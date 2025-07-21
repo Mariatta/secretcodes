@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import dj_database_url
 
 from pathlib import Path
 
@@ -25,10 +26,31 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=0))
+IS_HEROKU_APP = "DYNO" in os.environ and "CI" not in os.environ
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS")
-if ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ALLOWED_HOSTS.split(",")
+if IS_HEROKU_APP:
+    # On Heroku, it's safe to use a wildcard for `ALLOWED_HOSTS`, since the Heroku router performs
+    # validation of the Host header in the incoming HTTP request. On other platforms you may need to
+    # list the expected hostnames explicitly in production to prevent HTTP Host header attacks. See:
+    # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-ALLOWED_HOSTS
+    ALLOWED_HOSTS = ["*"]
+
+    # Redirect all non-HTTPS requests to HTTPS. This requires that:
+    # 1. Your app has a TLS/SSL certificate, which all `*.herokuapp.com` domains do by default.
+    #    When using a custom domain, you must configure one. See:
+    #    https://devcenter.heroku.com/articles/automated-certificate-management
+    # 2. Your app's WSGI web server is configured to use the `X-Forwarded-Proto` headers set by
+    #    the Heroku Router (otherwise you may encounter infinite HTTP 301 redirects). See this
+    #    app's `gunicorn.conf.py` for how this is done when using gunicorn.
+    #
+    # For maximum security, consider enabling HTTP Strict Transport Security (HSTS) headers too:
+    # https://docs.djangoproject.com/en/5.2/ref/middleware/#http-strict-transport-security
+    SECURE_SSL_REDIRECT = True
+else:
+
+    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS")
+    if ALLOWED_HOSTS:
+        ALLOWED_HOSTS = ALLOWED_HOSTS.split(",")
 
 
 # Application definition
@@ -42,11 +64,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 'allauth',
     'allauth.account',
-    "qrcode_manager"
+    "qrcode_manager",
+    "whitenoise"
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -88,13 +112,39 @@ WSGI_APPLICATION = "secretcodes.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if IS_HEROKU_APP:
+    # In production on Heroku the database configuration is derived from the `DATABASE_URL`
+    # environment variable by the dj-database-url package. `DATABASE_URL` will be set
+    # automatically by Heroku when a database addon is attached to your Heroku app. See:
+    # https://devcenter.heroku.com/articles/provisioning-heroku-postgres#application-config-vars
+    # https://github.com/jazzband/dj-database-url
+    DATABASES = {
+        "default": dj_database_url.config(
+            env="DATABASE_URL",
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        ),
     }
-}
-
+else:
+    if os.environ.get("DATABASE_URL", None) is not None:
+        DATABASES = {
+            "default": dj_database_url.config(
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
+        }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.postgresql"),
+                "NAME": os.environ.get("SQL_DATABASE", "postgres"),
+                "USER": os.environ.get("SQL_USER", "postgres"),
+                "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
+                "HOST": os.environ.get("SQL_HOST", "localhost"),
+                "PORT": os.environ.get("SQL_PORT", "5432"),
+            }
+        }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -161,3 +211,4 @@ if USE_SPACES == "true":
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
