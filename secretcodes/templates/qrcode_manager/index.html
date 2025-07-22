@@ -1,4 +1,4 @@
-{% extends "qrcode_manager/base.html" %}
+{% extends "../base.html" %}
 {% load allauth i18n %}
 {% load django_bootstrap5 %}
 {% load static %}
@@ -13,7 +13,7 @@ hello {{ name }}
      {% bootstrap_button button_type="submit" content="OK" %}
   {% bootstrap_button button_type="reset" content="Cancel" %}
     </form>
-    {% if qr_image %}
-        <img src="{% get_media_prefix %}qrcode/{{ qr_image }}" alt="QR Code" />
+    {% if qr_image_presigned %}
+        <img src="{{ qr_image_presigned }}" alt="QR Code" />
     {% endif %}
 {% endblock content %}

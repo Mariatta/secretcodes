@@ -1,0 +1,11 @@
+{% extends "./base.html" %}
+{% load allauth i18n %}
+{% load django_bootstrap5 %}
+{% load static %}
+{% block body %}
+{% endblock body %}
+{% block content %}
+    <ul>
+        <li><a href="{% url "qrcode_generator" %}">QR Code Generator</a></li>
+    </ul>
+{% endblock content %}

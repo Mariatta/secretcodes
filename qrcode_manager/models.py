@@ -1,9 +1,10 @@
-import qrcode
 from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
-# Create your models here.
 
+import boto3
+
+from .s3_wrapper import S3Wrapper
 class BaseModel(models.Model):
     creation_date = models.DateTimeField(
         "creation_date", editable=False, auto_now_add=True
@@ -21,25 +22,23 @@ class BaseModel(models.Model):
 class QRCode(BaseModel):
 
     description = models.CharField("description", max_length=100)
-    url = models.URLField("url")
-    qr_img = models.ImageField("qrcode", upload_to="qrcode", blank=True, null=True)
+    url = models.URLField("url", unique=True)
 
     def __str__(self):
         return self.description
 
-    def save(self, *args, **kwargs):
-        qr_img = self.generate_qr()
-        # qr_img.save(self.description + ".png")
-        code = super().save()
-        return code
-
     def generate_qr(self):
-        img = generate_qr(self.url, self.description+".png")
+        save_path = settings.MEDIA_ROOT + "/qrcode/"
+        filename = f"{self.description}"
+        s3_wrapper = S3Wrapper()
+        img = s3_wrapper.generate_qr(self.url, filename, save_path)
         return img
 
-def generate_qr(url, filename):
-    save_path = settings.MEDIA_ROOT + "/qrcode/" + filename
-    img = qrcode.make(url)
-    img.save(save_path)
-    return img
-    # print("saved "+ )
+    def save(self, *args, **kwargs):
+        self.generate_qr()
+        super().save(*args, **kwargs)
+
+    def get_qr_image_url(self):
+        save_path = settings.MEDIA_ROOT + "/qrcode/" + self.description
+        s3_wrapper = S3Wrapper()
+        return s3_wrapper.generate_url(save_path)

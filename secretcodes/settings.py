@@ -66,7 +66,9 @@ INSTALLED_APPS = [
     'allauth.account',
     "qrcode_manager",
     "whitenoise",
-    "django_bootstrap5"
+    "django_bootstrap5",
+    "storages",
+    "secretcodes"
 ]
 
 MIDDLEWARE = [
