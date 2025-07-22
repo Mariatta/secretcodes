@@ -1,0 +1,126 @@
+{% load i18n %}
+{% load django_bootstrap5 %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <title>
+            {% block head_title %}
+            {% endblock head_title %}
+        </title>
+        <meta property="og:title"
+              content="{% block og_title %}Secret Codes{% endblock og_title %}" />
+        <meta property="og:description"
+              content="{% block og_description %}Mariatta's Secret Codes{% endblock og_description %}" />
+        <meta property="og:type"
+              content="{% block og_type %}website{% endblock og_type %}" />
+        <meta property="og:url"
+              content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock og_url %}" />
+        <meta property="og:image"
+              content="{% block og_image %}{% endblock og_image %}" />
+        <meta property="og:image:alt"
+              content="{% block og_image_alt %}{% endblock og_image_alt %}">
+        <meta property="og:site_name" content="Secret Codes" />
+        <meta property="og:locale" content="en_US">
+        {% block extra_head %}
+            <script src="https://kit.fontawesome.com/8774ceef9d.js"
+                    crossorigin="anonymous"></script>
+        {% endblock extra_head %}
+        {% bootstrap_css %}
+        {% bootstrap_javascript %}
+        {# Display django.contrib.messages as Bootstrap alerts #}
+        {% bootstrap_messages %}
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        {% block body %}
+        {% endblock body %}
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark"
+             aria-label="Fourth navbar example">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="https://mariatta.ca">Secret Codes by Mariatta</a>
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarsExample04"
+                        aria-controls="navbarsExample04"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarsExample04">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="{% url "index" %}">Home</a>
+                        </li>
+
+                    </ul>
+                    {% if user.is_authenticated %}
+                        <div class="dropdown text-end navbar-nav">
+                            <a href="#"
+                               class="nav-link d-block link-body-emphasis text-decoration-none dropdown-toggle"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="true">
+                                Welcome, {{ user.username }}
+                                {# djlint:off #}
+{#                                <img src="https://github.com/mdo.png" alt="mdo" width="32" height="32" class="rounded-circle">#}
+                                {# djlint:on #}
+                            </a>
+                            {# djlint:off #}
+                            <ul class="dropdown-menu text-small"
+                                style="position: absolute;
+                                       inset: 0px 0px auto auto;
+                                       margin: 0px;
+                                       transform: translate(0px, 34px)"
+                                data-popper-placement="bottom-end">
+                            {# djlint:on #}
+                            {% if user.is_superuser %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:index' %}">{% trans "Admin Area" %}</a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                            {% endif %}
+
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            {% url 'account_logout' as logout_url_ %}
+                            {% if logout_url_ %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ logout_url_ }}">{% trans "Sign Out" %}</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div>
+                        <a type="button"
+                           class="btn btn-outline-light"
+                           href="{% url 'account_login' %}">Login</a>
+                    </div>
+                {% endif %}
+                {# djlint:off #}
+{#                    <form role="search">#}
+{#                        <input class="form-control" type="search" placeholder="Search" aria-label="Search">#}
+{#                    </form>#}
+                {# djlint:on #}
+            </div>
+        </div>
+    </nav>
+    <div class="container my-5">
+        {% block content %}
+        {% endblock content %}
+    </div>
+    <footer class="footer mt-auto py-3 bg-dark text-white">
+        <div class="container">
+
+            {% block footer_text %}
+            {% endblock footer_text %}
+        </div>
+    </footer>
+</body>
+</html>
