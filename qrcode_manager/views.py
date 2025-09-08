@@ -2,8 +2,11 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render
+from django.utils import timezone
+
 from .forms import QRCodePreviewForm
 from .models import QRCode
+
 @login_required
 def index(request):
     context = {"name": request.user.username}
@@ -11,7 +14,6 @@ def index(request):
     if request.method == "POST":
         qr_form = QRCodePreviewForm(request.POST)
         if qr_form.is_valid():
-            print(qr_form.cleaned_data)
             # Process the form data and generate a QR code
             url = qr_form.cleaned_data.get("url")
             if QRCode.objects.filter(url=url).exists():
@@ -51,9 +53,11 @@ def qr_code_generator(request):
 
 
 def url_reverse(request, slug):
-
     qr_obj = QRCode.objects.filter(slug=slug).first()
     if qr_obj:
+        qr_obj.visit_count += 1
+        qr_obj.last_visited = timezone.now()
+        qr_obj.save()
         return HttpResponseRedirect(qr_obj.url)
     else:
         raise Http404

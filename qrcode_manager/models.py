@@ -25,6 +25,8 @@ class QRCode(BaseModel):
     url = models.URLField("url", unique=True)
     filename = models.CharField("filename", max_length=100, default="")
     slug = models.CharField("slug", max_length=40, blank=True, null=True, unique=True)
+    visit_count = models.IntegerField("visit_count", default=0)
+    last_visited = models.DateTimeField("last_visited", blank=True, null=True)
 
     def __str__(self):
         return self.description
