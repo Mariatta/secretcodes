@@ -274,3 +274,5 @@ BOOTSTRAP5 = {
         "default": "django_bootstrap5.renderers.FieldRenderer",
     },
 }
+
+DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "http://localhost:8000")

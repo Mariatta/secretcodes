@@ -21,17 +21,26 @@ class BaseModel(models.Model):
 
 class QRCode(BaseModel):
 
-    description = models.CharField("description", max_length=100)
+    description = models.CharField("description", max_length=30)
     url = models.URLField("url", unique=True)
+    filename = models.CharField("filename", max_length=100, default="")
+    slug = models.CharField("slug", max_length=40, blank=True, null=True, unique=True)
 
     def __str__(self):
         return self.description
 
+    @property
+    def qr_filename(self):
+        if self.filename:
+            return self.filename
+        else:
+            self.filename = self.description + ".png"
+            return self.filename
+
     def generate_qr(self):
         save_path = settings.MEDIA_ROOT + "/qrcode/"
-        filename = f"{self.description}"
         s3_wrapper = S3Wrapper()
-        img = s3_wrapper.generate_qr(self.url, filename, save_path)
+        img = s3_wrapper.generate_qr(settings.DOMAIN_NAME + "/"+ self.slug, self.qr_filename, save_path)
         return img
 
     def save(self, *args, **kwargs):
@@ -39,6 +48,6 @@ class QRCode(BaseModel):
         super().save(*args, **kwargs)
 
     def get_qr_image_url(self):
-        save_path = settings.MEDIA_ROOT + "/qrcode/" + self.description
+        save_path = settings.MEDIA_ROOT + "/qrcode/" + self.qr_filename
         s3_wrapper = S3Wrapper()
         return s3_wrapper.generate_url(save_path)

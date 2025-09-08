@@ -34,14 +34,10 @@ class S3Wrapper:
     def generate_qr(self, url, filename, path=None):
         if not path:
             path = "short_lived/qrcode/"
-            print("no path, path is", path)
-        else:
-            print("provided path is", path)
         save_path = path + filename
 
         buffer = io.BytesIO()
 
-        print(save_path + " Saved")
         img = qrcode.make(url)
 
         img.save(buffer)

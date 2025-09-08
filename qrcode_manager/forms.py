@@ -1,8 +1,16 @@
 from django import forms
-from qrcode_manager.models import QRCode
+from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
 
 class QRCodePreviewForm(forms.Form):
 
     url = forms.URLField(label='URL')
-    filename = forms.CharField(label='Filename')
+    description = forms.CharField(label='Description', max_length=30, required=False)
+    slug = forms.CharField(label='Slug', max_length=30, required=False, validators=[
+            RegexValidator(
+                r'^[^\s]+$',  # Regex: matches one or more characters that are NOT whitespace
+                _('This field cannot contain spaces.'),
+                code='no_spaces_allowed'
+            )
+        ])
 
