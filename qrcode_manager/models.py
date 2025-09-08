@@ -42,7 +42,10 @@ class QRCode(BaseModel):
     def generate_qr(self):
         save_path = settings.MEDIA_ROOT + "/qrcode/"
         s3_wrapper = S3Wrapper()
-        img = s3_wrapper.generate_qr(settings.DOMAIN_NAME + "/"+ self.slug, self.qr_filename, save_path)
+        if self.slug:
+            img = s3_wrapper.generate_qr(settings.DOMAIN_NAME + "/"+ self.slug, self.qr_filename, save_path)
+        else:
+            img = s3_wrapper.generate_qr(self.url, self.qr_filename, save_path)
         return img
 
     def save(self, *args, **kwargs):

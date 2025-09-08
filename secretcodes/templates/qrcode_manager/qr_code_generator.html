@@ -6,13 +6,16 @@
 {% endblock body %}
 {% block content %}
 
-    <form action="{% url 'qrcode_generator' %}" method="post" class="form">
+    <form action="{% url post_url %}" method="post" class="form">
      {% csrf_token %}
 
   {% bootstrap_form qr_preview_form %}
      {% bootstrap_button button_type="submit" content="Generate QR Code" %}
     {% bootstrap_button button_type="reset" content="Reset" %}
     </form>
+    {% if result_url %}
+        <a href="{{ result_url }}">{{ result_url }}</a>
+    {% endif %}
     {% if qr_image_presigned %}
         <img src="{{ qr_image_presigned }}" alt="QR Code" />
     {% endif %}

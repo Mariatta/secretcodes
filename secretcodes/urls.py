@@ -26,7 +26,8 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("admin/", admin.site.urls),
     path('accounts/', include('allauth.urls')),
-    path("qrcode_manager/", include("qrcode_manager.urls")),
+    # path("qrcode_manager/", include("qrcode_manager.urls")),
     path("qrcode_generator/", qr_views.qr_code_generator, name="qrcode_generator"),
-    path("<str:slug>/", qr_views.url_reverse, name="url_reverse")
+    path("qrcode_slug_generator/", qr_views.qrcode_slug_generator, name="qrcode_slug_generator"),
+   path("<str:slug>/", qr_views.url_reverse, name="url_reverse")
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
