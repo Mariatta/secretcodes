@@ -2,6 +2,8 @@ from django.conf import settings
 import boto3
 import io
 import qrcode
+
+
 class S3Wrapper:
     def __init__(self):
         self.session = boto3.session.Session()
@@ -17,15 +19,22 @@ class S3Wrapper:
         extra_args = extra_args or settings.AWS_S3_OBJECT_PARAMETERS
         extra_args["ContentType"] = content_type
         extra_args["ACL"] = settings.AWS_DEFAULT_ACL
-        self.client.upload_fileobj(buffer, settings.AWS_STORAGE_BUCKET_NAME, filename,
-                          ExtraArgs=extra_args,)
+        self.client.upload_fileobj(
+            buffer,
+            settings.AWS_STORAGE_BUCKET_NAME,
+            filename,
+            ExtraArgs=extra_args,
+        )
 
     def generate_presigned_url(self, filename, expires_in=3600):
-        pre_signed_url = self.client.generate_presigned_url('get_object',
-                                           Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
-                                                               'Key': filename,
-                                                               },
-                                                       ExpiresIn=expires_in)
+        pre_signed_url = self.client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
+                "Key": filename,
+            },
+            ExpiresIn=expires_in,
+        )
         return pre_signed_url
 
     def generate_url(self, filename):

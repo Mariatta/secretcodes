@@ -1,4 +1,3 @@
-
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.http import HttpResponseRedirect, Http404
@@ -7,6 +6,7 @@ from django.utils import timezone
 
 from .forms import QRCodePreviewForm, QRCodeWithSlugPreviewForm
 from .models import QRCode
+
 
 @login_required
 def qrcode_slug_generator(request):
@@ -22,8 +22,11 @@ def qrcode_slug_generator(request):
                     qr_obj.slug = qr_form.cleaned_data.get("slug")
                     qr_obj.save()
             else:
-                qr_obj = QRCode.objects.create(url=url, description=qr_form.cleaned_data.get("description"),
-                                               slug=qr_form.cleaned_data.get("slug"))
+                qr_obj = QRCode.objects.create(
+                    url=url,
+                    description=qr_form.cleaned_data.get("description"),
+                    slug=qr_form.cleaned_data.get("slug"),
+                )
 
             context["qr_image_presigned"] = qr_obj.get_qr_image_url()
             context["result_url"] = settings.DOMAIN_NAME + "/" + qr_obj.slug
@@ -33,17 +36,19 @@ def qrcode_slug_generator(request):
     context["post_url"] = "qrcode_slug_generator"
     return render(request, "qrcode_manager/qr_code_generator.html", context)
 
+
 def qr_code_generator(request):
     context = {}
     if request.method == "POST":
         qr_form = QRCodePreviewForm(request.POST)
         if qr_form.is_valid():
-            print(qr_form.cleaned_data)
             url = qr_form.cleaned_data.get("url")
             if QRCode.objects.filter(url=url).exists():
                 qr_obj = QRCode.objects.get(url=url)
             else:
-                qr_obj = QRCode.objects.create(url=url, description=qr_form.cleaned_data.get("description"))
+                qr_obj = QRCode.objects.create(
+                    url=url, description=qr_form.cleaned_data.get("description")
+                )
 
             context["qr_image_presigned"] = qr_obj.get_qr_image_url()
             context["result_url"] = url

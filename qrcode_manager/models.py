@@ -5,6 +5,8 @@ from django.conf import settings
 import boto3
 
 from .s3_wrapper import S3Wrapper
+
+
 class BaseModel(models.Model):
     creation_date = models.DateTimeField(
         "creation_date", editable=False, auto_now_add=True
@@ -18,6 +20,7 @@ class BaseModel(models.Model):
         ):  # pragma: no cover
             kwargs["update_fields"].append("modified_date")
         super().save(*args, **kwargs)
+
 
 class QRCode(BaseModel):
 
@@ -43,7 +46,9 @@ class QRCode(BaseModel):
         save_path = settings.MEDIA_ROOT + "/qrcode/"
         s3_wrapper = S3Wrapper()
         if self.slug:
-            img = s3_wrapper.generate_qr(settings.DOMAIN_NAME + "/"+ self.slug, self.qr_filename, save_path)
+            img = s3_wrapper.generate_qr(
+                settings.DOMAIN_NAME + "/" + self.slug, self.qr_filename, save_path
+            )
         else:
             img = s3_wrapper.generate_qr(self.url, self.qr_filename, save_path)
         return img
