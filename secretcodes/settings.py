@@ -92,6 +92,12 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
+# Allauth settings
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGIN_METHODS = {"username"}
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_ADAPTER = 'secretcodes.account_adapter.SecretCodesAccountAdapter'
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
