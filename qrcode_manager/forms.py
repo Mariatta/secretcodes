@@ -6,13 +6,13 @@ from django.utils.translation import gettext_lazy as _
 class QRCodePreviewForm(forms.Form):
 
     url = forms.URLField(label="URL")
-    description = forms.CharField(label="Description", max_length=30, required=False)
+    description = forms.CharField(label="Description", max_length=30, required=True)
 
 
 class QRCodeWithSlugPreviewForm(forms.Form):
 
     url = forms.URLField(label="URL")
-    description = forms.CharField(label="Description", max_length=30, required=False)
+    description = forms.CharField(label="Description", max_length=30, required=True)
     slug = forms.CharField(
         label="Slug",
         max_length=30,

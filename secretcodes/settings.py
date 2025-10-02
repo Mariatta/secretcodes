@@ -196,9 +196,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 USE_SPACES = os.getenv("USE_SPACES")
-print("use spaces", USE_SPACES)
 if USE_SPACES == "true":
-    print("Using spaces for media storage")
     STORAGES = {
         "default": {
             "BACKEND": "storage_backend.custom_storage.MediaStorage",
@@ -215,8 +213,7 @@ if USE_SPACES == "true":
     AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     AWS_QUERYSTRING_AUTH = False
-else:
-    print("not using spaces")
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
