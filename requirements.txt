@@ -6,7 +6,7 @@ django-tables2==2.7.5
 gunicorn==23.0.0
 packaging==24.2
 psycopg2-binary==2.9.10
-sqlparse==0.5.3
+sqlparse==0.5.4
 django-bootstrap5==25.1
 whitenoise==6.9.0
 dj-database-url==2.3.0
