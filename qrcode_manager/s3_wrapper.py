@@ -1,7 +1,8 @@
-from django.conf import settings
-import boto3
 import io
+
+import boto3
 import qrcode
+from django.conf import settings
 
 
 class S3Wrapper:

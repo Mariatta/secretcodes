@@ -1,5 +1,5 @@
-from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -64,7 +64,6 @@ def url_reverse(request, slug):
     qr_obj = get_object_or_404(QRCode, slug=slug)
     # Use F() expression to avoid race conditions
     QRCode.objects.filter(pk=qr_obj.pk).update(
-        visit_count=F("visit_count") + 1,
-        last_visited=timezone.now()
+        visit_count=F("visit_count") + 1, last_visited=timezone.now()
     )
     return redirect(qr_obj.url)

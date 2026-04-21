@@ -1,8 +1,9 @@
 [tool.djlint]
 # https://www.djlint.com/docs/linter/
+# H006 - Img tag should have height and width attributes.
 # H030 - Consider adding a meta description.
 # H031 - Consider adding meta keywords.
-ignore="H030,H031"
+ignore="H006,H030,H031"
 profile = "django"
 custom_blocks="switch"
 line_break_after_multiline_tag=true
@@ -14,4 +15,7 @@ testpaths = [ "tests" ]
 pythonpath = [ "." ]
 
 [tool.coverage.run]
-omit = ["secretcodes/settings.py"]
+omit = [
+    "secretcodes/settings.py",
+    "*/migrations/*",
+]
