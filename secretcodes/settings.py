@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import base64
+import hashlib
 import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,7 +68,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "allauth",
     "allauth.account",
+    "availability",
     "qrcode_manager",
+    "solo",
+    "timezone_field",
     "whitenoise",
     "django_bootstrap5",
     "storages",
@@ -278,3 +284,18 @@ BOOTSTRAP5 = {
 }
 
 DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "http://localhost:8000")
+
+# Fernet key used to encrypt OAuth refresh tokens at rest. Generate with
+# `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+# and store in the FERNET_KEY environment variable. Required in production;
+# in DEBUG mode a key is derived from SECRET_KEY for local-dev convenience.
+FERNET_KEY = os.environ.get("FERNET_KEY")
+if not FERNET_KEY:
+    if DEBUG:
+        FERNET_KEY = base64.urlsafe_b64encode(
+            hashlib.sha256((SECRET_KEY or "dev").encode()).digest()
+        ).decode()
+    else:
+        raise ImproperlyConfigured(
+            "FERNET_KEY environment variable is required when DEBUG is False"
+        )

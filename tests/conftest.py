@@ -1,6 +1,9 @@
+import os
 from unittest.mock import MagicMock
 
 import pytest
+
+os.environ.setdefault("FERNET_KEY", "kTdjP9joWZr9JfnWHGmcQOOPxFEKfCB3_Hx7OgHD6LU=")
 
 
 @pytest.fixture(autouse=True)
