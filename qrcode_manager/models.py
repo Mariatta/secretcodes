@@ -1,8 +1,6 @@
+from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
-from django.conf import settings
-
-import boto3
 
 from .s3_wrapper import S3Wrapper
 

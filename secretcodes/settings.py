@@ -11,9 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-import dj_database_url
-
 from pathlib import Path
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -96,7 +96,7 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGIN_METHODS = {"username"}
 ACCOUNT_LOGOUT_ON_GET = True
-ACCOUNT_ADAPTER = 'secretcodes.account_adapter.SecretCodesAccountAdapter'
+ACCOUNT_ADAPTER = "secretcodes.account_adapter.SecretCodesAccountAdapter"
 
 TEMPLATES = [
     {
