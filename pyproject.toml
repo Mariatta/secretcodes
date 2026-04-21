@@ -8,6 +8,7 @@ profile = "django"
 custom_blocks="switch"
 line_break_after_multiline_tag=true
 use_gitignore = true
+extend_exclude = "htmlcov,venv,.venv,staticroot,.state,node_modules"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "secretcodes.settings"
