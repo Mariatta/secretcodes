@@ -1,0 +1,29 @@
+# Test + coverage artifacts
+htmlcov/
+.coverage
+test.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Django
+db.sqlite3
+staticroot/
+media/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Build state
+.state/
+
+# Claude workspace instructions (personal)
+CLAUDE.md
+
+# Credentials — must never be committed
+client_secret_*.json
