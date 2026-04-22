@@ -5,13 +5,12 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
-hello {{ name }}
+    hello {{ name }}
     <form action="{% url 'qrcode_manager:index' %}" method="post" class="form">
-     {% csrf_token %}
-
-  {% bootstrap_form qr_preview_form %}
-     {% bootstrap_button button_type="submit" content="OK" %}
-  {% bootstrap_button button_type="reset" content="Cancel" %}
+        {% csrf_token %}
+        {% bootstrap_form qr_preview_form %}
+        {% bootstrap_button button_type="submit" content="OK" %}
+        {% bootstrap_button button_type="reset" content="Cancel" %}
     </form>
     {% if qr_image_presigned %}
         <img src="{{ qr_image_presigned }}" alt="QR Code" />

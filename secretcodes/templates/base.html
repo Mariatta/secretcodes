@@ -54,7 +54,6 @@
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="{% url "index" %}">Home</a>
                         </li>
-
                     </ul>
                     {% if user.is_authenticated %}
                         <div class="dropdown text-end navbar-nav">
@@ -83,8 +82,6 @@
                                     <hr class="dropdown-divider">
                                 </li>
                             {% endif %}
-
-
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -117,7 +114,6 @@
     </div>
     <footer class="footer mt-auto py-3 bg-dark text-white">
         <div class="container">
-
             {% block footer_text %}
             {% endblock footer_text %}
         </div>

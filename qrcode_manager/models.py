@@ -1,9 +1,9 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.timezone import now
-from django.conf import settings
 
-import boto3
-
+from .forms import validate_slug_not_reserved
 from .s3_wrapper import S3Wrapper
 
 
@@ -42,18 +42,30 @@ class QRCode(BaseModel):
             self.filename = self.description + ".png"
             return self.filename
 
+    def clean(self):
+        super().clean()
+        if self.slug:
+            try:
+                validate_slug_not_reserved(self.slug)
+            except ValidationError as exc:
+                raise ValidationError({"slug": exc})
+
     def generate_qr(self):
         save_path = settings.MEDIA_ROOT + "/qrcode/"
         s3_wrapper = S3Wrapper()
         if self.slug:
             img = s3_wrapper.generate_qr(
-                settings.DOMAIN_NAME + "/" + self.slug, self.qr_filename, save_path
+                settings.DOMAIN_NAME + "/qr/" + self.slug,
+                self.qr_filename,
+                save_path,
             )
         else:
             img = s3_wrapper.generate_qr(self.url, self.qr_filename, save_path)
         return img
 
     def save(self, *args, **kwargs):
+        if self.slug:
+            validate_slug_not_reserved(self.slug)
         self.generate_qr()
         super().save(*args, **kwargs)
 

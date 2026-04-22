@@ -15,12 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.conf.urls.static import static
-from django.conf import settings
-from secretcodes import views
+
 from qrcode_manager import views as qr_views
+from secretcodes import views
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -33,5 +34,10 @@ urlpatterns = [
         qr_views.qrcode_slug_generator,
         name="qrcode_slug_generator",
     ),
-    path("<str:slug>/", qr_views.url_reverse, name="url_reverse"),
+    path("qr/<str:slug>/", qr_views.url_reverse, name="url_reverse"),
+    path(
+        "<str:slug>/",
+        qr_views.legacy_url_reverse,
+        name="legacy_url_reverse",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
