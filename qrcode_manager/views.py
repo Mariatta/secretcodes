@@ -71,8 +71,9 @@ def url_reverse(request, slug):
 
 
 def legacy_url_reverse(request, slug):
-    # Pre-migration URLs at /<slug>/ 301-redirect to the namespaced /qr/<slug>/.
+    """Pre-migration URLs at /<slug>/ 301-redirect to the namespaced /qr/<slug>/.
     # get_object_or_404 gives a clean 404 for unknown slugs rather than
     # chaining a 301 into a 404.
+    """
     get_object_or_404(QRCode, slug=slug)
     return redirect(reverse("url_reverse", args=[slug]), permanent=True)
