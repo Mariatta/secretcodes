@@ -116,6 +116,11 @@
         <div class="container">
             {% block footer_text %}
             {% endblock footer_text %}
+            <div class="small">
+                <a class="link-light" href="{% url 'privacy' %}">Privacy</a>
+                ·
+                <a class="link-light" href="{% url 'terms' %}">Terms</a>
+            </div>
         </div>
     </footer>
 </body>

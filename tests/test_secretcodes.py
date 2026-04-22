@@ -12,6 +12,28 @@ def test_index_view_renders(client):
     assert response.status_code == 200
 
 
+@pytest.mark.django_db
+def test_privacy_page_renders(client):
+    response = client.get(reverse("privacy"))
+    assert response.status_code == 200
+    assert b"Privacy Policy" in response.content
+    assert b"freeBusy" in response.content
+
+
+@pytest.mark.django_db
+def test_terms_page_renders(client):
+    response = client.get(reverse("terms"))
+    assert response.status_code == 200
+    assert b"Terms of Service" in response.content
+
+
+@pytest.mark.django_db
+def test_footer_links_to_privacy_and_terms(client):
+    response = client.get(reverse("index"))
+    assert reverse("privacy").encode() in response.content
+    assert reverse("terms").encode() in response.content
+
+
 def test_account_adapter_signup_disabled():
     adapter = SecretCodesAccountAdapter()
     assert adapter.is_open_for_signup(request=None) is False

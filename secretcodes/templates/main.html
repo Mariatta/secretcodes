@@ -5,14 +5,34 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
-    <ul>
-        <li>
-            <a href="{% url "qrcode_generator" %}">QR Code Generator</a>
-        </li>
-        {% if user.is_authenticated %}
+    <section class="mb-4">
+        <h2>
+            Availability
+        </h2>
+        <ul>
             <li>
-                <a href="{% url "qrcode_slug_generator" %}">QR Code Generator with Slug</a>
+                <a href="{% url "availability:week_grid" %}">When is Mariatta available?</a>
             </li>
-        {% endif %}
-    </ul>
+            {% if user.is_superuser %}
+                <li>
+                    <a href="{% url "availability:admin" %}">Manage connected Google accounts</a>
+                </li>
+            {% endif %}
+        </ul>
+    </section>
+    <section class="mb-4">
+        <h2>
+            QR codes
+        </h2>
+        <ul>
+            <li>
+                <a href="{% url "qrcode_generator" %}">QR Code Generator</a>
+            </li>
+            {% if user.is_authenticated %}
+                <li>
+                    <a href="{% url "qrcode_slug_generator" %}">QR Code Generator with Slug</a>
+                </li>
+            {% endif %}
+        </ul>
+    </section>
 {% endblock content %}

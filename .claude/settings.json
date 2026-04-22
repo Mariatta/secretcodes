@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip index versions *)",
+      "Bash(pip show *)",
+      "Bash(pip list)",
+      "Bash(black --check *)",
+      "Bash(isort --check-only *)",
+      "Bash(flake8 *)",
+      "Bash(djlint . --check)",
+      "Bash(djlint . --lint)",
+      "Bash(./venv/bin/black --check *)",
+      "Bash(./venv/bin/isort --check-only *)",
+      "Bash(./venv/bin/flake8 *)",
+      "Bash(./venv/bin/djlint . --check)",
+      "Bash(./venv/bin/djlint . --lint)",
+      "Bash(./venv/bin/pip index versions *)",
+      "Bash(./venv/bin/pip show *)",
+      "Bash(./venv/bin/pip list)"
+    ]
+  }
+}

@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.test import override_settings
 
+from qrcode_manager.s3_wrapper import S3Wrapper
+
 AWS_OVERRIDES = dict(
     AWS_S3_ENDPOINT_URL="https://s3.example.com",
     AWS_ACCESS_KEY_ID="key",
@@ -21,16 +23,12 @@ def boto_session():
 
 @override_settings(**AWS_OVERRIDES)
 def test_init_builds_client(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     S3Wrapper()
     boto_session.session.Session.assert_called_once()
 
 
 @override_settings(**AWS_OVERRIDES)
 def test_upload_fileobj_passes_through(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     wrapper.upload_fileobj(b"data", "f.png", "image/png")
     wrapper.client.upload_fileobj.assert_called_once()
@@ -41,8 +39,6 @@ def test_upload_fileobj_passes_through(boto_session):
 
 @override_settings(**AWS_OVERRIDES)
 def test_upload_fileobj_accepts_extra_args(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     wrapper.upload_fileobj(b"data", "f.png", "image/png", extra_args={"Foo": "Bar"})
     _, kwargs = wrapper.client.upload_fileobj.call_args
@@ -51,8 +47,6 @@ def test_upload_fileobj_accepts_extra_args(boto_session):
 
 @override_settings(**AWS_OVERRIDES)
 def test_generate_presigned_url(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     wrapper.client.generate_presigned_url.return_value = "https://signed"
     assert wrapper.generate_presigned_url("f.png") == "https://signed"
@@ -61,16 +55,12 @@ def test_generate_presigned_url(boto_session):
 
 @override_settings(**AWS_OVERRIDES)
 def test_generate_url_composes_path(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     assert wrapper.generate_url("f.png") == "https://s3.example.com/bucket/f.png"
 
 
 @override_settings(**AWS_OVERRIDES)
 def test_generate_qr_default_path(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     with patch("qrcode_manager.s3_wrapper.qrcode") as mock_qrcode:
         mock_qrcode.make.return_value = MagicMock()
@@ -80,8 +70,6 @@ def test_generate_qr_default_path(boto_session):
 
 @override_settings(**AWS_OVERRIDES)
 def test_generate_qr_custom_path(boto_session):
-    from qrcode_manager.s3_wrapper import S3Wrapper
-
     wrapper = S3Wrapper()
     with patch("qrcode_manager.s3_wrapper.qrcode") as mock_qrcode:
         mock_qrcode.make.return_value = MagicMock()

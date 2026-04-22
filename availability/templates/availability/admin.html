@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Connected Google accounts
+{% endblock head_title %}
+{% block content %}
+    <h1>
+        Connected Google accounts
+    </h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <p>
+        <a class="btn btn-primary" href="{% url 'availability:oauth_start' %}">Connect Google Account</a>
+    </p>
+    {% if accounts %}
+        <ul class="list-group">
+            {% for account in accounts %}
+                <li class="list-group-item">
+                    <strong>{{ account.label }}</strong> · {{ account.email }}
+                    <br>
+                    <small class="text-muted">{{ account.tracked_calendars.count }} tracked calendar{{ account.tracked_calendars.count|pluralize }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            No Google accounts connected yet. Click the button above to connect one.
+        </p>
+    {% endif %}
+{% endblock content %}

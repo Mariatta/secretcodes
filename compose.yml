@@ -39,10 +39,17 @@ services:
       DEBUG: True
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,[::1]
       SECRET_KEY: verysecure
+      FERNET_KEY: kTdjP9joWZr9JfnWHGmcQOOPxFEKfCB3_Hx7OgHD6LU=
       DATABASE_URL: postgresql://secretcodes:secretcodes@postgres:5432/secretcodes
       DJANGO_DEFAULT_FROM_EMAIL: Mariatta <mariatta@mariatta.ca>
       DJANGO_EMAIL_HOST: maildev
       DJANGO_EMAIL_PORT: 1025
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI}
+      # Dev-only: allow http://localhost redirect and Google's scope expansion
+      OAUTHLIB_INSECURE_TRANSPORT: "1"
+      OAUTHLIB_RELAX_TOKEN_SCOPE: "1"
       # S3 / DO Spaces for QR-code image storage. Flip USE_SPACES to "true"
       # and provide real credentials in .env to exercise the QR upload path
       # locally. Leaving USE_SPACES unset skips the AWS settings block entirely

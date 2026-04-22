@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static tz %}
+{% block head_title %}
+    Mariatta's availability
+{% endblock head_title %}
+{% block extra_head %}
+    <style>
+        .day-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 768px) {
+            .day-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (min-width: 1200px) {
+            .day-grid { grid-template-columns: repeat(7, 1fr); }
+        }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+    {% timezone profile.timezone %}
+    <h1>
+        Mariatta's availability
+    </h1>
+    <p class="text-muted">
+        Mariatta is in <strong>{{ profile.timezone }}</strong>.
+        <span id="viewer-tz-label"></span>
+        Next 14 days starting {{ range_start|date:"l, Y-m-d" }}.
+    </p>
+    <p>
+        <a class="btn btn-sm {% if view_mode == 'summary' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+           href="?view=summary{% if include_extended %}&include_extended=true{% endif %}">Summary</a>
+        <a class="btn btn-sm {% if view_mode == 'detail' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+           href="?view=detail{% if include_extended %}&include_extended=true{% endif %}">Detail</a>
+    </p>
+    {% if view_mode == "summary" %}
+        {% if week_summary.best %}
+            <div class="alert alert-success">
+                <strong>Recommended:</strong>
+                {{ week_summary.best.date|date:"l, F j" }} ·
+                {{ week_summary.best.label.headline }}
+                {% if week_summary.best.best_window %}
+                    · best window
+                    <time datetime="{{ week_summary.best.best_window.0|date:'c' }}">{{ week_summary.best.best_window.0|time:"H:i" }}</time>
+                    –
+                    <time datetime="{{ week_summary.best.best_window.1|date:'c' }}">{{ week_summary.best.best_window.1|time:"H:i" }}</time>
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="day-grid">
+            {% for day in week_summary.days %}
+                <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ day.date|date:"D, M j" }}
+                        </h5>
+                        <h6 class="card-subtitle mb-2">
+                            {{ day.label.headline }}
+                        </h6>
+                        <p class="card-text small text-muted">
+                            {{ day.reason }}
+                        </p>
+                        {% if day.best_window %}
+                            <p class="card-text small">
+                                Best window:
+                                <strong class="text-nowrap"><time datetime="{{ day.best_window.0|date:'c' }}">{{ day.best_window.0|time:"H:i" }}</time>–<time datetime="{{ day.best_window.1|date:'c' }}">{{ day.best_window.1|time:"H:i" }}</time></strong>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {% if result.free_slots %}
+            <div class="row">
+                {% regroup result.free_slots by start|date:"D, M j" as day_groups %}
+                {% for day in day_groups %}
+                    <div class="col-md-3 mb-3">
+                        <h5>
+                            {{ day.grouper }}
+                        </h5>
+                        <ul class="list-unstyled">
+                            {% for slot in day.list %}
+                                <li>
+                                    <span class="badge {% if slot.band == "business" %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        <time datetime="{{ slot.start|date:'c' }}">{{ slot.start|time:"H:i" }}</time>
+                                        –
+                                        <time datetime="{{ slot.end|date:'c' }}">{{ slot.end|time:"H:i" }}</time>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>
+                No free slots in the visible range.
+            </p>
+        {% endif %}
+        {% if exhausted and not include_extended %}
+            <a class="btn btn-outline-primary"
+               href="?view=detail&include_extended=true">Need a different time?</a>
+        {% endif %}
+    {% endif %}
+{% endtimezone %}
+<script>
+        (function () {
+            const viewerTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const label = document.getElementById("viewer-tz-label");
+            if (label) {
+                label.textContent = "Times shown in your timezone (" + viewerTz + ").";
+            }
+            document.querySelectorAll("time[datetime]").forEach(function (el) {
+                const d = new Date(el.getAttribute("datetime"));
+                if (isNaN(d)) { return; }
+                el.textContent = d.toLocaleTimeString([], {
+                    hour: "2-digit", minute: "2-digit", hour12: false
+                });
+            });
+        })();
+</script>
+{% endblock content %}

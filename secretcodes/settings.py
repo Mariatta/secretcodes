@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import base64
+import hashlib
 import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,7 +68,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "allauth",
     "allauth.account",
+    "availability",
     "qrcode_manager",
+    "solo",
+    "timezone_field",
     "whitenoise",
     "django_bootstrap5",
     "storages",
@@ -278,3 +284,31 @@ BOOTSTRAP5 = {
 }
 
 DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "http://localhost:8000")
+
+# Fernet key used to encrypt OAuth refresh tokens at rest. Generate with
+# `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+# and store in the FERNET_KEY environment variable. Required in production;
+# in DEBUG mode a key is derived from SECRET_KEY for local-dev convenience.
+FERNET_KEY = os.environ.get("FERNET_KEY")
+if not FERNET_KEY:
+    if DEBUG:
+        FERNET_KEY = base64.urlsafe_b64encode(
+            hashlib.sha256((SECRET_KEY or "dev").encode()).digest()
+        ).decode()
+    else:
+        raise ImproperlyConfigured(
+            "FERNET_KEY environment variable is required when DEBUG is False"
+        )
+
+# Google OAuth client credentials. Register an OAuth 2.0 client in the Google
+# Cloud Console, then set these env vars. Required for availability calendar
+# sync (Stages 4a/4b); empty defaults let the app boot without them.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    "http://localhost:8000/availability/oauth/callback/",
+)
+GOOGLE_FREEBUSY_CACHE_SECONDS = int(
+    os.environ.get("GOOGLE_FREEBUSY_CACHE_SECONDS", "300")
+)

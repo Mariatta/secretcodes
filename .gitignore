@@ -27,3 +27,5 @@ CLAUDE.md
 
 # Credentials — must never be committed
 client_secret_*.json
+.env
+.env.*
