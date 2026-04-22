@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import QRCodePreviewForm, QRCodeWithSlugPreviewForm
@@ -29,7 +30,7 @@ def qrcode_slug_generator(request):
                 )
 
             context["qr_image_presigned"] = qr_obj.get_qr_image_url()
-            context["result_url"] = settings.DOMAIN_NAME + "/" + qr_obj.slug
+            context["result_url"] = settings.DOMAIN_NAME + "/qr/" + qr_obj.slug
     else:
         qr_form = QRCodeWithSlugPreviewForm()
     context["qr_preview_form"] = qr_form
@@ -67,3 +68,13 @@ def url_reverse(request, slug):
         visit_count=F("visit_count") + 1, last_visited=timezone.now()
     )
     return redirect(qr_obj.url)
+
+
+def legacy_url_reverse(request, slug):
+    """Redirect pre-migration URLs at /<slug>/ to the namespaced /qr/<slug>/.
+
+    Uses get_object_or_404 so an unknown slug returns a clean 404 rather
+    than chaining a 301 into a 404.
+    """
+    get_object_or_404(QRCode, slug=slug)
+    return redirect(reverse("url_reverse", args=[slug]), permanent=True)
