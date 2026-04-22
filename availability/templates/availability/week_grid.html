@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}
+    Mariatta's availability
+{% endblock head_title %}
+{% block content %}
+    <h1>
+        Mariatta's availability
+    </h1>
+    <p class="text-muted">
+        Times shown in <strong>{{ profile.timezone }}</strong>.
+        Week of {{ range_start|date:"Y-m-d" }}.
+    </p>
+    <p>
+        <a class="btn btn-sm {% if view_mode == 'summary' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+           href="?view=summary{% if include_extended %}&include_extended=true{% endif %}">Summary</a>
+        <a class="btn btn-sm {% if view_mode == 'detail' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+           href="?view=detail{% if include_extended %}&include_extended=true{% endif %}">Detail</a>
+    </p>
+    {% if view_mode == "summary" %}
+        {% if week_summary.best %}
+            <div class="alert alert-success">
+                <strong>Recommended:</strong>
+                {{ week_summary.best.date|date:"l, F j" }} ·
+                {{ week_summary.best.label.headline }}
+                {% if week_summary.best.best_window %}
+                    · best window
+                    {{ week_summary.best.best_window.0|time:"H:i" }}–{{ week_summary.best.best_window.1|time:"H:i" }}
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="row">
+            {% for day in week_summary.days %}
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ day.date|date:"D, M j" }}
+                            </h5>
+                            <h6 class="card-subtitle mb-2">
+                                {{ day.label.headline }}
+                            </h6>
+                            <p class="card-text small text-muted">
+                                {{ day.reason }}
+                            </p>
+                            {% if day.best_window %}
+                                <p class="card-text small">
+                                    Best window:
+                                    <strong>{{ day.best_window.0|time:"H:i" }}–{{ day.best_window.1|time:"H:i" }}</strong>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {% if result.free_slots %}
+            <div class="row">
+                {% regroup result.free_slots by start|date:"D, M j" as day_groups %}
+                {% for day in day_groups %}
+                    <div class="col-md-3 mb-3">
+                        <h5>
+                            {{ day.grouper }}
+                        </h5>
+                        <ul class="list-unstyled">
+                            {% for slot in day.list %}
+                                <li>
+                                    <span class="badge {% if slot.band == "business" %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ slot.start|time:"H:i" }}–{{ slot.end|time:"H:i" }}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>
+                No free slots in the visible range.
+            </p>
+        {% endif %}
+        {% if exhausted and not include_extended %}
+            <a class="btn btn-outline-primary"
+               href="?view=detail&include_extended=true">Need a different time?</a>
+        {% endif %}
+    {% endif %}
+{% endblock content %}
