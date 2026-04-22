@@ -43,6 +43,15 @@ services:
       DJANGO_DEFAULT_FROM_EMAIL: Mariatta <mariatta@mariatta.ca>
       DJANGO_EMAIL_HOST: maildev
       DJANGO_EMAIL_PORT: 1025
+      # S3 / DO Spaces for QR-code image storage. Flip USE_SPACES to "true"
+      # and provide real credentials in .env to exercise the QR upload path
+      # locally. Leaving USE_SPACES unset skips the AWS settings block entirely
+      # — which currently crashes the QR slug generator view.
+      USE_SPACES: ${USE_SPACES}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
+      AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL}
     depends_on:
       redis:
         condition: service_healthy

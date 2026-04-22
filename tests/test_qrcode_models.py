@@ -1,5 +1,6 @@
 import pytest
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 from qrcode_manager.models import QRCode
 
@@ -41,12 +42,12 @@ def test_generate_qr_without_slug_uses_url(mock_s3_wrapper):
 
 
 @pytest.mark.django_db
-def test_generate_qr_with_slug_uses_domain_and_slug(mock_s3_wrapper):
+def test_generate_qr_with_slug_uses_qr_namespace(mock_s3_wrapper):
     QRCode.objects.create(
         url="https://example.com", description="with-slug", slug="abc"
     )
     positional_urls = [c.args[0] for c in mock_s3_wrapper.generate_qr.call_args_list]
-    assert f"{settings.DOMAIN_NAME}/abc" in positional_urls
+    assert f"{settings.DOMAIN_NAME}/qr/abc" in positional_urls
 
 
 @pytest.mark.django_db
@@ -56,3 +57,25 @@ def test_basemodel_save_updates_modified_date():
     qr.description = "two"
     qr.save()
     assert qr.modified_date >= original
+
+
+@pytest.mark.django_db
+def test_save_rejects_reserved_slug():
+    with pytest.raises(ValidationError):
+        QRCode.objects.create(
+            url="https://example.com", description="x", slug="availability"
+        )
+
+
+@pytest.mark.django_db
+def test_clean_rejects_reserved_slug():
+    qr = QRCode(url="https://example.com", description="x", slug="admin")
+    with pytest.raises(ValidationError) as excinfo:
+        qr.clean()
+    assert "slug" in excinfo.value.message_dict
+
+
+@pytest.mark.django_db
+def test_clean_passes_for_non_reserved_slug():
+    qr = QRCode(url="https://example.com", description="x", slug="mytalk")
+    qr.clean()

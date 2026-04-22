@@ -133,3 +133,19 @@ def test_url_reverse_redirects_and_increments(client):
 def test_url_reverse_unknown_slug_404s(client):
     response = client.get(reverse("url_reverse", args=["nope"]))
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_legacy_url_301_redirects_to_qr_namespace(client):
+    QRCode.objects.create(
+        url="https://example.com", description="old", slug="oldlink"
+    )
+    response = client.get(reverse("legacy_url_reverse", args=["oldlink"]))
+    assert response.status_code == 301
+    assert response.url == reverse("url_reverse", args=["oldlink"])
+
+
+@pytest.mark.django_db
+def test_legacy_url_unknown_slug_404s(client):
+    response = client.get(reverse("legacy_url_reverse", args=["nope"]))
+    assert response.status_code == 404

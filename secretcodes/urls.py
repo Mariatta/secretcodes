@@ -34,5 +34,10 @@ urlpatterns = [
         qr_views.qrcode_slug_generator,
         name="qrcode_slug_generator",
     ),
-    path("<str:slug>/", qr_views.url_reverse, name="url_reverse"),
+    path("qr/<str:slug>/", qr_views.url_reverse, name="url_reverse"),
+    path(
+        "<str:slug>/",
+        qr_views.legacy_url_reverse,
+        name="legacy_url_reverse",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
