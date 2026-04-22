@@ -1,0 +1,111 @@
+{% extends "./base.html" %}
+{% block head_title %}
+    Privacy Policy
+{% endblock head_title %}
+{% block content %}
+    <h1>Privacy Policy</h1>
+    <p class="text-muted">
+        Last updated: 2026-04-22
+    </p>
+    <h2>What this site collects</h2>
+    <h3>From visitors</h3>
+    <p>
+        This site does not track you. It does not set cookies for analytics or
+        advertising, does not fingerprint your browser, does not embed
+        third-party trackers, and does not share data with third parties.
+        Standard web-server access logs (IP address, timestamp, path) are
+        retained only as long as the hosting provider's default retention
+        permits.
+    </p>
+    <h3>From people who generate QR codes</h3>
+    <p>
+        Anyone can use the basic QR code generator. Short, named slugs (e.g.
+        <code>/qr/mytalk/</code>) can only be created by authenticated site
+        accounts — and since account sign-up is disabled, in practice only
+        Mariatta creates slug-style QR codes. No new accounts can be
+        self-registered through this site.
+    </p>
+    <p>
+        The QR code generator stores the following in the site's database so
+        that the codes continue to resolve and can be inspected later:
+    </p>
+    <ul>
+        <li>
+            The <strong>URL</strong> you supplied, so the QR image can redirect
+            to it.
+        </li>
+        <li>
+            The short <strong>description</strong> you typed for the code.
+        </li>
+        <li>
+            The <strong>slug</strong> (for slug-style codes).
+        </li>
+        <li>
+            An aggregate <strong>visit counter</strong> and the
+            <strong>timestamp of the most recent visit</strong>, incremented
+            each time the short URL is followed. This is a single integer and
+            timestamp per QR code — not a per-visitor log.
+        </li>
+    </ul>
+    <p>
+        <strong>Not stored</strong>: your IP address, your identity, which
+        account (if any) created which QR code, any per-visitor record of who
+        followed a short URL, or anything else that would link a QR code back
+        to a specific person.
+    </p>
+    <h3>From Google accounts connected by the site owner</h3>
+    <p>
+        The availability feature depends on OAuth access to Mariatta's own
+        Google Calendar accounts. When Mariatta (the site owner) connects a
+        Google account to this site, the following is stored:
+    </p>
+    <ul>
+        <li>
+            The email address of the connected Google account (used only to
+            label the connection).
+        </li>
+        <li>
+            An OAuth refresh token, encrypted at rest with Fernet symmetric
+            encryption, so the site can fetch calendar data going forward
+            without re-prompting for consent.
+        </li>
+        <li>
+            The set of OAuth scopes granted.
+        </li>
+    </ul>
+    <p>
+        From Google Calendar, the site calls the
+        <a href="https://developers.google.com/calendar/api/v3/reference/freebusy/query"><code>freeBusy.query</code></a>
+        API, which returns <strong>only the start and end timestamps of busy
+        time ranges</strong>. The site does not read event titles, descriptions,
+        attendees, locations, guest lists, or any other calendar event details.
+        freeBusy responses are cached for up to 5 minutes and then re-fetched.
+    </p>
+    <h2>How the data is used</h2>
+    <p>
+        The busy timestamps are combined with Mariatta's configured business
+        hours to produce a public free/busy shadow — shown on this site as
+        qualitative day labels ("Available", "Likely available", "Tight",
+        "Unlikely", "Unavailable") and time ranges. Visitors see only this
+        processed output, never raw event data.
+    </p>
+    <h2>Sharing</h2>
+    <p>
+        The site does not sell, trade, or share connected-account data with
+        third parties. Data is accessed only by Google (when fetching freeBusy)
+        and the hosting provider (as a necessary part of serving requests).
+    </p>
+    <h2>Retention and revocation</h2>
+    <p>
+        Connected-account data is retained until the site owner revokes the
+        connection from the site's admin, or until you (if you authorized a
+        connection) revoke access at
+        <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.
+        Revocation invalidates the stored refresh token immediately.
+    </p>
+    <h2>Contact</h2>
+    <p>
+        Questions or concerns:
+        <a href="mailto:mariatta@mariatta.ca">mariatta@mariatta.ca</a>.
+    </p>
+{% endblock content %}

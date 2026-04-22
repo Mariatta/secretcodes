@@ -11,10 +11,12 @@ RESERVED_SLUGS = frozenset(
         "admin",
         "availability",
         "media",
+        "privacy",
         "qr",
         "qrcode_generator",
         "qrcode_slug_generator",
         "static",
+        "terms",
     }
 )
 

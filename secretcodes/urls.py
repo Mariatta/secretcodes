@@ -28,6 +28,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("availability/", include("availability.urls")),
+    path("privacy/", views.privacy, name="privacy"),
+    path("terms/", views.terms, name="terms"),
     # path("qrcode_manager/", include("qrcode_manager.urls")),
     path("qrcode_generator/", qr_views.qr_code_generator, name="qrcode_generator"),
     path(
