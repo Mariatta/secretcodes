@@ -17,16 +17,16 @@ from .services.availability import (
     compute_availability,
     recommend_week,
 )
+from .services.google import fetch_busy_blocks_for_all
 from .services.oauth import build_flow, fetch_user_email
 
 superuser_required = user_passes_test(lambda u: u.is_superuser)
 
 
-def _week_bounds(profile):
+def _display_range(profile):
     now = timezone.now().astimezone(profile.timezone)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    start -= timedelta(days=start.weekday())
-    end = start + timedelta(days=7)
+    end = start + timedelta(days=14)
     return start, end
 
 
@@ -35,15 +35,16 @@ def week_grid(request):
     profile = AvailabilityProfile.get_solo()
     include_extended = request.GET.get("include_extended") == "true"
     view_mode = request.GET.get("view", "summary")
-    range_start, range_end = _week_bounds(profile)
+    range_start, range_end = _display_range(profile)
+    busy_blocks = fetch_busy_blocks_for_all(range_start, range_end)
     result = compute_availability(
         range_start,
         range_end,
-        [],
+        busy_blocks,
         profile,
         include_extended=include_extended,
     )
-    week_summary = recommend_week(result, [], profile, range_start, range_end)
+    week_summary = recommend_week(result, busy_blocks, profile, range_start, range_end)
     context = {
         "profile": profile,
         "range_start": range_start,
@@ -64,10 +65,11 @@ def slots_json(request):
     range_end = parse_datetime(request.GET["end"])
     duration_minutes = int(request.GET.get("duration", profile.default_slot_minutes))
     include_extended = request.GET.get("include_extended") == "true"
+    busy_blocks = fetch_busy_blocks_for_all(range_start, range_end)
     result = compute_availability(
         range_start,
         range_end,
-        [],
+        busy_blocks,
         profile,
         duration=timedelta(minutes=duration_minutes),
         include_extended=include_extended,
@@ -96,7 +98,10 @@ def check(request):
     candidate_end = candidate_start + timedelta(minutes=duration_minutes)
 
     profile = AvailabilityProfile.get_solo()
-    free, band, reason = classify_candidate(profile, candidate_start, candidate_end, [])
+    busy_blocks = fetch_busy_blocks_for_all(candidate_start, candidate_end)
+    free, band, reason = classify_candidate(
+        profile, candidate_start, candidate_end, busy_blocks
+    )
     return JsonResponse({"free": free, "band": band, "reason": reason})
 
 

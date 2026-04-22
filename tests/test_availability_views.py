@@ -7,7 +7,8 @@ import pytest
 from django.urls import reverse
 
 from availability.models import AvailabilityProfile
-from availability.views import _week_bounds
+from availability.services.availability import BusyBlock
+from availability.views import _display_range
 
 
 @pytest.mark.django_db
@@ -147,9 +148,57 @@ def test_check_endpoint_defaults_duration_to_thirty(client):
 
 
 @pytest.mark.django_db
-def test_week_bounds_anchors_to_monday_in_profile_tz():
+def test_display_range_starts_today_in_profile_tz():
     wednesday = datetime(2026, 4, 22, 10, 0, tzinfo=timezone.utc)
     with patch("availability.views.timezone.now", return_value=wednesday):
-        start, end = _week_bounds(AvailabilityProfile.get_solo())
-    assert start.weekday() == 0
-    assert (end - start) == timedelta(days=7)
+        start, end = _display_range(AvailabilityProfile.get_solo())
+    assert start.weekday() == 2
+    assert start.hour == 0 and start.minute == 0
+    assert (end - start) == timedelta(days=14)
+
+
+@pytest.mark.django_db
+def test_week_grid_uses_real_busy_blocks_from_google(client):
+    monday_10 = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    monday_17 = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc)
+    busy = [BusyBlock(monday_10, monday_17)]
+    with patch(
+        "availability.views.fetch_busy_blocks_for_all", return_value=busy
+    ) as mock_fetch:
+        response = client.get(reverse("availability:week_grid"))
+    assert response.status_code == 200
+    mock_fetch.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_slots_json_uses_real_busy_blocks(client):
+    # 17:00-18:00 UTC = 10:00-11:00 PDT (inside 9-5 PT business hours)
+    busy_start = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc)
+    busy_end = datetime(2026, 5, 4, 18, 0, tzinfo=timezone.utc)
+    busy = [BusyBlock(busy_start, busy_end)]
+    with patch("availability.views.fetch_busy_blocks_for_all", return_value=busy):
+        response = client.get(
+            _slots_url(
+                start=datetime(2026, 5, 4, 0, 0, tzinfo=timezone.utc).isoformat(),
+                end=datetime(2026, 5, 5, 0, 0, tzinfo=timezone.utc).isoformat(),
+            )
+        )
+    data = response.json()
+    # Without busy: 16 business slots; with 10-11 busy, 2 slots removed
+    assert data["business_slot_count"] == 14
+
+
+@pytest.mark.django_db
+def test_check_endpoint_reports_busy(client):
+    candidate_start = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc)
+    candidate_end = datetime(2026, 5, 4, 17, 30, tzinfo=timezone.utc)
+    busy = [BusyBlock(candidate_start, candidate_end)]
+    with patch("availability.views.fetch_busy_blocks_for_all", return_value=busy):
+        response = client.post(
+            reverse("availability:check"),
+            data=json.dumps({"datetime": candidate_start.isoformat(), "duration": 30}),
+            content_type="application/json",
+        )
+    data = response.json()
+    assert data["free"] is False
+    assert data["reason"] == "Busy"
