@@ -137,9 +137,7 @@ def test_url_reverse_unknown_slug_404s(client):
 
 @pytest.mark.django_db
 def test_legacy_url_301_redirects_to_qr_namespace(client):
-    QRCode.objects.create(
-        url="https://example.com", description="old", slug="oldlink"
-    )
+    QRCode.objects.create(url="https://example.com", description="old", slug="oldlink")
     response = client.get(reverse("legacy_url_reverse", args=["oldlink"]))
     assert response.status_code == 301
     assert response.url == reverse("url_reverse", args=["oldlink"])
