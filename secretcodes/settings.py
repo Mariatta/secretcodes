@@ -57,6 +57,30 @@ else:
         ALLOWED_HOSTS = ALLOWED_HOSTS.split(",")
 
 
+# Logging. Django's default only logs to console when DEBUG=True. In
+# production we want tracebacks in stderr so Heroku captures them.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+
 # Application definition
 
 INSTALLED_APPS = [
