@@ -3,14 +3,18 @@
     For agents — Mariatta's availability MCP server
 {% endblock head_title %}
 {% block content %}
-    <h1>For agents</h1>
+    <h1>
+        For agents
+    </h1>
     <p class="lead">
         Mariatta exposes a read-only
         <a href="https://modelcontextprotocol.io">Model Context Protocol</a>
         server so your agent can check her availability without a human in the
         loop. No account, no API key, no secret handshake. JSON in, JSON out.
     </p>
-    <h2>Endpoint</h2>
+    <h2>
+        Endpoint
+    </h2>
     <pre><code>POST https://secretcodes.dev/mcp/
 Content-Type: application/json</code></pre>
     <ul>
@@ -31,7 +35,9 @@ Content-Type: application/json</code></pre>
             <a href="/.well-known/mcp.json"><code>/.well-known/mcp.json</code></a>
         </li>
     </ul>
-    <h2>Hello world</h2>
+    <h2>
+        Hello world
+    </h2>
     <p>
         List the available tools:
     </p>
@@ -44,8 +50,12 @@ Content-Type: application/json</code></pre>
     <pre><code>curl -sX POST https://secretcodes.dev/mcp/ \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"check_availability","arguments":{"datetime":"2026-04-25T17:00:00+00:00","duration_minutes":60}}}'</code></pre>
-    <h2>Connecting common clients</h2>
-    <h3>Claude Desktop</h3>
+    <h2>
+        Connecting common clients
+    </h2>
+    <h3>
+        Claude Desktop
+    </h3>
     <p>
         Add to
         <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>
@@ -59,9 +69,13 @@ Content-Type: application/json</code></pre>
     }
   }
 }</code></pre>
-    <h3>Claude Code</h3>
+    <h3>
+        Claude Code
+    </h3>
     <pre><code>claude mcp add mariatta-availability https://secretcodes.dev/mcp/</code></pre>
-    <h3>MCP Inspector</h3>
+    <h3>
+        MCP Inspector
+    </h3>
     <p>
         For interactive debugging:
     </p>
@@ -69,8 +83,12 @@ Content-Type: application/json</code></pre>
     <p>
         Point it at the endpoint URL, transport <em>HTTP</em>.
     </p>
-    <h2>Tools</h2>
-    <h3><code>check_availability</code></h3>
+    <h2>
+        Tools
+    </h2>
+    <h3>
+        <code>check_availability</code>
+    </h3>
     <p>
         "Is this specific time free?"
     </p>
@@ -90,7 +108,9 @@ Content-Type: application/json</code></pre>
         (<code>"Busy"</code>, <code>"Outside business/extended hours"</code>,
         <code>"Spans multiple days"</code>).
     </p>
-    <h3><code>list_free_slots</code></h3>
+    <h3>
+        <code>list_free_slots</code>
+    </h3>
     <p>
         "Find open slots in a date range."
     </p>
@@ -113,7 +133,9 @@ Content-Type: application/json</code></pre>
         Slots are sorted chronologically. <code>band</code> is
         <code>"business"</code> or <code>"extended"</code>.
     </p>
-    <h3><code>get_busy_shadow</code></h3>
+    <h3>
+        <code>get_busy_shadow</code>
+    </h3>
     <p>
         "Raw busy blocks from Mariatta's calendars in a date range." Returns
         only start/end timestamps — never event titles, attendees, locations,
@@ -127,13 +149,17 @@ Content-Type: application/json</code></pre>
     <p>
         Returns <code>{ "busy_blocks": [{ "start", "end" }] }</code>.
     </p>
-    <h3><code>get_booking_info</code></h3>
+    <h3>
+        <code>get_booking_info</code>
+    </h3>
     <p>
         Currently stubbed. Returns
         <code>{ "available": false, "message": "..." }</code>. Will fill in
         when a paid-booking layer lands.
     </p>
-    <h2>Response shape</h2>
+    <h2>
+        Response shape
+    </h2>
     <p>
         Every successful <code>tools/call</code> response has this outer shape:
     </p>
@@ -161,19 +187,25 @@ Content-Type: application/json</code></pre>
         params (including unknown tool name), <code>-32603</code> internal
         error.
     </p>
-    <h2>Freshness</h2>
+    <h2>
+        Freshness
+    </h2>
     <p>
         Upstream Google Calendar <code>freeBusy</code> responses are cached
         server-side for 5 minutes. Please cache on your end where possible.
         Don't poll more frequently than the upstream cache would refresh.
     </p>
-    <h2>Privacy</h2>
+    <h2>
+        Privacy
+    </h2>
     <p>
         The endpoint only returns free/busy timestamps — no event titles,
         attendees, descriptions, or other details. Full details in the
         <a href="{% url 'privacy' %}">Privacy Policy</a>.
     </p>
-    <h2>Questions, bug reports, feature requests</h2>
+    <h2>
+        Questions, bug reports, feature requests
+    </h2>
     <p>
         Open an issue at
         <a href="https://github.com/Mariatta/secretcodes/issues">github.com/Mariatta/secretcodes/issues</a>.

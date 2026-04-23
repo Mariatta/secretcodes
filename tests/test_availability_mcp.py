@@ -75,7 +75,10 @@ def test_mcp_endpoint_preserves_request_id(client):
 def test_mcp_dispatch_returns_internal_error_when_tool_raises():
     payload = _jsonrpc(
         "tools/call",
-        {"name": "check_availability", "arguments": {"datetime": "2026-05-04T10:00:00+00:00"}},
+        {
+            "name": "check_availability",
+            "arguments": {"datetime": "2026-05-04T10:00:00+00:00"},
+        },
     )
     with patch(
         "availability.services.mcp.classify_candidate",

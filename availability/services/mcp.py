@@ -217,9 +217,7 @@ def _handle_tools_call(params):
         raise ToolNotFound(f"Unknown tool: {name!r}")
     result = TOOLS[name]["handler"](arguments)
     return {
-        "content": [
-            {"type": "text", "text": json.dumps(result, default=str)}
-        ],
+        "content": [{"type": "text", "text": json.dumps(result, default=str)}],
     }
 
 
