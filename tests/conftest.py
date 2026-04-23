@@ -7,6 +7,18 @@ os.environ.setdefault("FERNET_KEY", "kTdjP9joWZr9JfnWHGmcQOOPxFEKfCB3_Hx7OgHD6LU
 
 
 @pytest.fixture(autouse=True)
+def _assume_connected_calendars(monkeypatch):
+    """Tests assume at least one connected calendar by default.
+
+    Tests exercising the disconnected UX override at the relevant import
+    site — `availability.views.has_active_calendars` for web/JSON views,
+    `availability.services.mcp.has_active_calendars` for MCP tools.
+    """
+    monkeypatch.setattr("availability.views.has_active_calendars", lambda: True)
+    monkeypatch.setattr("availability.services.mcp.has_active_calendars", lambda: True)
+
+
+@pytest.fixture(autouse=True)
 def mock_s3_wrapper(monkeypatch):
     mock_class = MagicMock()
     mock_instance = mock_class.return_value

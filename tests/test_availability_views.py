@@ -6,8 +6,9 @@ from urllib.parse import urlencode
 import pytest
 from django.urls import reverse
 
-from availability.models import AvailabilityProfile
+from availability.models import AvailabilityProfile, GoogleAccount, TrackedCalendar
 from availability.services.availability import BusyBlock
+from availability.services.google import has_active_calendars
 from availability.views import _display_range
 
 
@@ -16,6 +17,116 @@ def test_week_grid_renders(client):
     response = client.get(reverse("availability:week_grid"))
     assert response.status_code == 200
     assert b"Mariatta's availability" in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_shows_check_back_later_when_disconnected(client, monkeypatch):
+    monkeypatch.setattr("availability.views.has_active_calendars", lambda: False)
+    response = client.get(reverse("availability:week_grid"))
+    assert response.status_code == 200
+    assert b"No live calendar data yet" in response.content
+    assert b"check back later" in response.content
+    assert b"Recommended" not in response.content
+
+
+@pytest.mark.django_db
+def test_has_active_calendars_true_when_account_has_active_tracked_calendar():
+    account = GoogleAccount.objects.create(
+        label="real", email="real@example.com", refresh_token="r-real"
+    )
+    TrackedCalendar.objects.create(
+        account=account,
+        google_calendar_id="primary",
+        display_label="Primary",
+        is_active=True,
+    )
+    assert has_active_calendars() is True
+
+
+@pytest.mark.django_db
+def test_has_active_calendars_false_when_no_accounts():
+    assert has_active_calendars() is False
+
+
+@pytest.mark.django_db
+def test_has_active_calendars_false_when_account_token_empty():
+    account = GoogleAccount.objects.create(
+        label="blank", email="blank@example.com", refresh_token=""
+    )
+    TrackedCalendar.objects.create(
+        account=account,
+        google_calendar_id="primary",
+        display_label="Primary",
+        is_active=True,
+    )
+    assert has_active_calendars() is False
+
+
+@pytest.mark.django_db
+def test_has_active_calendars_false_when_only_inactive_calendars():
+    account = GoogleAccount.objects.create(
+        label="r", email="r@example.com", refresh_token="r"
+    )
+    TrackedCalendar.objects.create(
+        account=account,
+        google_calendar_id="primary",
+        display_label="Primary",
+        is_active=False,
+    )
+    assert has_active_calendars() is False
+
+
+@pytest.mark.django_db
+def test_slots_json_when_disconnected_returns_empty(client, monkeypatch):
+    monkeypatch.setattr("availability.views.has_active_calendars", lambda: False)
+    response = client.get(
+        _slots_url(
+            start=datetime(2026, 5, 4, 0, 0, tzinfo=timezone.utc).isoformat(),
+            end=datetime(2026, 5, 5, 0, 0, tzinfo=timezone.utc).isoformat(),
+        )
+    )
+    data = response.json()
+    assert data["connected"] is False
+    assert data["slots"] == []
+    assert data["business_slot_count"] == 0
+
+
+@pytest.mark.django_db
+def test_slots_json_when_connected_includes_connected_true(client):
+    response = client.get(
+        _slots_url(
+            start=datetime(2026, 5, 4, 0, 0, tzinfo=timezone.utc).isoformat(),
+            end=datetime(2026, 5, 5, 0, 0, tzinfo=timezone.utc).isoformat(),
+        )
+    )
+    assert response.json()["connected"] is True
+
+
+@pytest.mark.django_db
+def test_check_when_disconnected_returns_connected_false(client, monkeypatch):
+    monkeypatch.setattr("availability.views.has_active_calendars", lambda: False)
+    candidate = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc).isoformat()
+    response = client.post(
+        reverse("availability:check"),
+        data=json.dumps({"datetime": candidate}),
+        content_type="application/json",
+    )
+    data = response.json()
+    assert data["connected"] is False
+    assert data["free"] is None
+    assert data["band"] is None
+    assert data["reason"] == "No calendars connected"
+
+
+@pytest.mark.django_db
+def test_check_when_connected_includes_connected_true(client):
+    candidate = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc).isoformat()
+    response = client.post(
+        reverse("availability:check"),
+        data=json.dumps({"datetime": candidate}),
+        content_type="application/json",
+    )
+    assert response.json()["connected"] is True
 
 
 @pytest.mark.django_db

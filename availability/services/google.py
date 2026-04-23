@@ -80,3 +80,16 @@ def fetch_busy_blocks_for_all(
         blocks.extend(fetch_busy_blocks(account, range_start, range_end))
     blocks.sort(key=lambda b: b.start)
     return blocks
+
+
+def has_active_calendars() -> bool:
+    """Whether at least one connected account has an active tracked calendar.
+
+    When this returns False, the availability views should not display a
+    fabricated "all free" schedule — there's simply no data yet.
+    """
+    return (
+        GoogleAccount.objects.exclude(refresh_token="")
+        .filter(tracked_calendars__is_active=True)
+        .exists()
+    )
