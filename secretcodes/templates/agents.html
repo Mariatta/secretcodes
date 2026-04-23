@@ -28,7 +28,15 @@ Content-Type: application/json</code></pre>
             Authentication: <strong>none</strong> — public, read-only
         </li>
         <li>
-            Rate limit: none enforced today; please be reasonable
+            Rate limit: <strong>60 requests/minute per IP</strong>. Exceeding
+            returns HTTP 429 with a JSON-RPC error
+            (<code>{ "error": { "code": -32000, "message": "Rate limit exceeded" } }</code>).
+        </li>
+        <li>
+            Maximum range: <strong>14 days</strong> for
+            <code>list_free_slots</code> and <code>get_busy_shadow</code>.
+            Longer ranges will be available in a future paid tier — requests
+            over the limit return JSON-RPC error code <code>-32602</code>.
         </li>
         <li>
             Machine-readable descriptor:
@@ -129,41 +137,43 @@ Content-Type: application/json</code></pre>
     </ul>
     <p>
         Returns
-        <code>{ "slots": [{ "start", "end", "band" }], "business_slot_count": int }</code>.
+        <code>{ "slots": [{ "start", "end", "band" }], "business_slot_count": int, "connected": bool }</code>.
         Slots are sorted chronologically. <code>band</code> is
-        <code>"business"</code> or <code>"extended"</code>.
-    </p>
-    <h3>
-        <code>get_busy_shadow</code>
-    </h3>
-    <p>
-        "Raw busy blocks from Mariatta's calendars in a date range." Returns
-        only start/end timestamps — never event titles, attendees, locations,
-        or descriptions.
-    </p>
-    <ul>
-        <li>
-            <code>start</code>, <code>end</code> (strings, required)
-        </li>
-    </ul>
-    <p>
-        Returns <code>{ "busy_blocks": [{ "start", "end" }] }</code>.
-    </p>
-    <h3>
-        <code>get_booking_info</code>
-    </h3>
-    <p>
-        Currently stubbed. Returns
-        <code>{ "available": false, "message": "..." }</code>. Will fill in
-        when a paid-booking layer lands.
-    </p>
-    <h2>
-        Response shape
-    </h2>
-    <p>
-        Every successful <code>tools/call</code> response has this outer shape:
-    </p>
-    <pre><code>{
+        <code>"business"</code> or <code>"extended"</code>. <strong>Max
+            range 14 days</strong>.
+        </p>
+        <h3>
+            <code>get_busy_shadow</code>
+        </h3>
+        <p>
+            "Raw busy blocks from Mariatta's calendars in a date range." Returns
+            only start/end timestamps — never event titles, attendees, locations,
+            or descriptions.
+        </p>
+        <ul>
+            <li>
+                <code>start</code>, <code>end</code> (strings, required)
+            </li>
+        </ul>
+        <p>
+            Returns <code>{ "busy_blocks": [{ "start", "end" }], "connected": bool }</code>.
+            <strong>Max range 14 days</strong>.
+        </p>
+        <h3>
+            <code>get_booking_info</code>
+        </h3>
+        <p>
+            Currently stubbed. Returns
+            <code>{ "available": false, "message": "..." }</code>. Will fill in
+            when a paid-booking layer lands.
+        </p>
+        <h2>
+            Response shape
+        </h2>
+        <p>
+            Every successful <code>tools/call</code> response has this outer shape:
+        </p>
+        <pre><code>{
   "jsonrpc": "2.0",
   "id": &lt;your request id&gt;,
   "result": {
@@ -172,42 +182,42 @@ Content-Type: application/json</code></pre>
     ]
   }
 }</code></pre>
-    <p>
-        The inner <code>text</code> field is a JSON string of the tool's
-        actual return value — parse it as JSON on your end. This matches the
-        MCP spec's <code>content</code> array convention.
-    </p>
-    <p>
-        Errors follow JSON-RPC 2.0:
-    </p>
-    <pre><code>{ "jsonrpc": "2.0", "id": ..., "error": { "code": -32602, "message": "..." } }</code></pre>
-    <p>
-        Standard codes: <code>-32700</code> parse error,
-        <code>-32601</code> method not found, <code>-32602</code> invalid
-        params (including unknown tool name), <code>-32603</code> internal
-        error.
-    </p>
-    <h2>
-        Freshness
-    </h2>
-    <p>
-        Upstream Google Calendar <code>freeBusy</code> responses are cached
-        server-side for 5 minutes. Please cache on your end where possible.
-        Don't poll more frequently than the upstream cache would refresh.
-    </p>
-    <h2>
-        Privacy
-    </h2>
-    <p>
-        The endpoint only returns free/busy timestamps — no event titles,
-        attendees, descriptions, or other details. Full details in the
-        <a href="{% url 'privacy' %}">Privacy Policy</a>.
-    </p>
-    <h2>
-        Questions, bug reports, feature requests
-    </h2>
-    <p>
-        Open an issue at
-        <a href="https://github.com/Mariatta/secretcodes/issues">github.com/Mariatta/secretcodes/issues</a>.
-    </p>
-{% endblock content %}
+        <p>
+            The inner <code>text</code> field is a JSON string of the tool's
+            actual return value — parse it as JSON on your end. This matches the
+            MCP spec's <code>content</code> array convention.
+        </p>
+        <p>
+            Errors follow JSON-RPC 2.0:
+        </p>
+        <pre><code>{ "jsonrpc": "2.0", "id": ..., "error": { "code": -32602, "message": "..." } }</code></pre>
+        <p>
+            Standard codes: <code>-32700</code> parse error,
+            <code>-32601</code> method not found, <code>-32602</code> invalid
+            params (including unknown tool name), <code>-32603</code> internal
+            error.
+        </p>
+        <h2>
+            Freshness
+        </h2>
+        <p>
+            Upstream Google Calendar <code>freeBusy</code> responses are cached
+            server-side for 5 minutes. Please cache on your end where possible.
+            Don't poll more frequently than the upstream cache would refresh.
+        </p>
+        <h2>
+            Privacy
+        </h2>
+        <p>
+            The endpoint only returns free/busy timestamps — no event titles,
+            attendees, descriptions, or other details. Full details in the
+            <a href="{% url 'privacy' %}">Privacy Policy</a>.
+        </p>
+        <h2>
+            Questions, bug reports, feature requests
+        </h2>
+        <p>
+            Open an issue at
+            <a href="https://github.com/Mariatta/secretcodes/issues">github.com/Mariatta/secretcodes/issues</a>.
+        </p>
+    {% endblock content %}

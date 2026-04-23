@@ -97,7 +97,7 @@ def test_initialize_returns_protocol_and_server_info(client):
     response = _post(client, _jsonrpc("initialize"))
     data = response.json()
     assert data["result"]["protocolVersion"] == PROTOCOL_VERSION
-    assert data["result"]["serverInfo"]["name"] == "secretcodes-availability"
+    assert data["result"]["serverInfo"]["name"] == "mariatta-availability"
     assert "tools" in data["result"]["capabilities"]
 
 
@@ -274,6 +274,61 @@ def test_handle_tools_call_raises_for_unknown_tool():
 def test_invalid_params_raised_for_missing_datetime():
     with pytest.raises(InvalidParams):
         _tool_check_availability({})
+
+
+# ---------- range cap ----------
+
+
+@pytest.mark.django_db
+def test_list_free_slots_rejects_range_exceeding_max(client):
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "list_free_slots",
+                "arguments": {
+                    "start": datetime(2026, 5, 4, 0, tzinfo=UTC).isoformat(),
+                    "end": datetime(2026, 5, 25, 0, tzinfo=UTC).isoformat(),
+                },
+            },
+        ),
+    )
+    data = response.json()
+    assert data["error"]["code"] == -32602
+    assert "14 days" in data["error"]["message"]
+
+
+@pytest.mark.django_db
+def test_get_busy_shadow_rejects_range_exceeding_max(client):
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "get_busy_shadow",
+                "arguments": {
+                    "start": datetime(2026, 5, 4, 0, tzinfo=UTC).isoformat(),
+                    "end": datetime(2026, 5, 25, 0, tzinfo=UTC).isoformat(),
+                },
+            },
+        ),
+    )
+    assert response.json()["error"]["code"] == -32602
+
+
+# ---------- rate limit ----------
+
+
+@pytest.mark.django_db
+def test_mcp_endpoint_rate_limits(client, settings):
+    settings.MCP_RATE_LIMIT = "2/m"
+    payload = _jsonrpc("tools/list")
+    assert _post(client, payload).status_code == 200
+    assert _post(client, payload).status_code == 200
+    response = _post(client, payload)
+    assert response.status_code == 429
+    assert response.json()["error"]["code"] == -32000
 
 
 # ---------- disconnected state ----------

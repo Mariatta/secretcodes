@@ -256,7 +256,7 @@ def test_score_day_wide_open_with_no_meetings():
     assert rec.label == "wide_open"
     assert rec.label.headline == "Available"
     assert rec.meeting_count == 0
-    assert rec.reason == "0 other meetings"
+    assert rec.reason == "0 other appointments"
     assert rec.free_minutes == 480
     assert rec.business_minutes == 480
     assert rec.best_window is not None
@@ -293,10 +293,18 @@ def test_score_day_fully_booked_when_no_slots():
     assert rec.label == "fully_booked"
 
 
-def test_score_day_weekend_is_fully_booked():
+def test_score_day_weekend_is_off_hours():
     rec = score_day(_pt(2026, 5, 9).date(), [], [], FakeProfile())
-    assert rec.label == "fully_booked"
-    assert "business hours" in rec.reason.lower()
+    assert rec.label == "off_hours"
+    assert rec.label.headline == "Outside business hours"
+
+
+def test_score_day_weekend_reports_meeting_count():
+    busy = [BusyBlock(_pt(2026, 5, 9, 12), _pt(2026, 5, 9, 13))]
+    rec = score_day(_pt(2026, 5, 9).date(), [], busy, FakeProfile())
+    assert rec.label == "off_hours"
+    assert rec.reason == "1 other appointment"
+    assert rec.meeting_count == 1
 
 
 def test_score_day_counts_meetings_in_reason():
@@ -304,7 +312,7 @@ def test_score_day_counts_meetings_in_reason():
     busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
     rec = score_day(_pt(2026, 5, 4).date(), one_slot, busy, FakeProfile())
     assert rec.meeting_count == 1
-    assert rec.reason == "1 other meeting"
+    assert rec.reason == "1 other appointment"
 
 
 def test_recommend_week_picks_best_day():
@@ -324,7 +332,7 @@ def test_recommend_week_best_none_when_all_weekend():
     result = compute_availability(saturday, monday_after, [], FakeProfile())
     week = recommend_week(result, [], FakeProfile(), saturday, monday_after)
     assert week.best is None
-    assert all(d.label == "fully_booked" for d in week.days)
+    assert all(d.label == "off_hours" for d in week.days)
 
 
 def test_recommend_week_groups_busy_blocks_by_date():

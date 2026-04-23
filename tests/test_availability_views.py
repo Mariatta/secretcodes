@@ -130,6 +130,49 @@ def test_check_when_connected_includes_connected_true(client):
 
 
 @pytest.mark.django_db
+def test_slots_json_rejects_range_exceeding_max(client):
+    response = client.get(
+        _slots_url(
+            start=datetime(2026, 5, 4, 0, tzinfo=timezone.utc).isoformat(),
+            end=datetime(2026, 5, 25, 0, tzinfo=timezone.utc).isoformat(),
+        )
+    )
+    assert response.status_code == 400
+    assert "14 days" in response.json()["error"]
+
+
+@pytest.mark.django_db
+def test_slots_json_rate_limits(client, settings):
+    settings.AVAILABILITY_API_RATE_LIMIT = "2/m"
+    url = _slots_url(
+        start=datetime(2026, 5, 4, 0, tzinfo=timezone.utc).isoformat(),
+        end=datetime(2026, 5, 5, 0, tzinfo=timezone.utc).isoformat(),
+    )
+    assert client.get(url).status_code == 200
+    assert client.get(url).status_code == 200
+    response = client.get(url)
+    assert response.status_code == 429
+    assert response.json() == {"error": "Rate limit exceeded"}
+
+
+@pytest.mark.django_db
+def test_check_endpoint_rate_limits(client, settings):
+    settings.AVAILABILITY_API_RATE_LIMIT = "2/m"
+    body = json.dumps(
+        {"datetime": datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc).isoformat()}
+    )
+    url = reverse("availability:check")
+    assert (
+        client.post(url, data=body, content_type="application/json").status_code == 200
+    )
+    assert (
+        client.post(url, data=body, content_type="application/json").status_code == 200
+    )
+    response = client.post(url, data=body, content_type="application/json")
+    assert response.status_code == 429
+
+
+@pytest.mark.django_db
 def test_week_grid_defaults_to_summary_view(client):
     response = client.get(reverse("availability:week_grid"))
     assert b"Recommended" in response.content or b"Wide open" in response.content

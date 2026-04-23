@@ -5,6 +5,13 @@ from datetime import datetime, time, timedelta
 from enum import StrEnum
 from typing import Optional
 
+# Longer ranges will be part of a paid tier later.
+MAX_QUERY_RANGE_DAYS = 14
+MAX_QUERY_RANGE_MESSAGE = (
+    f"Range exceeds maximum of {MAX_QUERY_RANGE_DAYS} days. "
+    "Longer ranges will be available in a future paid tier."
+)
+
 
 class Band(StrEnum):
     BUSINESS = "business"
@@ -37,6 +44,7 @@ class DayLabel(StrEnum):
     LIKELY_AVAILABLE = ("likely_available", "Likely available", 3)
     TIGHT = ("tight", "Tight but possible", 2)
     UNLIKELY = ("unlikely", "Unlikely", 1)
+    OFF_HOURS = ("off_hours", "Outside business hours", 0)
     FULLY_BOOKED = ("fully_booked", "Unavailable", 0)
 
 
@@ -271,8 +279,7 @@ def score_day(
     meeting_count = len(busy_for_day)
 
     if business_minutes == 0:
-        label = DayLabel.FULLY_BOOKED
-        reason = "Outside business hours"
+        label = DayLabel.OFF_HOURS
     else:
         free_ratio = free_minutes / business_minutes
         if free_ratio >= 0.9:
@@ -285,8 +292,8 @@ def score_day(
             label = DayLabel.UNLIKELY
         else:
             label = DayLabel.FULLY_BOOKED
-        suffix = "s" if meeting_count != 1 else ""
-        reason = f"{meeting_count} other meeting{suffix}"
+    suffix = "s" if meeting_count != 1 else ""
+    reason = f"{meeting_count} other appointment{suffix}"
 
     return DayRecommendation(
         date=day,
@@ -326,7 +333,7 @@ def recommend_week(
         )
         cursor += timedelta(days=1)
 
-    available = [d for d in days if d.label is not DayLabel.FULLY_BOOKED]
+    available = [d for d in days if d.label.rank > 0]
     best = (
         max(available, key=lambda d: (d.label.rank, d.free_minutes))
         if available

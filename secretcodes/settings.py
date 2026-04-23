@@ -336,3 +336,7 @@ GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
 GOOGLE_FREEBUSY_CACHE_SECONDS = int(
     os.environ.get("GOOGLE_FREEBUSY_CACHE_SECONDS", "300")
 )
+
+# Public API rate limits. Override via env var for testing or tuning.
+MCP_RATE_LIMIT = os.environ.get("MCP_RATE_LIMIT", "60/m")
+AVAILABILITY_API_RATE_LIMIT = os.environ.get("AVAILABILITY_API_RATE_LIMIT", "120/m")

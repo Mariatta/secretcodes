@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseBadRequest, JsonResponse
@@ -10,9 +11,12 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
+from django_ratelimit.decorators import ratelimit
 
 from .models import AvailabilityProfile, GoogleAccount, TrackedCalendar
 from .services.availability import (
+    MAX_QUERY_RANGE_DAYS,
+    MAX_QUERY_RANGE_MESSAGE,
     classify_candidate,
     compute_availability,
     recommend_week,
@@ -24,6 +28,18 @@ from .services.oauth import build_flow, fetch_user_email
 superuser_required = user_passes_test(lambda u: u.is_superuser)
 
 NO_CALENDARS_REASON = "No calendars connected"
+
+
+def _rate_limited(request):
+    return getattr(request, "limited", False)
+
+
+def _mcp_rate(group, request):
+    return settings.MCP_RATE_LIMIT
+
+
+def _api_rate(group, request):
+    return settings.AVAILABILITY_API_RATE_LIMIT
 
 
 def _display_range(profile):
@@ -91,12 +107,17 @@ def week_grid(request):
 
 
 @require_GET
+@ratelimit(key="ip", rate=_api_rate, block=False)
 def slots_json(request):
+    if _rate_limited(request):
+        return JsonResponse({"error": "Rate limit exceeded"}, status=429)
     if not has_active_calendars():
         return JsonResponse({"connected": False, "slots": [], "business_slot_count": 0})
     profile = AvailabilityProfile.get_solo()
     range_start = parse_datetime(request.GET["start"])
     range_end = parse_datetime(request.GET["end"])
+    if range_end - range_start > timedelta(days=MAX_QUERY_RANGE_DAYS):
+        return JsonResponse({"error": MAX_QUERY_RANGE_MESSAGE}, status=400)
     duration_minutes = int(request.GET.get("duration", profile.default_slot_minutes))
     include_extended = request.GET.get("include_extended") == "true"
     busy_blocks = fetch_busy_blocks_for_all(range_start, range_end)
@@ -127,7 +148,10 @@ def slots_json(request):
 
 @csrf_exempt
 @require_POST
+@ratelimit(key="ip", rate=_api_rate, block=False)
 def check(request):
+    if _rate_limited(request):
+        return JsonResponse({"error": "Rate limit exceeded"}, status=429)
     if not has_active_calendars():
         return JsonResponse(
             {
@@ -221,12 +245,22 @@ def oauth_callback(request):
 
 @csrf_exempt
 @require_POST
+@ratelimit(key="ip", rate=_mcp_rate, block=False)
 def mcp_endpoint(request):
     """MCP server entry point — JSON-RPC 2.0 over HTTP POST.
 
     The heavy lifting lives in availability.services.mcp; this view just
     parses the JSON body and hands it off.
     """
+    if _rate_limited(request):
+        return JsonResponse(
+            {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32000, "message": "Rate limit exceeded"},
+            },
+            status=429,
+        )
     try:
         payload = json.loads(request.body)
     except json.JSONDecodeError:

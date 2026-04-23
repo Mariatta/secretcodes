@@ -14,9 +14,6 @@
         @media (min-width: 768px) {
             .day-grid { grid-template-columns: repeat(4, 1fr); }
         }
-        @media (min-width: 1200px) {
-            .day-grid { grid-template-columns: repeat(7, 1fr); }
-        }
     </style>
 {% endblock extra_head %}
 {% block content %}
@@ -62,13 +59,13 @@
             {% endif %}
             <div class="day-grid">
                 {% for day in week_summary.days %}
-                    <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
-                        <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% else %}secondary text-white{% endif %}">
+                    <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% elif day.label == 'off_hours' %}info{% else %}secondary{% endif %}">
+                        <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% elif day.label == 'off_hours' %}info text-dark{% else %}secondary text-white{% endif %}">
                             {{ day.date|date:"D, M j" }}
                         </div>
                         <div class="card-body">
                             <p class="mb-2">
-                                <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                                <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% elif day.label == 'off_hours' %}info text-dark{% else %}secondary{% endif %}">
                                     {{ day.label.headline }}
                                 </span>
                             </p>
@@ -89,13 +86,13 @@
             {% if result.free_slots %}
                 <div class="day-grid">
                     {% for day, slots in days_with_slots %}
-                        <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
-                            <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% else %}secondary text-white{% endif %}">
+                        <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% elif day.label == 'off_hours' %}info{% else %}secondary{% endif %}">
+                            <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% elif day.label == 'off_hours' %}info text-dark{% else %}secondary text-white{% endif %}">
                                 {{ day.date|date:"D, M j" }}
                             </div>
                             <div class="card-body">
                                 <p class="mb-2">
-                                    <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                                    <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% elif day.label == 'off_hours' %}info text-dark{% else %}secondary{% endif %}">
                                         {{ day.label.headline }}
                                     </span>
                                 </p>
@@ -111,7 +108,7 @@
                                     </ul>
                                 {% else %}
                                     <p class="small text-muted mb-0">
-                                        No free slots
+                                        {{ day.reason }}
                                     </p>
                                 {% endif %}
                             </div>
