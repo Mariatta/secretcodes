@@ -283,7 +283,10 @@ def test_week_grid_uses_real_busy_blocks_from_google(client):
 
 @pytest.mark.django_db
 def test_slots_json_uses_real_busy_blocks(client):
-    # 17:00-18:00 UTC = 10:00-11:00 PDT (inside 9-5 PT business hours)
+    # 17:00-18:00 UTC = 10:00-11:00 PDT (inside 9-5 PT business hours).
+    # With the default 30-min meeting buffer, the busy block pads to
+    # 9:30-11:30 PDT, eating 4 of the 16 business slots (9:30-10:00,
+    # 10:00-10:30, 10:30-11:00, 11:00-11:30).
     busy_start = datetime(2026, 5, 4, 17, 0, tzinfo=timezone.utc)
     busy_end = datetime(2026, 5, 4, 18, 0, tzinfo=timezone.utc)
     busy = [BusyBlock(busy_start, busy_end)]
@@ -295,8 +298,7 @@ def test_slots_json_uses_real_busy_blocks(client):
             )
         )
     data = response.json()
-    # Without busy: 16 business slots; with 10-11 busy, 2 slots removed
-    assert data["business_slot_count"] == 14
+    assert data["business_slot_count"] == 12
 
 
 @pytest.mark.django_db

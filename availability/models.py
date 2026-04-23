@@ -72,6 +72,14 @@ class AvailabilityProfile(SingletonModel):
     extended_reveal_threshold = models.PositiveIntegerField(
         "extended_reveal_threshold", default=4
     )
+    meeting_buffer_minutes = models.PositiveIntegerField(
+        "meeting_buffer_minutes",
+        default=30,
+        help_text=(
+            "Padding applied before and after every busy block when computing "
+            "free slots. 30 minutes by default."
+        ),
+    )
     creation_date = models.DateTimeField(
         "creation_date", editable=False, auto_now_add=True
     )

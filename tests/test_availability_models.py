@@ -115,6 +115,7 @@ def test_availability_profile_defaults_from_brief():
     assert profile.min_notice_hours == 12
     assert profile.max_horizon_days == 21
     assert profile.extended_reveal_threshold == 4
+    assert profile.meeting_buffer_minutes == 30
 
 
 def test_default_business_hours_shape():
