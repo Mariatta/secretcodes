@@ -13,10 +13,11 @@ from django.utils.dateparse import parse_datetime
 from availability.models import AvailabilityProfile
 
 from .availability import classify_candidate, compute_availability
-from .google import fetch_busy_blocks_for_all
+from .google import fetch_busy_blocks_for_all, has_active_calendars
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {"name": "secretcodes-availability", "version": "1.0.0"}
+NO_CALENDARS_REASON = "No calendars connected"
 
 
 class InvalidParams(Exception):
@@ -39,10 +40,17 @@ def _tool_check_availability(arguments):
     dt = _parse_dt(arguments.get("datetime"))
     duration = int(arguments.get("duration_minutes", 30))
     end = dt + timedelta(minutes=duration)
+    if not has_active_calendars():
+        return {
+            "connected": False,
+            "free": None,
+            "band": None,
+            "reason": NO_CALENDARS_REASON,
+        }
     profile = AvailabilityProfile.get_solo()
     busy = fetch_busy_blocks_for_all(dt, end)
     free, band, reason = classify_candidate(profile, dt, end, busy)
-    return {"free": free, "band": band, "reason": reason}
+    return {"connected": True, "free": free, "band": band, "reason": reason}
 
 
 def _tool_list_free_slots(arguments):
@@ -50,6 +58,8 @@ def _tool_list_free_slots(arguments):
     end = _parse_dt(arguments.get("end"))
     duration = int(arguments.get("duration_minutes", 30))
     include_extended = bool(arguments.get("include_extended", False))
+    if not has_active_calendars():
+        return {"connected": False, "slots": [], "business_slot_count": 0}
     profile = AvailabilityProfile.get_solo()
     busy = fetch_busy_blocks_for_all(start, end)
     result = compute_availability(
@@ -61,6 +71,7 @@ def _tool_list_free_slots(arguments):
         include_extended=include_extended,
     )
     return {
+        "connected": True,
         "slots": [
             {
                 "start": slot.start.isoformat(),
@@ -76,12 +87,15 @@ def _tool_list_free_slots(arguments):
 def _tool_get_busy_shadow(arguments):
     start = _parse_dt(arguments.get("start"))
     end = _parse_dt(arguments.get("end"))
+    if not has_active_calendars():
+        return {"connected": False, "busy_blocks": []}
     busy = fetch_busy_blocks_for_all(start, end)
     return {
+        "connected": True,
         "busy_blocks": [
             {"start": block.start.isoformat(), "end": block.end.isoformat()}
             for block in busy
-        ]
+        ],
     }
 
 

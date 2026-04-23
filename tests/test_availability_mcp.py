@@ -274,3 +274,90 @@ def test_handle_tools_call_raises_for_unknown_tool():
 def test_invalid_params_raised_for_missing_datetime():
     with pytest.raises(InvalidParams):
         _tool_check_availability({})
+
+
+# ---------- disconnected state ----------
+
+
+@pytest.mark.django_db
+def test_check_availability_returns_connected_false_when_disconnected(
+    client, monkeypatch
+):
+    monkeypatch.setattr("availability.services.mcp.has_active_calendars", lambda: False)
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "check_availability",
+                "arguments": {
+                    "datetime": datetime(2026, 5, 4, 17, 0, tzinfo=UTC).isoformat()
+                },
+            },
+        ),
+    )
+    parsed = json.loads(response.json()["result"]["content"][0]["text"])
+    assert parsed["connected"] is False
+    assert parsed["free"] is None
+    assert parsed["reason"] == "No calendars connected"
+
+
+@pytest.mark.django_db
+def test_list_free_slots_returns_connected_false_when_disconnected(client, monkeypatch):
+    monkeypatch.setattr("availability.services.mcp.has_active_calendars", lambda: False)
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "list_free_slots",
+                "arguments": {
+                    "start": datetime(2026, 5, 4, 0, tzinfo=UTC).isoformat(),
+                    "end": datetime(2026, 5, 5, 0, tzinfo=UTC).isoformat(),
+                },
+            },
+        ),
+    )
+    parsed = json.loads(response.json()["result"]["content"][0]["text"])
+    assert parsed["connected"] is False
+    assert parsed["slots"] == []
+    assert parsed["business_slot_count"] == 0
+
+
+@pytest.mark.django_db
+def test_get_busy_shadow_returns_connected_false_when_disconnected(client, monkeypatch):
+    monkeypatch.setattr("availability.services.mcp.has_active_calendars", lambda: False)
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "get_busy_shadow",
+                "arguments": {
+                    "start": datetime(2026, 5, 4, 0, tzinfo=UTC).isoformat(),
+                    "end": datetime(2026, 5, 5, 0, tzinfo=UTC).isoformat(),
+                },
+            },
+        ),
+    )
+    parsed = json.loads(response.json()["result"]["content"][0]["text"])
+    assert parsed["connected"] is False
+    assert parsed["busy_blocks"] == []
+
+
+@pytest.mark.django_db
+def test_tools_call_includes_connected_true_when_connected(client):
+    response = _post(
+        client,
+        _jsonrpc(
+            "tools/call",
+            {
+                "name": "check_availability",
+                "arguments": {
+                    "datetime": datetime(2026, 5, 4, 17, 0, tzinfo=UTC).isoformat()
+                },
+            },
+        ),
+    )
+    parsed = json.loads(response.json()["result"]["content"][0]["text"])
+    assert parsed["connected"] is True

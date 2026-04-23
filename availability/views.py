@@ -17,11 +17,13 @@ from .services.availability import (
     compute_availability,
     recommend_week,
 )
-from .services.google import fetch_busy_blocks_for_all
+from .services.google import fetch_busy_blocks_for_all, has_active_calendars
 from .services.mcp import dispatch as mcp_dispatch
 from .services.oauth import build_flow, fetch_user_email
 
 superuser_required = user_passes_test(lambda u: u.is_superuser)
+
+NO_CALENDARS_REASON = "No calendars connected"
 
 
 def _display_range(profile):
@@ -34,9 +36,20 @@ def _display_range(profile):
 @require_GET
 def week_grid(request):
     profile = AvailabilityProfile.get_solo()
+    range_start, range_end = _display_range(profile)
+    if not has_active_calendars():
+        return render(
+            request,
+            "availability/week_grid.html",
+            {
+                "profile": profile,
+                "range_start": range_start,
+                "range_end": range_end,
+                "connected": False,
+            },
+        )
     include_extended = request.GET.get("include_extended") == "true"
     view_mode = request.GET.get("view", "summary")
-    range_start, range_end = _display_range(profile)
     busy_blocks = fetch_busy_blocks_for_all(range_start, range_end)
     result = compute_availability(
         range_start,
@@ -55,12 +68,15 @@ def week_grid(request):
         "exhausted": result.business_slot_count < profile.extended_reveal_threshold,
         "view_mode": view_mode,
         "week_summary": week_summary,
+        "connected": True,
     }
     return render(request, "availability/week_grid.html", context)
 
 
 @require_GET
 def slots_json(request):
+    if not has_active_calendars():
+        return JsonResponse({"connected": False, "slots": [], "business_slot_count": 0})
     profile = AvailabilityProfile.get_solo()
     range_start = parse_datetime(request.GET["start"])
     range_end = parse_datetime(request.GET["end"])
@@ -77,6 +93,7 @@ def slots_json(request):
     )
     return JsonResponse(
         {
+            "connected": True,
             "slots": [
                 {
                     "start": slot.start.isoformat(),
@@ -93,6 +110,15 @@ def slots_json(request):
 @csrf_exempt
 @require_POST
 def check(request):
+    if not has_active_calendars():
+        return JsonResponse(
+            {
+                "connected": False,
+                "free": None,
+                "band": None,
+                "reason": NO_CALENDARS_REASON,
+            }
+        )
     payload = json.loads(request.body)
     candidate_start = parse_datetime(payload["datetime"])
     duration_minutes = int(payload.get("duration", 30))
@@ -103,7 +129,9 @@ def check(request):
     free, band, reason = classify_candidate(
         profile, candidate_start, candidate_end, busy_blocks
     )
-    return JsonResponse({"free": free, "band": band, "reason": reason})
+    return JsonResponse(
+        {"connected": True, "free": free, "band": band, "reason": reason}
+    )
 
 
 @login_required
