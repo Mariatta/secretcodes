@@ -20,6 +20,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from availability import views as availability_views
 from qrcode_manager import views as qr_views
 from secretcodes import views
 
@@ -28,6 +29,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("availability/", include("availability.urls")),
+    path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
+    path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),
+    path("agents/", views.agents, name="agents"),
     path("privacy/", views.privacy, name="privacy"),
     path("terms/", views.terms, name="terms"),
     # path("qrcode_manager/", include("qrcode_manager.urls")),

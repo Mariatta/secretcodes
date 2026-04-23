@@ -13,6 +13,9 @@
             <li>
                 <a href="{% url "availability:week_grid" %}">When is Mariatta available?</a>
             </li>
+            <li>
+                <a href="{% url "agents" %}">For agents (MCP endpoint)</a>
+            </li>
             {% if user.is_superuser %}
                 <li>
                     <a href="{% url "availability:admin" %}">Manage connected Google accounts</a>

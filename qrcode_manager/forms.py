@@ -9,7 +9,9 @@ RESERVED_SLUGS = frozenset(
     {
         "accounts",
         "admin",
+        "agents",
         "availability",
+        "mcp",
         "media",
         "privacy",
         "qr",

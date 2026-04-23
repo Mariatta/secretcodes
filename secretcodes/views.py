@@ -1,4 +1,8 @@
+from django.http import JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
+
+from availability.services.mcp import get_server_descriptor
 
 
 def index(request):
@@ -14,3 +18,19 @@ def privacy(request):
 def terms(request):
     """Public terms-of-service page."""
     return render(request, "terms.html")
+
+
+def agents(request):
+    """Developer-facing docs for the MCP server exposed at /mcp/."""
+    return render(request, "agents.html")
+
+
+def well_known_mcp(request):
+    """Machine-readable MCP server descriptor.
+
+    Agents and frameworks can GET this to discover the endpoint, protocol
+    version, and the full tool catalog without making an MCP handshake.
+    """
+    endpoint = request.build_absolute_uri(reverse("mcp_endpoint"))
+    documentation = request.build_absolute_uri(reverse("agents"))
+    return JsonResponse(get_server_descriptor(endpoint, documentation))

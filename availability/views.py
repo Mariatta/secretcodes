@@ -18,6 +18,7 @@ from .services.availability import (
     recommend_week,
 )
 from .services.google import fetch_busy_blocks_for_all
+from .services.mcp import dispatch as mcp_dispatch
 from .services.oauth import build_flow, fetch_user_email
 
 superuser_required = user_passes_test(lambda u: u.is_superuser)
@@ -166,3 +167,25 @@ def oauth_callback(request):
 
     messages.success(request, f"Connected {email}")
     return redirect(reverse("availability:admin"))
+
+
+@csrf_exempt
+@require_POST
+def mcp_endpoint(request):
+    """MCP server entry point — JSON-RPC 2.0 over HTTP POST.
+
+    The heavy lifting lives in availability.services.mcp; this view just
+    parses the JSON body and hands it off.
+    """
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": "Parse error"},
+            },
+            status=400,
+        )
+    return JsonResponse(mcp_dispatch(payload))
