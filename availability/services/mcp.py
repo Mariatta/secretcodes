@@ -56,7 +56,7 @@ def _tool_check_availability(arguments):
         busy,
         buffer=timedelta(minutes=profile.meeting_buffer_minutes),
     )
-    return {"free": free, "band": band, "reason": reason}
+    return {"connected": True, "free": free, "band": band, "reason": reason}
 
 
 def _tool_list_free_slots(arguments):
