@@ -33,6 +33,10 @@ def _display_range(profile):
     return start, end
 
 
+def _buffer_for(profile):
+    return timedelta(minutes=profile.meeting_buffer_minutes)
+
+
 @require_GET
 def week_grid(request):
     profile = AvailabilityProfile.get_solo()
@@ -57,8 +61,20 @@ def week_grid(request):
         busy_blocks,
         profile,
         include_extended=include_extended,
+        buffer=_buffer_for(profile),
     )
     week_summary = recommend_week(result, busy_blocks, profile, range_start, range_end)
+    days_with_slots = [
+        (
+            day,
+            [
+                slot
+                for slot in result.free_slots
+                if slot.start.astimezone(profile.timezone).date() == day.date
+            ],
+        )
+        for day in week_summary.days
+    ]
     context = {
         "profile": profile,
         "range_start": range_start,
@@ -69,6 +85,7 @@ def week_grid(request):
         "view_mode": view_mode,
         "week_summary": week_summary,
         "connected": True,
+        "days_with_slots": days_with_slots,
     }
     return render(request, "availability/week_grid.html", context)
 
@@ -90,6 +107,7 @@ def slots_json(request):
         profile,
         duration=timedelta(minutes=duration_minutes),
         include_extended=include_extended,
+        buffer=_buffer_for(profile),
     )
     return JsonResponse(
         {
@@ -127,7 +145,11 @@ def check(request):
     profile = AvailabilityProfile.get_solo()
     busy_blocks = fetch_busy_blocks_for_all(candidate_start, candidate_end)
     free, band, reason = classify_candidate(
-        profile, candidate_start, candidate_end, busy_blocks
+        profile,
+        candidate_start,
+        candidate_end,
+        busy_blocks,
+        buffer=_buffer_for(profile),
     )
     return JsonResponse(
         {"connected": True, "free": free, "band": band, "reason": reason}

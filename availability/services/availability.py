@@ -122,6 +122,16 @@ def _generate_slots_in_window(
     return slots
 
 
+def _apply_buffer(busy_blocks: list[BusyBlock], buffer: timedelta) -> list[BusyBlock]:
+    """Pad every busy block by ±buffer so adjacent meetings get breathing room."""
+    if not buffer:
+        return busy_blocks
+    return [
+        BusyBlock(start=block.start - buffer, end=block.end + buffer)
+        for block in busy_blocks
+    ]
+
+
 def compute_availability(
     range_start: datetime,
     range_end: datetime,
@@ -129,6 +139,7 @@ def compute_availability(
     profile,
     duration: timedelta | None = None,
     include_extended: bool = False,
+    buffer: timedelta = timedelta(),
 ) -> AvailabilityResult:
     if range_start >= range_end:
         return AvailabilityResult()
@@ -136,6 +147,8 @@ def compute_availability(
     tz = profile.timezone
     if duration is None:
         duration = timedelta(minutes=profile.default_slot_minutes)
+
+    padded_busy = _apply_buffer(busy_blocks, buffer)
 
     local_start = range_start.astimezone(tz)
     local_end = range_end.astimezone(tz)
@@ -153,7 +166,7 @@ def compute_availability(
                 day,
                 window,
                 duration,
-                busy_blocks,
+                padded_busy,
                 Band.BUSINESS,
                 range_start,
                 range_end,
@@ -167,7 +180,7 @@ def compute_availability(
                     day,
                     window,
                     duration,
-                    busy_blocks,
+                    padded_busy,
                     Band.EXTENDED,
                     range_start,
                     range_end,
@@ -185,6 +198,7 @@ def classify_candidate(
     candidate_start: datetime,
     candidate_end: datetime,
     busy_blocks: list[BusyBlock],
+    buffer: timedelta = timedelta(),
 ) -> tuple[bool, Band | None, str | None]:
     if candidate_end <= candidate_start:
         return False, None, "End must be after start"
@@ -196,7 +210,8 @@ def classify_candidate(
     if local_start.date() != local_end.date():
         return False, None, "Spans multiple days"
 
-    if _overlaps_any_busy(candidate_start, candidate_end, busy_blocks):
+    padded_busy = _apply_buffer(busy_blocks, buffer)
+    if _overlaps_any_busy(candidate_start, candidate_end, padded_busy):
         return False, None, "Busy"
 
     weekday_key = Weekday.from_date(local_start)

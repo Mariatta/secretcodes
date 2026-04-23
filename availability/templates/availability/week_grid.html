@@ -63,13 +63,15 @@
             <div class="day-grid">
                 {% for day in week_summary.days %}
                     <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                        <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% else %}secondary text-white{% endif %}">
+                            {{ day.date|date:"D, M j" }}
+                        </div>
                         <div class="card-body">
-                            <h5 class="card-title">
-                                {{ day.date|date:"D, M j" }}
-                            </h5>
-                            <h6 class="card-subtitle mb-2">
-                                {{ day.label.headline }}
-                            </h6>
+                            <p class="mb-2">
+                                <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                                    {{ day.label.headline }}
+                                </span>
+                            </p>
                             <p class="card-text small text-muted">
                                 {{ day.reason }}
                             </p>
@@ -85,24 +87,34 @@
             </div>
         {% else %}
             {% if result.free_slots %}
-                <div class="row">
-                    {% regroup result.free_slots by start|date:"D, M j" as day_groups %}
-                    {% for day in day_groups %}
-                        <div class="col-md-3 mb-3">
-                            <h5>
-                                {{ day.grouper }}
-                            </h5>
-                            <ul class="list-unstyled">
-                                {% for slot in day.list %}
-                                    <li>
-                                        <span class="badge {% if slot.band == "business" %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                                            <time datetime="{{ slot.start|date:'c' }}">{{ slot.start|time:"H:i" }}</time>
-                                            –
-                                            <time datetime="{{ slot.end|date:'c' }}">{{ slot.end|time:"H:i" }}</time>
-                                        </span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                <div class="day-grid">
+                    {% for day, slots in days_with_slots %}
+                        <div class="card h-100 {% if day.label == 'fully_booked' %}bg-light text-muted{% endif %} border-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                            <div class="card-header fw-semibold bg-{% if day.label == 'wide_open' %}success text-white{% elif day.label == 'likely_available' %}primary text-white{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger text-white{% else %}secondary text-white{% endif %}">
+                                {{ day.date|date:"D, M j" }}
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    <span class="badge bg-{% if day.label == 'wide_open' %}success{% elif day.label == 'likely_available' %}primary{% elif day.label == 'tight' %}warning text-dark{% elif day.label == 'unlikely' %}danger{% else %}secondary{% endif %}">
+                                        {{ day.label.headline }}
+                                    </span>
+                                </p>
+                                {% if slots %}
+                                    <ul class="list-unstyled small mb-0">
+                                        {% for slot in slots %}
+                                            <li>
+                                                <span class="badge {% if slot.band == "business" %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                    <time datetime="{{ slot.start|date:'c' }}">{{ slot.start|time:"H:i" }}</time>–<time datetime="{{ slot.end|date:'c' }}">{{ slot.end|time:"H:i" }}</time>
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="small text-muted mb-0">
+                                        No free slots
+                                    </p>
+                                {% endif %}
+                            </div>
                         </div>
                     {% endfor %}
                 </div>

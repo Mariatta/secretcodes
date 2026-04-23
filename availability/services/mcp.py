@@ -49,7 +49,13 @@ def _tool_check_availability(arguments):
         }
     profile = AvailabilityProfile.get_solo()
     busy = fetch_busy_blocks_for_all(dt, end)
-    free, band, reason = classify_candidate(profile, dt, end, busy)
+    free, band, reason = classify_candidate(
+        profile,
+        dt,
+        end,
+        busy,
+        buffer=timedelta(minutes=profile.meeting_buffer_minutes),
+    )
     return {"connected": True, "free": free, "band": band, "reason": reason}
 
 
@@ -69,6 +75,7 @@ def _tool_list_free_slots(arguments):
         profile,
         duration=timedelta(minutes=duration),
         include_extended=include_extended,
+        buffer=timedelta(minutes=profile.meeting_buffer_minutes),
     )
     return {
         "connected": True,

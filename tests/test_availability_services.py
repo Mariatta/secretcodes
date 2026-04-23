@@ -335,3 +335,69 @@ def test_recommend_week_groups_busy_blocks_by_date():
     week = recommend_week(result, busy, FakeProfile(), monday, friday)
     tuesday = next(d for d in week.days if d.date == _pt(2026, 5, 5).date())
     assert tuesday.meeting_count == 1
+
+
+# ---------- meeting buffer ----------
+
+
+def test_compute_availability_defaults_to_no_buffer():
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    result = compute_availability(
+        _pt(2026, 5, 4, 0), _pt(2026, 5, 5, 0), busy, FakeProfile()
+    )
+    # Without buffer, 10-11 busy removes exactly 2 slots from 16 = 14.
+    assert result.business_slot_count == 14
+
+
+def test_compute_availability_buffer_pads_busy_blocks():
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    result = compute_availability(
+        _pt(2026, 5, 4, 0),
+        _pt(2026, 5, 5, 0),
+        busy,
+        FakeProfile(),
+        buffer=timedelta(minutes=30),
+    )
+    # 30-min buffer expands 10-11 to 9:30-11:30 → removes 4 slots → 12.
+    assert result.business_slot_count == 12
+
+
+def test_compute_availability_larger_buffer_removes_more_slots():
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    result = compute_availability(
+        _pt(2026, 5, 4, 0),
+        _pt(2026, 5, 5, 0),
+        busy,
+        FakeProfile(),
+        buffer=timedelta(minutes=60),
+    )
+    # 60-min buffer expands 10-11 to 9:00-12:00 → removes 6 slots → 10.
+    assert result.business_slot_count == 10
+
+
+def test_classify_candidate_buffer_blocks_adjacent_slot():
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    # 9:30-10:00 would be free without buffer (just touches busy at 10:00).
+    # With 30-min buffer, busy becomes 9:30-11:30 — 9:30-10:00 now overlaps.
+    free, band, reason = classify_candidate(
+        FakeProfile(),
+        _pt(2026, 5, 4, 9, 30),
+        _pt(2026, 5, 4, 10, 0),
+        busy,
+        buffer=timedelta(minutes=30),
+    )
+    assert free is False
+    assert reason == "Busy"
+
+
+def test_classify_candidate_buffer_zero_leaves_adjacency_alone():
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    # Without buffer, 9:30-10:00 is adjacent to 10:00-11:00 busy — still free.
+    free, band, reason = classify_candidate(
+        FakeProfile(),
+        _pt(2026, 5, 4, 9, 30),
+        _pt(2026, 5, 4, 10, 0),
+        busy,
+    )
+    assert free is True
+    assert band == "business"
