@@ -12,11 +12,16 @@ from django.utils.dateparse import parse_datetime
 
 from availability.models import AvailabilityProfile
 
-from .availability import classify_candidate, compute_availability
+from .availability import (
+    MAX_QUERY_RANGE_DAYS,
+    MAX_QUERY_RANGE_MESSAGE,
+    classify_candidate,
+    compute_availability,
+)
 from .google import fetch_busy_blocks_for_all, has_active_calendars
 
 PROTOCOL_VERSION = "2024-11-05"
-SERVER_INFO = {"name": "secretcodes-availability", "version": "1.0.0"}
+SERVER_INFO = {"name": "mariatta-availability", "version": "1.0.0"}
 NO_CALENDARS_REASON = "No calendars connected"
 
 
@@ -62,6 +67,8 @@ def _tool_check_availability(arguments):
 def _tool_list_free_slots(arguments):
     start = _parse_dt(arguments.get("start"))
     end = _parse_dt(arguments.get("end"))
+    if end - start > timedelta(days=MAX_QUERY_RANGE_DAYS):
+        raise InvalidParams(MAX_QUERY_RANGE_MESSAGE)
     duration = int(arguments.get("duration_minutes", 30))
     include_extended = bool(arguments.get("include_extended", False))
     if not has_active_calendars():
@@ -94,6 +101,8 @@ def _tool_list_free_slots(arguments):
 def _tool_get_busy_shadow(arguments):
     start = _parse_dt(arguments.get("start"))
     end = _parse_dt(arguments.get("end"))
+    if end - start > timedelta(days=MAX_QUERY_RANGE_DAYS):
+        raise InvalidParams(MAX_QUERY_RANGE_MESSAGE)
     if not has_active_calendars():
         return {"connected": False, "busy_blocks": []}
     busy = fetch_busy_blocks_for_all(start, end)
@@ -109,10 +118,7 @@ def _tool_get_busy_shadow(arguments):
 def _tool_get_booking_info(arguments):
     return {
         "available": False,
-        "message": (
-            "Paid booking is not yet available. For now, contact Mariatta "
-            "directly at mariatta@mariatta.ca."
-        ),
+        "message": ("Paid booking is not yet available."),
     }
 
 
@@ -147,7 +153,8 @@ TOOLS = {
         "description": (
             "Return free time slots in a date range. Default duration is "
             "30 minutes, business hours only. Set include_extended=true "
-            "to also return early-morning and evening extended-hour slots."
+            "to also return early-morning and evening extended-hour slots. "
+            "Maximum range 14 days; longer ranges are a future paid feature."
         ),
         "input_schema": {
             "type": "object",
@@ -169,7 +176,8 @@ TOOLS = {
         "description": (
             "Return the busy time ranges from Mariatta's connected Google "
             "Calendars in a date range. Only start/end timestamps — never "
-            "event titles, attendees, or descriptions."
+            "event titles, attendees, or descriptions. "
+            "Maximum range 14 days; longer ranges are a future paid feature."
         ),
         "input_schema": {
             "type": "object",
@@ -203,9 +211,9 @@ def _tool_definition(name):
 def get_server_descriptor(endpoint_url, documentation_url):
     """Static metadata for machine discovery (served at /.well-known/mcp.json).
 
-    Bundles server identity, transport info, and the full tool catalog in a
-    single GET-able document so agent frameworks can sniff capabilities
-    without an MCP handshake.
+    Bundles server identity, transport info, limits, and the full tool
+    catalog in a single GET-able document so agent frameworks can sniff
+    capabilities without an MCP handshake.
     """
     return {
         "name": SERVER_INFO["name"],
@@ -215,6 +223,10 @@ def get_server_descriptor(endpoint_url, documentation_url):
         "documentation": documentation_url,
         "transport": "http",
         "authentication": "none",
+        "limits": {
+            "rate": "60/minute per IP",
+            "max_query_range_days": MAX_QUERY_RANGE_DAYS,
+        },
         "tools": [_tool_definition(name) for name in TOOLS],
     }
 

@@ -2,8 +2,17 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
+from django.core.cache import cache
 
 os.environ.setdefault("FERNET_KEY", "kTdjP9joWZr9JfnWHGmcQOOPxFEKfCB3_Hx7OgHD6LU=")
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Clear Django cache between tests so ratelimit counters don't bleed."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture(autouse=True)

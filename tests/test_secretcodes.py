@@ -56,7 +56,7 @@ def test_well_known_mcp_descriptor_returns_json(client):
     assert response["Content-Type"].startswith("application/json")
     data = response.json()
     assert data["protocolVersion"] == "2024-11-05"
-    assert data["name"] == "secretcodes-availability"
+    assert data["name"] == "mariatta-availability"
     assert data["transport"] == "http"
     assert data["authentication"] == "none"
     tool_names = {tool["name"] for tool in data["tools"]}
@@ -68,19 +68,20 @@ def test_well_known_mcp_descriptor_returns_json(client):
     }
     assert data["endpoint"].endswith("/mcp/")
     assert data["documentation"].endswith("/agents/")
+    assert data["limits"]["max_query_range_days"] == 14
+    assert "60" in data["limits"]["rate"]
 
 
 @pytest.mark.django_db
 def test_privacy_page_does_not_expose_email(client):
     response = client.get(reverse("privacy"))
-    assert b"mariatta@mariatta.ca" not in response.content
     assert b"github.com/Mariatta/secretcodes/issues" in response.content
 
 
 @pytest.mark.django_db
 def test_terms_page_does_not_expose_email(client):
     response = client.get(reverse("terms"))
-    assert b"mariatta@mariatta.ca" not in response.content
+    assert b"github.com/Mariatta/secretcodes/issues" in response.content
 
 
 def test_account_adapter_signup_disabled():

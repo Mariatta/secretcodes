@@ -7,7 +7,7 @@
         Privacy Policy
     </h1>
     <p class="text-muted">
-        Last updated: 2026-04-22
+        Last updated: 2026-04-23
     </p>
     <h2>
         What this site collects
@@ -100,6 +100,21 @@
         qualitative day labels ("Available", "Likely available", "Tight",
         "Unlikely", "Unavailable") and time ranges. Visitors see only this
         processed output, never raw event data.
+    </p>
+    <h2>
+        Rate limiting
+    </h2>
+    <p>
+        To prevent abuse of the public JSON API and the
+        <a href="{% url 'agents' %}">Model Context Protocol</a> endpoint, the
+        site enforces per-IP request limits (currently 120 requests per minute
+        for the JSON API and 60 requests per minute for the MCP endpoint).
+        Counters are held in the site's cache backend keyed by the requester's
+        IP address and expire automatically at the end of each one-minute
+        window. The IP address is used only to enforce these limits and is not
+        retained, aggregated, or used for any other purpose. Standard web-server
+        access logs (described above) are separate and follow the hosting
+        provider's default retention.
     </p>
     <h2>
         Sharing
