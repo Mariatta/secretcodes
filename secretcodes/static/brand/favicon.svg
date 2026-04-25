@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Secret Codes">
+  <rect x="4" y="4" width="92" height="92" rx="6" fill="#F2ECDD" stroke="#0E1730" stroke-width="4"></rect>
+  <g stroke="#0E1730" stroke-width="0.8" opacity="0.3">
+    <line x1="4" y1="22.4" x2="96" y2="22.4"></line>
+    <line x1="4" y1="40.8" x2="96" y2="40.8"></line>
+    <line x1="4" y1="59.2" x2="96" y2="59.2"></line>
+    <line x1="4" y1="77.6" x2="96" y2="77.6"></line>
+    <line x1="22.4" y1="4" x2="22.4" y2="96"></line>
+    <line x1="40.8" y1="4" x2="40.8" y2="96"></line>
+    <line x1="59.2" y1="4" x2="59.2" y2="96"></line>
+    <line x1="77.6" y1="4" x2="77.6" y2="96"></line>
+  </g>
+  <text x="50" y="70" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-weight="500" font-size="68" fill="#0E1730" letter-spacing="-2">S</text>
+  <circle cx="76" cy="26" r="6" fill="#D84C2F"></circle>
+</svg>

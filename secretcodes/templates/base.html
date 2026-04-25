@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load static %}
 {% load django_bootstrap5 %}
 <!DOCTYPE html>
 <html lang="en">
@@ -24,22 +25,58 @@
               content="{% block og_image_alt %}{% endblock og_image_alt %}">
         <meta property="og:site_name" content="Secret Codes" />
         <meta property="og:locale" content="en_US">
+        <link rel="icon"
+              type="image/svg+xml"
+              href="{% static 'brand/favicon.svg' %}">
         {% block extra_head %}
             <script src="https://kit.fontawesome.com/8774ceef9d.js"
                     crossorigin="anonymous"></script>
         {% endblock extra_head %}
         {% bootstrap_css %}
         {% bootstrap_javascript %}
+        <link rel="stylesheet" href="{% static 'brand/secret-codes.css' %}">
         {# Display django.contrib.messages as Bootstrap alerts #}
         {% bootstrap_messages %}
     </head>
     <body class="d-flex flex-column min-vh-100">
         {% block body %}
         {% endblock body %}
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark"
-             aria-label="Fourth navbar example">
+        <nav class="navbar navbar-expand-md navbar-dark sc-bg-ink"
+             aria-label="Site navigation"
+             data-bs-theme="dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="https://secretcodes.dev">Secret Codes by Mariatta</a>
+                <a class="navbar-brand sc-brand-link d-inline-flex align-items-center"
+                   href="https://secretcodes.dev"
+                   aria-label="Secret Codes">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         viewBox="0 0 560 180"
+                         role="img"
+                         aria-label="Secret Codes"
+                         height="32"
+                         class="sc-brand-svg">
+                        <title>Secret Codes</title>
+                        <g transform="translate(28,30)" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.85">
+                        <line x1="0" y1="0" x2="40" y2="0"></line>
+                        <line x1="0" y1="8" x2="40" y2="8"></line>
+                        <line x1="0" y1="16" x2="40" y2="16"></line>
+                        <line x1="0" y1="24" x2="40" y2="24"></line>
+                        <line x1="0" y1="32" x2="40" y2="32"></line>
+                        <line x1="0" y1="40" x2="40" y2="40"></line>
+                        <line x1="0" y1="0" x2="0" y2="40"></line>
+                        <line x1="8" y1="0" x2="8" y2="40"></line>
+                        <line x1="16" y1="0" x2="16" y2="40"></line>
+                        <line x1="24" y1="0" x2="24" y2="40"></line>
+                        <line x1="32" y1="0" x2="32" y2="40"></line>
+                        <line x1="40" y1="0" x2="40" y2="40"></line>
+                        <rect x="8" y="0" width="8" height="8" fill="var(--sc-accent, #D84C2F)" stroke="none"></rect>
+                        <rect x="24" y="16" width="8" height="8" fill="var(--sc-accent, #D84C2F)" stroke="none"></rect>
+                        <rect x="0" y="24" width="8" height="8" fill="currentColor" stroke="none"></rect>
+                        <rect x="32" y="32" width="8" height="8" fill="currentColor" stroke="none"></rect>
+                        </g>
+                        <text x="90" y="120" class="sc-opsz-display" font-family="Fraunces, Georgia, serif" font-weight="500" font-style="italic" font-size="128" letter-spacing="-3" fill="currentColor">Secret</text>
+                        <text x="92" y="160" font-family="'JetBrains Mono', ui-monospace, monospace" font-weight="600" font-size="28" letter-spacing="4" fill="currentColor">C · O · D · E · S</text>
+                    </svg>
+                </a>
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
@@ -50,11 +87,20 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarsExample04">
-                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="{% url "index" %}">Home</a>
-                        </li>
-                    </ul>
+                    {% with current=request.resolver_match.url_name %}
+                        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                            <li class="nav-item">
+                                <a class="nav-link{% if current == 'index' %} active{% endif %}"
+                                   {% if current == 'index' %}aria-current="page"{% endif %}
+                                   href="{% url 'index' %}">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link{% if current == 'about' %} active{% endif %}"
+                                   {% if current == 'about' %}aria-current="page"{% endif %}
+                                   href="{% url 'about' %}">About</a>
+                            </li>
+                        </ul>
+                    {% endwith %}
                     {% if user.is_authenticated %}
                         <div class="dropdown text-end navbar-nav">
                             <a href="#"
@@ -112,14 +158,83 @@
         {% block content %}
         {% endblock content %}
     </div>
-    <footer class="footer mt-auto py-3 bg-dark text-white">
+    <footer class="footer sc-footer mt-auto py-4">
         <div class="container">
             {% block footer_text %}
             {% endblock footer_text %}
-            <div class="small">
-                <a class="link-light" href="{% url 'privacy' %}">Privacy</a>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 620 160"
+                 role="img"
+                 aria-label="Secret Codes (morse)"
+                 class="sc-footer__morse">
+                <title>Secret Codes</title>
+                <text x="20" y="80" class="sc-opsz-display" font-family="Fraunces, serif" font-weight="500" font-size="72" letter-spacing="-1.5" fill="currentColor">Secret Codes</text>
+                <line x1="20" y1="96" x2="240" y2="96" stroke="currentColor" stroke-width="1.2"></line>
+                <line x1="260" y1="96" x2="440" y2="96" stroke="var(--sc-accent)" stroke-width="1.2"></line>
+                <line x1="460" y1="96" x2="600" y2="96" stroke="currentColor" stroke-width="1.2"></line>
+                <text x="20" y="128" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2" fill="currentColor" opacity="0.82">... .   -.-. .-. . -    -.-. --- -.. . ...</text>
+                <text x="20" y="150" font-family="'JetBrains Mono', monospace" font-size="9" letter-spacing="3" fill="currentColor" opacity="0.5">S · E · C · R · E · T     C · O · D · E · S</text>
+            </svg>
+            <div class="small sc-mono mb-3">
+                <a href="{% url 'about' %}">About</a>
                 ·
-                <a class="link-light" href="{% url 'terms' %}">Terms</a>
+                <a href="{% url 'privacy' %}">Privacy</a>
+                ·
+                <a href="{% url 'terms' %}">Terms</a>
+            </div>
+            <ul class="sc-footer__socials" aria-label="Mariatta's online presence">
+                <li>
+                    <a href="https://mariatta.ca"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="Website"
+                       title="mariatta.ca">
+                        <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://fosstodon.org/@mariatta"
+                       target="_blank"
+                       rel="me noopener"
+                       aria-label="Mastodon">
+                        <i class="fa-brands fa-mastodon" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://bsky.app/profile/mariatta.ca"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="Bluesky">
+                        <i class="fa-brands fa-bluesky" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://www.linkedin.com/in/mariatta"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="LinkedIn">
+                        <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://www.instagram.com/mariatta81"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="Instagram">
+                        <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/Mariatta/secretcodes"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="GitHub source">
+                        <i class="fa-brands fa-github" aria-hidden="true"></i>
+                    </a>
+                </li>
+            </ul>
+            <div class="small sc-mono sc-footer__by">
+                by <a href="https://mariatta.ca" target="_blank" rel="noopener">mariatta.ca</a>
             </div>
         </div>
     </footer>

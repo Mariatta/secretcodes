@@ -131,7 +131,7 @@ ACCOUNT_ADAPTER = "secretcodes.account_adapter.SecretCodesAccountAdapter"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "secretcodes" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

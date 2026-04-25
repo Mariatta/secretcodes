@@ -1,0 +1,104 @@
+{% extends "./base.html" %}
+{% block head_title %}
+    About — Secret Codes
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mb-5">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">00</span>About
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            A small, <em class="sc-italic">personal</em> corner of the internet.
+        </h1>
+        <p class="sc-prose-lead">
+            <strong>Secret Codes</strong> is where I keep the small tools I've built
+            for myself — a public availability shadow, an MCP endpoint for agents,
+            a couple of QR utilities. Nothing here is trying to be a product.
+            It's open source, self-hosted, and runs without trackers, cookies,
+            or accounts. You're welcome to fork it.
+        </p>
+        <p class="sc-muted">
+            Built and maintained by <a href="https://mariatta.ca">Mariatta</a> in Vancouver, BC.
+        </p>
+    </section>
+    <div class="sc-coords mb-5">
+        <span><b>COORD</b> 49.282198°N · 122.829355°W</span>
+        <span><b>SIGNAL</b> ·  ·  · —</span>
+        <span><b>STATUS</b> decoded</span>
+        <span><b>OWNER</b> @mariatta</span>
+    </div>
+    <hr class="sc-rule my-5">
+    <section class="sc-prose py-4 mb-5">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">01</span>The name
+        </div>
+        <h2 class="sc-display mb-4">
+            For <em class="sc-italic">Darren</em>.
+        </h2>
+        <p>
+            The site is named in tribute to Darren Hayes's 2011 album
+            <em>Secret Codes &amp; Battleships</em> — a record that has stayed
+            with me for years. The themes that run through it (signals,
+            grids, things waiting to be decoded, holding on to what matters)
+            felt like the right shape for a folder of personal tools.
+        </p>
+        <p class="sc-muted">
+            Don't give up — on secret codes.
+        </p>
+    </section>
+    <hr class="sc-rule my-5">
+    <section class="sc-prose py-4">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">02</span>The marks
+        </div>
+        <h2 class="sc-display mb-4">
+            Ink, paper, and a <em class="sc-italic">battleship grid</em>.
+        </h2>
+        <p>
+            The visual language leans into the album's nautical-cipher mood
+            without leaning on it. Two ground tones do the quiet work:
+            <strong>battleship-night navy</strong> (the ink) and
+            <strong>cipher-paper cream</strong> (the page). Two signal colors
+            are reserved for the moment something is <em>found</em>:
+            <strong>maritime signal red</strong> for calls to action and
+            <strong>decoded gold</strong> for success.
+        </p>
+        <p>
+            Type pairs Fraunces (a soft, optical-sized serif) for the
+            personal voice with JetBrains Mono for the
+            <span class="sc-mono sc-mono-sm">machine-readable</span>
+            layer — coordinates, codes, small labels.
+        </p>
+        <h3 class="sc-display sc-h-sub mt-5 mb-3">
+            The wordmark
+        </h3>
+        <p>
+            <em class="sc-italic">Secret</em> in italic Fraunces, with the C·O·D·E·S
+            spelled in spaced monospace beneath — the personal voice and the
+            machine voice on top of each other. To the left, a small
+            cipher grid with two cells filled in red and two in ink: a hint
+            that something is being plotted.
+        </p>
+        <h3 class="sc-display sc-h-sub mt-5 mb-3">
+            The monogram
+        </h3>
+        <p>
+            A literal battleship board. The grid is labelled A–H across the
+            top and 1–8 down the side. The hits spell out an
+            <strong>S</strong> on the left and a <strong>C</strong> on the
+            right — Secret Codes, plotted. One hit on the C is the red signal
+            (the cell that "found" something), and a small crosshair below
+            marks where the next decode will land.
+        </p>
+        <h3 class="sc-display sc-h-sub mt-5 mb-3">
+            The morse lockup
+        </h3>
+        <p>
+            "Secret Codes" written in Fraunces with the same name underneath
+            in morse —
+            <span class="sc-mono">... .   -.-. .-. . -    -.-. --- -.. . ...</span>
+            — split by a slice of red in the underline. The easter egg, for
+            when the name should look like the thing it describes.
+        </p>
+    </section>
+{% endblock content %}
