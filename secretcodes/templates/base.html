@@ -45,16 +45,15 @@
              aria-label="Site navigation"
              data-bs-theme="dark">
             <div class="container-fluid">
-                <a class="navbar-brand d-inline-flex align-items-center"
+                <a class="navbar-brand sc-brand-link d-inline-flex align-items-center"
                    href="https://secretcodes.dev"
-                   style="color: var(--sc-paper)"
                    aria-label="Secret Codes">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          viewBox="0 0 560 180"
                          role="img"
                          aria-label="Secret Codes"
                          height="32"
-                         style="display: block">
+                         class="sc-brand-svg">
                         <title>Secret Codes</title>
                         <g transform="translate(28,30)" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.85">
                         <line x1="0" y1="0" x2="40" y2="0"></line>
@@ -74,7 +73,7 @@
                         <rect x="0" y="24" width="8" height="8" fill="currentColor" stroke="none"></rect>
                         <rect x="32" y="32" width="8" height="8" fill="currentColor" stroke="none"></rect>
                         </g>
-                        <text x="90" y="120" font-family="Fraunces, Georgia, serif" font-weight="500" font-style="italic" font-size="128" letter-spacing="-3" fill="currentColor" style="font-variation-settings:'opsz' 144">Secret</text>
+                        <text x="90" y="120" class="sc-opsz-display" font-family="Fraunces, Georgia, serif" font-weight="500" font-style="italic" font-size="128" letter-spacing="-3" fill="currentColor">Secret</text>
                         <text x="92" y="160" font-family="'JetBrains Mono', ui-monospace, monospace" font-weight="600" font-size="28" letter-spacing="4" fill="currentColor">C · O · D · E · S</text>
                     </svg>
                 </a>
@@ -159,7 +158,7 @@
         {% block content %}
         {% endblock content %}
     </div>
-    <footer class="footer mt-auto py-4 sc-bg-ink">
+    <footer class="footer sc-footer mt-auto py-4">
         <div class="container">
             {% block footer_text %}
             {% endblock footer_text %}
@@ -167,38 +166,29 @@
                  viewBox="0 0 620 160"
                  role="img"
                  aria-label="Secret Codes (morse)"
-                 style="max-width: 360px;
-                        width: 100%;
-                        height: auto;
-                        display: block;
-                        margin-bottom: 14px">
+                 class="sc-footer__morse">
                 <title>Secret Codes</title>
-                <text x="20" y="80" font-family="Fraunces, serif" font-weight="500" font-size="72" letter-spacing="-1.5" fill="currentColor" style="font-variation-settings: 'opsz' 144;">Secret Codes</text>
+                <text x="20" y="80" class="sc-opsz-display" font-family="Fraunces, serif" font-weight="500" font-size="72" letter-spacing="-1.5" fill="currentColor">Secret Codes</text>
                 <line x1="20" y1="96" x2="240" y2="96" stroke="currentColor" stroke-width="1.2"></line>
                 <line x1="260" y1="96" x2="440" y2="96" stroke="var(--sc-accent)" stroke-width="1.2"></line>
                 <line x1="460" y1="96" x2="600" y2="96" stroke="currentColor" stroke-width="1.2"></line>
                 <text x="20" y="128" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2" fill="currentColor" opacity="0.82">... .   -.-. .-. . -    -.-. --- -.. . ...</text>
                 <text x="20" y="150" font-family="'JetBrains Mono', monospace" font-size="9" letter-spacing="3" fill="currentColor" opacity="0.5">S · E · C · R · E · T     C · O · D · E · S</text>
             </svg>
-            <div class="small sc-mono mb-3" style="letter-spacing: 0.06em;">
-                <a href="{% url 'about' %}" style="color: var(--sc-paper);">About</a>
+            <div class="small sc-mono mb-3">
+                <a href="{% url 'about' %}">About</a>
                 ·
-                <a href="{% url 'privacy' %}" style="color: var(--sc-paper);">Privacy</a>
+                <a href="{% url 'privacy' %}">Privacy</a>
                 ·
-                <a href="{% url 'terms' %}" style="color: var(--sc-paper);">Terms</a>
+                <a href="{% url 'terms' %}">Terms</a>
             </div>
-            <ul class="list-unstyled d-flex flex-wrap gap-3 mb-2"
-                aria-label="Mariatta's online presence"
-                style="margin: 0;
-                       padding: 0">
+            <ul class="sc-footer__socials" aria-label="Mariatta's online presence">
                 <li>
                     <a href="https://mariatta.ca"
                        target="_blank"
                        rel="noopener"
                        aria-label="Website"
-                       title="mariatta.ca"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       title="mariatta.ca">
                         <i class="fa-solid fa-globe" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -206,9 +196,7 @@
                     <a href="https://fosstodon.org/@mariatta"
                        target="_blank"
                        rel="me noopener"
-                       aria-label="Mastodon"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       aria-label="Mastodon">
                         <i class="fa-brands fa-mastodon" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -216,9 +204,7 @@
                     <a href="https://bsky.app/profile/mariatta.ca"
                        target="_blank"
                        rel="noopener"
-                       aria-label="Bluesky"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       aria-label="Bluesky">
                         <i class="fa-brands fa-bluesky" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -226,9 +212,7 @@
                     <a href="https://www.linkedin.com/in/mariatta"
                        target="_blank"
                        rel="noopener"
-                       aria-label="LinkedIn"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       aria-label="LinkedIn">
                         <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -236,9 +220,7 @@
                     <a href="https://www.instagram.com/mariatta81"
                        target="_blank"
                        rel="noopener"
-                       aria-label="Instagram"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       aria-label="Instagram">
                         <i class="fa-brands fa-instagram" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -246,20 +228,13 @@
                     <a href="https://github.com/Mariatta/secretcodes"
                        target="_blank"
                        rel="noopener"
-                       aria-label="GitHub source"
-                       style="color: var(--sc-paper);
-                              font-size: 1.1rem">
+                       aria-label="GitHub source">
                         <i class="fa-brands fa-github" aria-hidden="true"></i>
                     </a>
                 </li>
             </ul>
-            <div class="small sc-mono"
-                 style="letter-spacing: 0.06em;
-                        color: rgba(242, 236, 221, 0.6)">
-                by <a href="https://mariatta.ca"
-    target="_blank"
-    rel="noopener"
-    style="color: var(--sc-paper)">mariatta.ca</a>
+            <div class="small sc-mono sc-footer__by">
+                by <a href="https://mariatta.ca" target="_blank" rel="noopener">mariatta.ca</a>
             </div>
         </div>
     </footer>

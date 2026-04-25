@@ -5,18 +5,17 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
-    <section class="row align-items-center g-5 py-4 mb-5"
-             style="--bs-gutter-x: 3rem">
+    <section class="sc-hero row align-items-center g-5 py-4 mb-5">
         <div class="col-md-7">
             <div class="sc-eyebrow mb-3">
-                <span style="color: var(--sc-accent); margin-right: 10px;">01</span>Personal infrastructure
+                <span class="sc-num">01</span>Personal infrastructure
             </div>
-            <h1 class="sc-display mb-4" style="line-height: 1.02;">
+            <h1 class="sc-display mb-4">
                 Tools I built <em class="sc-italic">for myself</em>.
                 <br>
                 Open source, so you can too.
             </h1>
-            <p class="sc-muted mb-4" style="max-width: 44ch; font-size: 1.05rem;">
+            <p class="sc-muted sc-lede mb-4">
                 Small, useful automations. Everything here runs without third-party trackers
                 or cookie gauntlets — the code is yours to read, fork, and self-host.
             </p>
@@ -36,8 +35,7 @@
                  role="img"
                  aria-label="Secret Codes monogram"
                  width="200"
-                 height="200"
-                 style="color: var(--sc-fg)">
+                 height="200">
                 <rect x="10" y="10" width="180" height="180" fill="none" stroke="currentColor" stroke-width="2"></rect>
                 <g stroke="currentColor" stroke-width="0.8" opacity="0.35">
                 <line x1="10" y1="32.5" x2="190" y2="32.5"></line>
@@ -98,93 +96,69 @@
         <span><b>STATUS</b> decoded</span>
         <span><b>OWNER</b> @mariatta</span>
     </div>
-    <hr class="sc-rule my-4" id="tools" style="scroll-margin-top: 80px;">
+    <hr class="sc-rule sc-anchor my-4" id="tools">
     <div class="row g-3 mt-4">
         <div class="col-md-4">
-            <a href="{% url 'availability:week_grid' %}"
-               class="sc-card d-flex flex-column h-100 text-decoration-none"
-               style="color: inherit;
-                      gap: 10px">
+            <a href="{% url 'availability:week_grid' %}" class="sc-card sc-tile">
                 <div class="sc-eyebrow">
-                    <span style="color: var(--sc-accent); margin-right: 10px;">01</span>Availability
+                    <span class="sc-num">01</span>Availability
                 </div>
-                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                <h4 class="sc-display sc-tile-title">
                     When am I free?
                 </h4>
-                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                <p class="sc-muted sc-tile-body">
                     No more going up-up-down-down-left-right-left-right on my calendar. Find a time to meet here.
                 </p>
-                <div class="sc-mono mt-auto"
-                     style="color: var(--sc-accent);
-                            font-size: 0.75rem;
-                            letter-spacing: 0.06em">
+                <div class="sc-arrow">
                     open →
                 </div>
             </a>
         </div>
         <div class="col-md-4">
-            <a href="{% url 'agents' %}"
-               class="sc-card d-flex flex-column h-100 text-decoration-none"
-               style="color: inherit;
-                      gap: 10px">
+            <a href="{% url 'agents' %}" class="sc-card sc-tile">
                 <div class="sc-eyebrow">
-                    <span style="color: var(--sc-accent); margin-right: 10px;">02</span>Agent
+                    <span class="sc-num">02</span>Agent
                 </div>
-                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                <h4 class="sc-display sc-tile-title">
                     MCP endpoint
                 </h4>
-                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                <p class="sc-muted sc-tile-body">
                     I'll have your agent talk to my agent. Public, rate-limited, no auth required.
                 </p>
-                <div class="sc-mono mt-auto"
-                     style="color: var(--sc-accent);
-                            font-size: 0.75rem;
-                            letter-spacing: 0.06em">
+                <div class="sc-arrow">
                     open →
                 </div>
             </a>
         </div>
         <div class="col-md-4">
-            <a href="{% url 'qrcode_generator' %}"
-               class="sc-card d-flex flex-column h-100 text-decoration-none"
-               style="color: inherit;
-                      gap: 10px">
+            <a href="{% url 'qrcode_generator' %}" class="sc-card sc-tile">
                 <div class="sc-eyebrow">
-                    <span style="color: var(--sc-accent); margin-right: 10px;">03</span>Utility
+                    <span class="sc-num">03</span>Utility
                 </div>
-                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                <h4 class="sc-display sc-tile-title">
                     QR codes
                 </h4>
-                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                <p class="sc-muted sc-tile-body">
                     Generate a QR for any URL. No login, no analytics, no watermark.
                 </p>
-                <div class="sc-mono mt-auto"
-                     style="color: var(--sc-accent);
-                            font-size: 0.75rem;
-                            letter-spacing: 0.06em">
+                <div class="sc-arrow">
                     open →
                 </div>
             </a>
         </div>
         {% if user.is_authenticated %}
             <div class="col-md-4">
-                <a href="{% url 'qrcode_slug_generator' %}"
-                   class="sc-card d-flex flex-column h-100 text-decoration-none"
-                   style="color: inherit;
-                          gap: 10px">
+                <a href="{% url 'qrcode_slug_generator' %}" class="sc-card sc-tile">
                     <div class="sc-eyebrow">
-                        <span style="color: var(--sc-accent); margin-right: 10px;">04</span>Utility
+                        <span class="sc-num">04</span>Utility
                     </div>
-                    <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                    <h4 class="sc-display sc-tile-title">
                         QR + slug
                     </h4>
-                    <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                    <p class="sc-muted sc-tile-body">
                         QR code with a pretty short URL on my own domain.
                     </p>
-                    <div class="sc-mono mt-auto"
-                         style="color: var(--sc-accent);
-                                font-size: 0.75rem;
-                                letter-spacing: 0.06em">
+                    <div class="sc-arrow">
                         open →
                     </div>
                 </a>
@@ -192,23 +166,17 @@
         {% endif %}
         {% if user.is_superuser %}
             <div class="col-md-4">
-                <a href="{% url 'availability:admin' %}"
-                   class="sc-card d-flex flex-column h-100 text-decoration-none"
-                   style="color: inherit;
-                          gap: 10px">
+                <a href="{% url 'availability:admin' %}" class="sc-card sc-tile">
                     <div class="sc-eyebrow">
-                        <span style="color: var(--sc-accent); margin-right: 10px;">05</span>Admin
+                        <span class="sc-num">05</span>Admin
                     </div>
-                    <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                    <h4 class="sc-display sc-tile-title">
                         Google accounts
                     </h4>
-                    <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                    <p class="sc-muted sc-tile-body">
                         Manage which calendars feed the availability shadow.
                     </p>
-                    <div class="sc-mono mt-auto"
-                         style="color: var(--sc-accent);
-                                font-size: 0.75rem;
-                                letter-spacing: 0.06em">
+                    <div class="sc-arrow">
                         open →
                     </div>
                 </a>
