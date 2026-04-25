@@ -5,37 +5,214 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
-    <section class="mb-4">
-        <h2>
-            Availability
-        </h2>
-        <ul>
-            <li>
-                <a href="{% url "availability:week_grid" %}">When is Mariatta available?</a>
-            </li>
-            <li>
-                <a href="{% url "agents" %}">For agents (MCP endpoint)</a>
-            </li>
-            {% if user.is_superuser %}
-                <li>
-                    <a href="{% url "availability:admin" %}">Manage connected Google accounts</a>
-                </li>
-            {% endif %}
-        </ul>
+    <section class="row align-items-center g-5 py-4 mb-5"
+             style="--bs-gutter-x: 3rem">
+        <div class="col-md-7">
+            <div class="sc-eyebrow mb-3">
+                <span style="color: var(--sc-accent); margin-right: 10px;">01</span>Personal infrastructure
+            </div>
+            <h1 class="sc-display mb-4" style="line-height: 1.02;">
+                Tools I built <em class="sc-italic">for myself</em>.
+                <br>
+                Open source, so you can too.
+            </h1>
+            <p class="sc-muted mb-4" style="max-width: 44ch; font-size: 1.05rem;">
+                Small, useful automations. Everything here runs without third-party trackers
+                or cookie gauntlets — the code is yours to read, fork, and self-host.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="#tools" class="sc-btn sc-btn--accent">
+                    Browse tools →
+                </a>
+                <a href="https://github.com/mariatta/secretcodes"
+                   class="sc-btn sc-btn--ghost">
+                    View source
+                </a>
+            </div>
+        </div>
+        <div class="col-md-5 text-md-end text-center">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 200 200"
+                 role="img"
+                 aria-label="Secret Codes monogram"
+                 width="200"
+                 height="200"
+                 style="color: var(--sc-fg)">
+                <rect x="10" y="10" width="180" height="180" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                <g stroke="currentColor" stroke-width="0.8" opacity="0.35">
+                <line x1="10" y1="32.5" x2="190" y2="32.5"></line>
+                <line x1="10" y1="55" x2="190" y2="55"></line>
+                <line x1="10" y1="77.5" x2="190" y2="77.5"></line>
+                <line x1="10" y1="100" x2="190" y2="100"></line>
+                <line x1="10" y1="122.5" x2="190" y2="122.5"></line>
+                <line x1="10" y1="145" x2="190" y2="145"></line>
+                <line x1="10" y1="167.5" x2="190" y2="167.5"></line>
+                <line x1="32.5" y1="10" x2="32.5" y2="190"></line>
+                <line x1="55" y1="10" x2="55" y2="190"></line>
+                <line x1="77.5" y1="10" x2="77.5" y2="190"></line>
+                <line x1="100" y1="10" x2="100" y2="190"></line>
+                <line x1="122.5" y1="10" x2="122.5" y2="190"></line>
+                <line x1="145" y1="10" x2="145" y2="190"></line>
+                <line x1="167.5" y1="10" x2="167.5" y2="190"></line>
+                </g>
+                <g font-family="'JetBrains Mono', monospace" font-size="8" fill="currentColor" opacity="0.55">
+                <text x="32.5" y="6" text-anchor="middle">A</text>
+                <text x="55" y="6" text-anchor="middle">B</text>
+                <text x="77.5" y="6" text-anchor="middle">C</text>
+                <text x="100" y="6" text-anchor="middle">D</text>
+                <text x="122.5" y="6" text-anchor="middle">E</text>
+                <text x="145" y="6" text-anchor="middle">F</text>
+                <text x="167.5" y="6" text-anchor="middle">G</text>
+                </g>
+                <circle cx="43.75" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="66.25" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="88.75" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="43.75" cy="55" r="4" fill="currentColor"></circle>
+                <circle cx="43.75" cy="77.5" r="4" fill="currentColor"></circle>
+                <circle cx="66.25" cy="77.5" r="4" fill="currentColor"></circle>
+                <circle cx="88.75" cy="77.5" r="4" fill="currentColor"></circle>
+                <circle cx="88.75" cy="100" r="4" fill="currentColor"></circle>
+                <circle cx="43.75" cy="122.5" r="4" fill="currentColor"></circle>
+                <circle cx="66.25" cy="122.5" r="4" fill="currentColor"></circle>
+                <circle cx="88.75" cy="122.5" r="4" fill="currentColor"></circle>
+                <circle cx="133.75" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="156.25" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="178.75" cy="32.5" r="4" fill="currentColor"></circle>
+                <circle cx="133.75" cy="55" r="4" fill="currentColor"></circle>
+                <circle cx="133.75" cy="77.5" r="4" fill="currentColor"></circle>
+                <circle cx="133.75" cy="100" r="4" fill="currentColor"></circle>
+                <circle cx="133.75" cy="122.5" r="4" fill="var(--sc-accent)"></circle>
+                <circle cx="156.25" cy="122.5" r="4" fill="currentColor"></circle>
+                <circle cx="178.75" cy="122.5" r="4" fill="currentColor"></circle>
+                <g stroke="var(--sc-accent)" stroke-width="1.2" opacity="0.9">
+                <line x1="100" y1="172" x2="100" y2="188"></line>
+                <line x1="92" y1="180" x2="108" y2="180"></line>
+                </g>
+                <text x="100" y="198" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="7" letter-spacing="2" fill="currentColor" opacity="0.6">SECRET CODES</text>
+            </svg>
+        </div>
     </section>
-    <section class="mb-4">
-        <h2>
-            QR codes
-        </h2>
-        <ul>
-            <li>
-                <a href="{% url "qrcode_generator" %}">QR Code Generator</a>
-            </li>
-            {% if user.is_authenticated %}
-                <li>
-                    <a href="{% url "qrcode_slug_generator" %}">QR Code Generator with Slug</a>
-                </li>
-            {% endif %}
-        </ul>
-    </section>
+    <div class="sc-coords mb-4">
+        <span><b>COORD</b> 49.282198°N · 122.829355°W</span>
+        <span><b>SIGNAL</b> ·  ·  · —</span>
+        <span><b>STATUS</b> decoded</span>
+        <span><b>OWNER</b> @mariatta</span>
+    </div>
+    <hr class="sc-rule my-4" id="tools" style="scroll-margin-top: 80px;">
+    <div class="row g-3 mt-4">
+        <div class="col-md-4">
+            <a href="{% url 'availability:week_grid' %}"
+               class="sc-card d-flex flex-column h-100 text-decoration-none"
+               style="color: inherit;
+                      gap: 10px">
+                <div class="sc-eyebrow">
+                    <span style="color: var(--sc-accent); margin-right: 10px;">01</span>Availability
+                </div>
+                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                    When am I free?
+                </h4>
+                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                    No more going up-up-down-down-left-right-left-right on my calendar. Find a time to meet here.
+                </p>
+                <div class="sc-mono mt-auto"
+                     style="color: var(--sc-accent);
+                            font-size: 0.75rem;
+                            letter-spacing: 0.06em">
+                    open →
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'agents' %}"
+               class="sc-card d-flex flex-column h-100 text-decoration-none"
+               style="color: inherit;
+                      gap: 10px">
+                <div class="sc-eyebrow">
+                    <span style="color: var(--sc-accent); margin-right: 10px;">02</span>Agent
+                </div>
+                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                    MCP endpoint
+                </h4>
+                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                    I'll have your agent talk to my agent. Public, rate-limited, no auth required.
+                </p>
+                <div class="sc-mono mt-auto"
+                     style="color: var(--sc-accent);
+                            font-size: 0.75rem;
+                            letter-spacing: 0.06em">
+                    open →
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'qrcode_generator' %}"
+               class="sc-card d-flex flex-column h-100 text-decoration-none"
+               style="color: inherit;
+                      gap: 10px">
+                <div class="sc-eyebrow">
+                    <span style="color: var(--sc-accent); margin-right: 10px;">03</span>Utility
+                </div>
+                <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                    QR codes
+                </h4>
+                <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                    Generate a QR for any URL. No login, no analytics, no watermark.
+                </p>
+                <div class="sc-mono mt-auto"
+                     style="color: var(--sc-accent);
+                            font-size: 0.75rem;
+                            letter-spacing: 0.06em">
+                    open →
+                </div>
+            </a>
+        </div>
+        {% if user.is_authenticated %}
+            <div class="col-md-4">
+                <a href="{% url 'qrcode_slug_generator' %}"
+                   class="sc-card d-flex flex-column h-100 text-decoration-none"
+                   style="color: inherit;
+                          gap: 10px">
+                    <div class="sc-eyebrow">
+                        <span style="color: var(--sc-accent); margin-right: 10px;">04</span>Utility
+                    </div>
+                    <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                        QR + slug
+                    </h4>
+                    <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                        QR code with a pretty short URL on my own domain.
+                    </p>
+                    <div class="sc-mono mt-auto"
+                         style="color: var(--sc-accent);
+                                font-size: 0.75rem;
+                                letter-spacing: 0.06em">
+                        open →
+                    </div>
+                </a>
+            </div>
+        {% endif %}
+        {% if user.is_superuser %}
+            <div class="col-md-4">
+                <a href="{% url 'availability:admin' %}"
+                   class="sc-card d-flex flex-column h-100 text-decoration-none"
+                   style="color: inherit;
+                          gap: 10px">
+                    <div class="sc-eyebrow">
+                        <span style="color: var(--sc-accent); margin-right: 10px;">05</span>Admin
+                    </div>
+                    <h4 class="sc-display mb-0" style="font-size: 1.375rem;">
+                        Google accounts
+                    </h4>
+                    <p class="sc-muted mb-0" style="font-size: 0.875rem;">
+                        Manage which calendars feed the availability shadow.
+                    </p>
+                    <div class="sc-mono mt-auto"
+                         style="color: var(--sc-accent);
+                                font-size: 0.75rem;
+                                letter-spacing: 0.06em">
+                        open →
+                    </div>
+                </a>
+            </div>
+        {% endif %}
+    </div>
 {% endblock content %}

@@ -32,6 +32,7 @@ urlpatterns = [
     path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
     path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),
     path("agents/", views.agents, name="agents"),
+    path("about/", views.about, name="about"),
     path("privacy/", views.privacy, name="privacy"),
     path("terms/", views.terms, name="terms"),
     # path("qrcode_manager/", include("qrcode_manager.urls")),

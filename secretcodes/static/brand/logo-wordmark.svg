@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 180" role="img" aria-label="Secret Codes">
+  <title>Secret Codes</title>
+  
+  <g transform="translate(28,30)" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.85">
+    <line x1="0" y1="0" x2="40" y2="0"></line>
+    <line x1="0" y1="8" x2="40" y2="8"></line>
+    <line x1="0" y1="16" x2="40" y2="16"></line>
+    <line x1="0" y1="24" x2="40" y2="24"></line>
+    <line x1="0" y1="32" x2="40" y2="32"></line>
+    <line x1="0" y1="40" x2="40" y2="40"></line>
+    <line x1="0" y1="0" x2="0" y2="40"></line>
+    <line x1="8" y1="0" x2="8" y2="40"></line>
+    <line x1="16" y1="0" x2="16" y2="40"></line>
+    <line x1="24" y1="0" x2="24" y2="40"></line>
+    <line x1="32" y1="0" x2="32" y2="40"></line>
+    <line x1="40" y1="0" x2="40" y2="40"></line>
+    <rect x="8" y="0" width="8" height="8" fill="var(--sc-accent, #D84C2F)" stroke="none"></rect>
+    <rect x="24" y="16" width="8" height="8" fill="var(--sc-accent, #D84C2F)" stroke="none"></rect>
+    <rect x="0" y="24" width="8" height="8" fill="currentColor" stroke="none"></rect>
+    <rect x="32" y="32" width="8" height="8" fill="currentColor" stroke="none"></rect>
+  </g>
+  <text x="90" y="120" font-family="Fraunces, Georgia, serif" font-weight="500" font-style="italic" font-size="128" letter-spacing="-3" fill="currentColor" style="font-variation-settings:&#39;opsz&#39; 144">Secret</text>
+  <text x="92" y="160" font-family="&#39;JetBrains Mono&#39;, ui-monospace, monospace" font-weight="600" font-size="28" letter-spacing="4" fill="currentColor">C · O · D · E · S</text>
+</svg>

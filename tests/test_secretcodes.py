@@ -44,6 +44,14 @@ def test_agents_page_renders(client):
 
 
 @pytest.mark.django_db
+def test_about_page_renders(client):
+    response = client.get(reverse("about"))
+    assert response.status_code == 200
+    assert b"Darren Hayes" in response.content
+    assert b"Secret Codes &amp; Battleships" in response.content
+
+
+@pytest.mark.django_db
 def test_landing_page_links_to_agents(client):
     response = client.get(reverse("index"))
     assert reverse("agents").encode() in response.content

@@ -25,6 +25,11 @@ def agents(request):
     return render(request, "agents.html")
 
 
+def about(request):
+    """About page: what this site is, plus the brand's origin story."""
+    return render(request, "about.html")
+
+
 def well_known_mcp(request):
     """Machine-readable MCP server descriptor.
 
