@@ -12,10 +12,16 @@
         </h1>
         <p class="sc-prose-lead">
             <strong>Secret Codes</strong> is where I keep the small tools I've built
-            for myself — a public availability shadow, an MCP endpoint for agents,
-            a couple of QR utilities. Nothing here is trying to be a product.
-            It's open source, self-hosted, and runs without trackers, cookies,
-            or accounts. You're welcome to fork it.
+            for myself —
+            <a href="{% url 'availability:week_grid' %}">a public availability shadow</a>
+            (free/busy from my calendar, no event details),
+            <a href="{% url 'agents' %}">an MCP endpoint</a>
+            (so agents can read the same shadow on my behalf),
+            and <a href="{% url 'qrcode_generator' %}">a couple of QR utilities</a>
+            (make a code for any URL). Nothing here is trying to be a product.
+            It's <a href="https://github.com/Mariatta/secretcodes">open source</a>,
+            self-hosted, and runs without trackers, cookies, or accounts.
+            You're welcome to fork it.
         </p>
         <p class="sc-muted">
             Built and maintained by <a href="https://mariatta.ca">Mariatta</a> in Vancouver, BC.
@@ -99,6 +105,21 @@
             <span class="sc-mono">... .   -.-. .-. . -    -.-. --- -.. . ...</span>
             — split by a slice of red in the underline. The easter egg, for
             when the name should look like the thing it describes.
+        </p>
+    </section>
+    <hr class="sc-rule my-5">
+    <section class="sc-prose py-4">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">03</span>Anything else?
+        </div>
+        <h2 class="sc-display mb-4">
+            <em class="sc-italic">Send</em> a signal.
+        </h2>
+        <p>
+            Found something broken, want to report a bug, or just want to say hi?
+            <a href="https://github.com/Mariatta/secretcodes/issues">Open an issue on GitHub</a>
+            — that's the only inbox for this site. The rest of me is in the
+            footer if you'd rather use a different channel.
         </p>
     </section>
 {% endblock content %}

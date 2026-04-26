@@ -164,23 +164,5 @@
                 </a>
             </div>
         {% endif %}
-        {% if user.is_superuser %}
-            <div class="col-md-4">
-                <a href="{% url 'availability:admin' %}" class="sc-card sc-tile">
-                    <div class="sc-eyebrow">
-                        <span class="sc-num">05</span>Admin
-                    </div>
-                    <h4 class="sc-display sc-tile-title">
-                        Google accounts
-                    </h4>
-                    <p class="sc-muted sc-tile-body">
-                        Manage which calendars feed the availability shadow.
-                    </p>
-                    <div class="sc-arrow">
-                        open →
-                    </div>
-                </a>
-            </div>
-        {% endif %}
     </div>
 {% endblock content %}
