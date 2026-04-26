@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% trans "Sign In" %} — Secret Codes
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mx-auto">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">·</span>{% trans "Sign in" %}
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            Welcome <em class="sc-italic">back</em>.
+        </h1>
+        <p class="sc-muted sc-prose-lead mb-4">
+            Sign-up is closed — this site is for Mariatta's personal use.
+            If you're not sure why you'd need to sign in, you don't.
+        </p>
+        <form method="post" action="{% url 'account_login' %}">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {{ redirect_field }}
+            <button type="submit" class="sc-btn sc-btn--accent mt-3">
+                {% trans "Sign In" %} →
+            </button>
+        </form>
+    </section>
+{% endblock content %}
