@@ -87,156 +87,189 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarsExample04">
-                    {% with current=request.resolver_match.url_name %}
+                    {% with current=request.resolver_match.url_name ns=request.resolver_match.namespace %}
                         <ul class="navbar-nav me-auto mb-2 mb-md-0">
                             <li class="nav-item">
                                 <a class="nav-link{% if current == 'index' %} active{% endif %}"
                                    {% if current == 'index' %}aria-current="page"{% endif %}
                                    href="{% url 'index' %}">Home</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if current == 'about' %} active{% endif %}"
-                                   {% if current == 'about' %}aria-current="page"{% endif %}
-                                   href="{% url 'about' %}">About</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle{% if ns == 'availability' or current == 'agents' %} active{% endif %}"
+                                   href="#"
+                                   role="button"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">Availability</a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'availability:week_grid' %}">When am I free?</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'agents' %}">For agents (MCP)</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle{% if current == 'qrcode_generator' or current == 'qrcode_slug_generator' %} active{% endif %}"
+                                   href="#"
+                                   role="button"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">QR</a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'qrcode_generator' %}">QR generator</a>
+                                    </li>
+                                    {% if user.is_authenticated %}
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'qrcode_slug_generator' %}">QR + slug</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
                             </li>
                         </ul>
                     {% endwith %}
                     {% if user.is_authenticated %}
-                        <div class="dropdown text-end navbar-nav">
-                            <a href="#"
-                               class="nav-link d-block link-body-emphasis text-decoration-none dropdown-toggle"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="true">
-                                Welcome, {{ user.username }}
-                                {# djlint:off #}
-{#                                <img src="https://github.com/mdo.png" alt="mdo" width="32" height="32" class="rounded-circle">#}
-                                {# djlint:on #}
-                            </a>
-                            {# djlint:off #}
-                            <ul class="dropdown-menu text-small"
-                                style="position: absolute;
-                                       inset: 0px 0px auto auto;
-                                       margin: 0px;
-                                       transform: translate(0px, 34px)"
-                                data-popper-placement="bottom-end">
-                            {# djlint:on #}
-                            {% if user.is_superuser %}
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'admin:index' %}">{% trans "Admin Area" %}</a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                            {% endif %}
-                            <li>
-                                <hr class="dropdown-divider">
+                        <ul class="navbar-nav">
+                            <li class="nav-item dropdown">
+                                <a href="#"
+                                   class="nav-link dropdown-toggle"
+                                   role="button"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">Welcome, {{ user.username }}</a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if user.is_superuser %}
+                                        <li>
+                                            <h6 class="dropdown-header">
+                                                {% trans "Manage accounts" %}
+                                            </h6>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'availability:admin' %}">{% trans "Google calendar accounts" %}</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'admin:index' %}">{% trans "Django admin" %}</a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                    {% endif %}
+                                    {% url 'account_logout' as logout_url_ %}
+                                    {% if logout_url_ %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ logout_url_ }}">{% trans "Sign Out" %}</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
                             </li>
-                            {% url 'account_logout' as logout_url_ %}
-                            {% if logout_url_ %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ logout_url_ }}">{% trans "Sign Out" %}</a>
-                                </li>
-                            {% endif %}
                         </ul>
-                    </div>
-                {% else %}
-                    <div>
-                        <a type="button"
-                           class="btn btn-outline-light"
-                           href="{% url 'account_login' %}">Login</a>
-                    </div>
-                {% endif %}
-                {# djlint:off #}
+                    {% else %}
+                        <div>
+                            <a type="button"
+                               class="btn btn-outline-light"
+                               href="{% url 'account_login' %}">Login</a>
+                        </div>
+                    {% endif %}
+                    {# djlint:off #}
 {#                    <form role="search">#}
 {#                        <input class="form-control" type="search" placeholder="Search" aria-label="Search">#}
 {#                    </form>#}
-                {# djlint:on #}
+                    {# djlint:on #}
+                </div>
             </div>
+        </nav>
+        <div class="container my-5">
+            {% block content %}
+            {% endblock content %}
         </div>
-    </nav>
-    <div class="container my-5">
-        {% block content %}
-        {% endblock content %}
-    </div>
-    <footer class="footer sc-footer mt-auto py-4">
-        <div class="container">
-            {% block footer_text %}
-            {% endblock footer_text %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 620 160"
-                 role="img"
-                 aria-label="Secret Codes (morse)"
-                 class="sc-footer__morse">
-                <title>Secret Codes</title>
-                <text x="20" y="80" class="sc-opsz-display" font-family="Fraunces, serif" font-weight="500" font-size="72" letter-spacing="-1.5" fill="currentColor">Secret Codes</text>
-                <line x1="20" y1="96" x2="240" y2="96" stroke="currentColor" stroke-width="1.2"></line>
-                <line x1="260" y1="96" x2="440" y2="96" stroke="var(--sc-accent)" stroke-width="1.2"></line>
-                <line x1="460" y1="96" x2="600" y2="96" stroke="currentColor" stroke-width="1.2"></line>
-                <text x="20" y="128" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2" fill="currentColor" opacity="0.82">... .   -.-. .-. . -    -.-. --- -.. . ...</text>
-                <text x="20" y="150" font-family="'JetBrains Mono', monospace" font-size="9" letter-spacing="3" fill="currentColor" opacity="0.5">S · E · C · R · E · T     C · O · D · E · S</text>
-            </svg>
-            <div class="small sc-mono mb-3">
-                <a href="{% url 'about' %}">About</a>
-                ·
-                <a href="{% url 'privacy' %}">Privacy</a>
-                ·
-                <a href="{% url 'terms' %}">Terms</a>
+        <footer class="footer sc-footer mt-auto py-4">
+            <div class="container">
+                {% block footer_text %}
+                {% endblock footer_text %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 620 160"
+                     role="img"
+                     aria-label="Secret Codes (morse)"
+                     class="sc-footer__morse">
+                    <title>Secret Codes</title>
+                    <text x="20" y="80" class="sc-opsz-display" font-family="Fraunces, serif" font-weight="500" font-size="72" letter-spacing="-1.5" fill="currentColor">Secret Codes</text>
+                    <line x1="20" y1="96" x2="240" y2="96" stroke="currentColor" stroke-width="1.2"></line>
+                    <line x1="260" y1="96" x2="440" y2="96" stroke="var(--sc-accent)" stroke-width="1.2"></line>
+                    <line x1="460" y1="96" x2="600" y2="96" stroke="currentColor" stroke-width="1.2"></line>
+                    <text x="20" y="128" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2" fill="currentColor" opacity="0.82">... .   -.-. .-. . -    -.-. --- -.. . ...</text>
+                    <text x="20" y="150" font-family="'JetBrains Mono', monospace" font-size="9" letter-spacing="3" fill="currentColor" opacity="0.5">S · E · C · R · E · T     C · O · D · E · S</text>
+                </svg>
+                <nav class="small sc-mono mb-3" aria-label="Site footer navigation">
+                    <a href="{% url 'index' %}">Home</a>
+                    ·
+                    <a href="{% url 'about' %}">About</a>
+                    ·
+                    <a href="{% url 'availability:week_grid' %}">Availability</a>
+                    ·
+                    <a href="{% url 'agents' %}">Agents</a>
+                    ·
+                    <a href="{% url 'qrcode_generator' %}">QR</a>
+                    ·
+                    <a href="https://github.com/Mariatta/secretcodes">Source</a>
+                    ·
+                    <a href="{% url 'privacy' %}">Privacy</a>
+                    ·
+                    <a href="{% url 'terms' %}">Terms</a>
+                </nav>
+                <ul class="sc-footer__socials" aria-label="Mariatta's online presence">
+                    <li>
+                        <a href="https://mariatta.ca"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="Website"
+                           title="mariatta.ca">
+                            <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://fosstodon.org/@mariatta"
+                           target="_blank"
+                           rel="me noopener"
+                           aria-label="Mastodon">
+                            <i class="fa-brands fa-mastodon" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://bsky.app/profile/mariatta.ca"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="Bluesky">
+                            <i class="fa-brands fa-bluesky" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.linkedin.com/in/mariatta"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="LinkedIn">
+                            <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.instagram.com/mariatta81"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="Instagram">
+                            <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/Mariatta/secretcodes"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="GitHub source">
+                            <i class="fa-brands fa-github" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                </ul>
+                <div class="small sc-mono sc-footer__by">
+                    by <a href="https://mariatta.ca" target="_blank" rel="noopener">mariatta.ca</a>
+                </div>
             </div>
-            <ul class="sc-footer__socials" aria-label="Mariatta's online presence">
-                <li>
-                    <a href="https://mariatta.ca"
-                       target="_blank"
-                       rel="noopener"
-                       aria-label="Website"
-                       title="mariatta.ca">
-                        <i class="fa-solid fa-globe" aria-hidden="true"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://fosstodon.org/@mariatta"
-                       target="_blank"
-                       rel="me noopener"
-                       aria-label="Mastodon">
-                        <i class="fa-brands fa-mastodon" aria-hidden="true"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://bsky.app/profile/mariatta.ca"
-                       target="_blank"
-                       rel="noopener"
-                       aria-label="Bluesky">
-                        <i class="fa-brands fa-bluesky" aria-hidden="true"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://www.linkedin.com/in/mariatta"
-                       target="_blank"
-                       rel="noopener"
-                       aria-label="LinkedIn">
-                        <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://www.instagram.com/mariatta81"
-                       target="_blank"
-                       rel="noopener"
-                       aria-label="Instagram">
-                        <i class="fa-brands fa-instagram" aria-hidden="true"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://github.com/Mariatta/secretcodes"
-                       target="_blank"
-                       rel="noopener"
-                       aria-label="GitHub source">
-                        <i class="fa-brands fa-github" aria-hidden="true"></i>
-                    </a>
-                </li>
-            </ul>
-            <div class="small sc-mono sc-footer__by">
-                by <a href="https://mariatta.ca" target="_blank" rel="noopener">mariatta.ca</a>
-            </div>
-        </div>
-    </footer>
-</body>
+        </footer>
+    </body>
 </html>
