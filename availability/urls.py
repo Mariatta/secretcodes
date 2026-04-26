@@ -9,6 +9,11 @@ urlpatterns = [
     path("slots.json", views.slots_json, name="slots_json"),
     path("check/", views.check, name="check"),
     path("admin/", views.admin_page, name="admin"),
+    path(
+        "admin/delete/<int:account_id>/",
+        views.delete_account,
+        name="delete_account",
+    ),
     path("oauth/start/", views.oauth_start, name="oauth_start"),
     path("oauth/callback/", views.oauth_callback, name="oauth_callback"),
 ]

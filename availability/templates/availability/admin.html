@@ -8,7 +8,7 @@
     </h1>
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-success">
+            <div class="alert alert-{{ message.tags|default:'info' }}">
                 {{ message }}
             </div>
         {% endfor %}
@@ -19,10 +19,20 @@
     {% if accounts %}
         <ul class="list-group">
             {% for account in accounts %}
-                <li class="list-group-item">
-                    <strong>{{ account.label }}</strong> · {{ account.email }}
-                    <br>
-                    <small class="text-muted">{{ account.tracked_calendars.count }} tracked calendar{{ account.tracked_calendars.count|pluralize }}</small>
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>{{ account.label }}</strong> · {{ account.email }}
+                        <br>
+                        <small class="text-muted">{{ account.tracked_calendars.count }} tracked calendar{{ account.tracked_calendars.count|pluralize }}</small>
+                    </div>
+                    <form method="post"
+                          action="{% url 'availability:delete_account' account.pk %}"
+                          onsubmit="return confirm('Disconnect {{ account.email|escapejs }}? This revokes the OAuth grant at Google and removes all tracked calendars.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Delete
+                        </button>
+                    </form>
                 </li>
             {% endfor %}
         </ul>
