@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseBadRequest, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -23,7 +23,7 @@ from .services.availability import (
 )
 from .services.google import fetch_busy_blocks_for_all, has_active_calendars
 from .services.mcp import dispatch as mcp_dispatch
-from .services.oauth import build_flow, fetch_user_email
+from .services.oauth import build_flow, fetch_user_email, revoke_token
 
 superuser_required = user_passes_test(lambda u: u.is_superuser)
 
@@ -240,6 +240,32 @@ def oauth_callback(request):
     )
 
     messages.success(request, f"Connected {email}")
+    return redirect(reverse("availability:admin"))
+
+
+@login_required
+@superuser_required
+@require_POST
+def delete_account(request, account_id):
+    """Disconnect a Google account: revoke at Google, then delete locally.
+
+    Revocation is best-effort — if Google's revoke endpoint is unreachable
+    we still delete the local record (the user can always revoke manually
+    at myaccount.google.com/permissions). Cascade removes TrackedCalendar
+    rows via the FK.
+    """
+    account = get_object_or_404(GoogleAccount, pk=account_id)
+    email = account.email
+    revoked = revoke_token(account.refresh_token)
+    account.delete()
+    if revoked:
+        messages.success(request, f"Disconnected {email}")
+    else:
+        messages.warning(
+            request,
+            f"Disconnected {email} locally, but Google's revoke endpoint did "
+            "not confirm. Revoke manually at myaccount.google.com/permissions.",
+        )
     return redirect(reverse("availability:admin"))
 
 

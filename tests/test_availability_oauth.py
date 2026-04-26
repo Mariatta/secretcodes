@@ -1,11 +1,17 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from django.test import override_settings
 from django.urls import reverse
 
 from availability.models import GoogleAccount, TrackedCalendar
-from availability.services.oauth import OAUTH_SCOPES, build_flow, fetch_user_email
+from availability.services.oauth import (
+    OAUTH_SCOPES,
+    build_flow,
+    fetch_user_email,
+    revoke_token,
+)
 
 OAUTH_SETTINGS = dict(
     GOOGLE_CLIENT_ID="cid",
@@ -225,6 +231,170 @@ def test_oauth_callback_rejects_missing_code(client, django_user_model):
     session.save()
     response = client.get(reverse("availability:oauth_callback"), {"state": "s"})
     assert response.status_code == 400
+
+
+def _mock_response(status_code, json_body=None):
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = json_body or {}
+    return resp
+
+
+def test_revoke_token_returns_true_for_empty_token():
+    assert revoke_token("") is True
+
+
+def test_revoke_token_returns_true_on_200():
+    with patch(
+        "availability.services.oauth.requests.post",
+        return_value=_mock_response(200),
+    ) as post:
+        assert revoke_token("r-tok") is True
+    post.assert_called_once()
+    call = post.call_args
+    assert call.args[0] == "https://oauth2.googleapis.com/revoke"
+    assert call.kwargs["data"] == {"token": "r-tok"}
+
+
+def test_revoke_token_returns_true_when_already_invalid():
+    with patch(
+        "availability.services.oauth.requests.post",
+        return_value=_mock_response(400, {"error": "invalid_token"}),
+    ):
+        assert revoke_token("r-tok") is True
+
+
+def test_revoke_token_returns_false_on_other_4xx_body():
+    with patch(
+        "availability.services.oauth.requests.post",
+        return_value=_mock_response(400, {"error": "something_else"}),
+    ):
+        assert revoke_token("r-tok") is False
+
+
+def test_revoke_token_returns_false_on_non_json_400():
+    resp = MagicMock()
+    resp.status_code = 400
+    resp.json.side_effect = ValueError("no json")
+    with patch("availability.services.oauth.requests.post", return_value=resp):
+        assert revoke_token("r-tok") is False
+
+
+def test_revoke_token_returns_false_on_5xx():
+    with patch(
+        "availability.services.oauth.requests.post",
+        return_value=_mock_response(503),
+    ):
+        assert revoke_token("r-tok") is False
+
+
+def test_revoke_token_returns_false_on_network_error():
+    with patch(
+        "availability.services.oauth.requests.post",
+        side_effect=requests.ConnectionError(),
+    ):
+        assert revoke_token("r-tok") is False
+
+
+@pytest.mark.django_db
+def test_delete_account_requires_login(client):
+    account = GoogleAccount.objects.create(
+        label="x", email="x@y.com", refresh_token="r"
+    )
+    response = client.post(reverse("availability:delete_account", args=[account.pk]))
+    assert response.status_code == 302
+    assert "accounts/login" in response.url
+    assert GoogleAccount.objects.filter(pk=account.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_account_rejects_non_superuser(client, django_user_model):
+    user = django_user_model.objects.create_user("regular", password="p")
+    client.force_login(user)
+    account = GoogleAccount.objects.create(
+        label="x", email="x@y.com", refresh_token="r"
+    )
+    response = client.post(reverse("availability:delete_account", args=[account.pk]))
+    assert response.status_code == 302
+    assert "accounts/login" in response.url
+    assert GoogleAccount.objects.filter(pk=account.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_account_rejects_get(client, django_user_model):
+    user = django_user_model.objects.create_superuser(
+        "u", email="u@example.com", password="p"
+    )
+    client.force_login(user)
+    account = GoogleAccount.objects.create(
+        label="x", email="x@y.com", refresh_token="r"
+    )
+    response = client.get(reverse("availability:delete_account", args=[account.pk]))
+    assert response.status_code == 405
+    assert GoogleAccount.objects.filter(pk=account.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_account_404_for_unknown_id(client, django_user_model):
+    user = django_user_model.objects.create_superuser(
+        "u", email="u@example.com", password="p"
+    )
+    client.force_login(user)
+    response = client.post(reverse("availability:delete_account", args=[9999]))
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_delete_account_revokes_at_google_and_removes_row(client, django_user_model):
+    user = django_user_model.objects.create_superuser(
+        "u", email="u@example.com", password="p"
+    )
+    client.force_login(user)
+    account = GoogleAccount.objects.create(
+        label="personal", email="me@personal.com", refresh_token="r-tok"
+    )
+    TrackedCalendar.objects.create(
+        account=account,
+        google_calendar_id="primary",
+        display_label="Primary",
+        is_active=True,
+    )
+
+    with patch("availability.views.revoke_token", return_value=True) as revoke:
+        response = client.post(
+            reverse("availability:delete_account", args=[account.pk]),
+            follow=True,
+        )
+
+    revoke.assert_called_once_with("r-tok")
+    assert response.status_code == 200
+    assert response.redirect_chain[-1][0] == reverse("availability:admin")
+    assert not GoogleAccount.objects.filter(pk=account.pk).exists()
+    assert not TrackedCalendar.objects.filter(account_id=account.pk).exists()
+    assert b"Disconnected me@personal.com" in response.content
+
+
+@pytest.mark.django_db
+def test_delete_account_proceeds_when_revoke_fails(client, django_user_model):
+    user = django_user_model.objects.create_superuser(
+        "u", email="u@example.com", password="p"
+    )
+    client.force_login(user)
+    account = GoogleAccount.objects.create(
+        label="x", email="me@personal.com", refresh_token="r-tok"
+    )
+
+    with patch("availability.views.revoke_token", return_value=False):
+        response = client.post(
+            reverse("availability:delete_account", args=[account.pk]),
+            follow=True,
+        )
+
+    assert response.status_code == 200
+    assert not GoogleAccount.objects.filter(pk=account.pk).exists()
+    assert b"Google&#x27;s revoke endpoint did" in response.content or (
+        b"Google's revoke endpoint did" in response.content
+    )
 
 
 @pytest.mark.django_db
