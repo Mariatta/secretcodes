@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_title %}
     Accept invitation · {{ block.super }}
-{% endblock %}
+{% endblock head_title %}
 {% block content %}
     <h1>
         Join {{ invitation.event.name }}?
@@ -36,4 +36,4 @@
         <a class="btn btn-outline-secondary"
            href="{% url 'expenses:event_list' %}">Not now</a>
     </form>
-{% endblock %}
+{% endblock content %}

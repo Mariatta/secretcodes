@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_title %}
     {{ event.name }} · Overview · {{ block.super }}
-{% endblock %}
+{% endblock head_title %}
 {% block content %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -120,4 +120,4 @@
             All settled.
         </p>
     {% endif %}
-{% endblock %}
+{% endblock content %}

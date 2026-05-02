@@ -2,7 +2,7 @@
 {% load django_bootstrap5 %}
 {% block head_title %}
     Set up your account · {{ block.super }}
-{% endblock %}
+{% endblock head_title %}
 {% block content %}
     <h1>
         Set up your account
@@ -30,4 +30,4 @@
         </button>
         <a class="btn btn-outline-secondary" href="{% url 'account_login' %}">I already have an account</a>
     </form>
-{% endblock %}
+{% endblock content %}

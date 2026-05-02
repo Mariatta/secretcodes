@@ -7,7 +7,7 @@
         Log
     {% endif %}
     expense · {{ event.name }} · {{ block.super }}
-{% endblock %}
+{% endblock head_title %}
 {% block content %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -65,4 +65,4 @@
             {% endif %}
         </div>
     </form>
-{% endblock %}
+{% endblock content %}

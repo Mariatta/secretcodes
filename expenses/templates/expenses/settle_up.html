@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_title %}
     Settle up · {{ event.name }} · {{ block.super }}
-{% endblock %}
+{% endblock head_title %}
 {% block content %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -52,4 +52,4 @@
         <a class="btn btn-outline-secondary"
            href="{% url 'expenses:event_overview' event_id=event.pk %}">Back</a>
     {% endif %}
-{% endblock %}
+{% endblock content %}
