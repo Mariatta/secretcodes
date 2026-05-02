@@ -1,6 +1,7 @@
 asgiref==3.11.1
 Django==5.2.13
 django-allauth==65.16.1
+markdown==3.10
 django-filter==25.2
 django-ratelimit==4.1.0
 django-tables2==3.0.0

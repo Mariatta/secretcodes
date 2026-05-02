@@ -224,6 +224,10 @@ def test_send_invitation_email_dispatches_and_marks_sent(
     assert "send_test@example.com" in message.to
     assert event.name in message.subject
     assert "/expenses/accept/" in message.body
+    html_body, content_type = message.alternatives[0]
+    assert content_type == "text/html"
+    assert "/expenses/accept/" in html_body
+    assert "<a " in html_body
     invite = ExpenseInvitation.objects.get(email="send_test@example.com")
     assert invite.sent_at is not None
 
