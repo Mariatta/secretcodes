@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block head_title %}
+    {{ event.name }} · Overview · {{ block.super }}
+{% endblock %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item active">
+                {{ event.name }}
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1>
+                {{ event.name }}
+            </h1>
+            <p class="text-muted mb-0">
+                {% if event.start_date %}
+                    {{ event.start_date|date:"M j, Y" }}
+                {% endif %}
+                {% if event.end_date %}
+                    – {{ event.end_date|date:"M j, Y" }}
+                {% endif %}
+                · base currency {{ event.base_currency }}
+            </p>
+        </div>
+        <div>
+            {% if user == event.owner or user.is_superuser %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:invite_create' event_id=event.pk %}">Invite</a>
+            {% endif %}
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_ledger' event_id=event.pk %}">Ledger</a>
+            <a class="btn btn-primary"
+               href="{% url 'expenses:expense_create' event_id=event.pk %}">Log expense</a>
+        </div>
+    </div>
+    {% include "expenses/_summary.html" %}
+    <h2 class="h4 mt-4">
+        Balances
+    </h2>
+    {% if rows %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            Participant
+                        </th>
+                        <th class="text-end">
+                            Paid
+                        </th>
+                        <th class="text-end">
+                            Their share
+                        </th>
+                        <th class="text-end">
+                            Net
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>
+                                {{ row.participant.display_name|default:row.participant }}
+                            </td>
+                            <td class="text-end font-monospace">
+                                {{ row.paid }}
+                            </td>
+                            <td class="text-end font-monospace">
+                                {{ row.shared }}
+                            </td>
+                            <td class="text-end font-monospace {% if row.balance > 0 %}text-success{% elif row.balance < 0 %}text-danger{% endif %}">
+                                {{ row.balance }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted">
+            No expenses yet.
+        </p>
+    {% endif %}
+    <h2 class="h4 mt-5">
+        Suggested settlements
+    </h2>
+    {% if transfers %}
+        <ul class="list-group">
+            {% for t in transfers %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>
+                            <strong>{{ t.debtor.display_name|default:t.debtor }}</strong>
+                            →
+                            <strong>{{ t.creditor.display_name|default:t.creditor }}</strong>
+                        </span>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="font-monospace">{{ t.amount }} {{ event.base_currency }}</span>
+                            <a class="btn btn-sm btn-outline-success"
+                               href="{% url 'expenses:settle_up' event_id=event.pk debtor_id=t.debtor.pk creditor_id=t.creditor.pk %}">Mark as paid</a>
+                        </div>
+                    </div>
+                    {% if t.creditor.payment_info %}
+                        <div class="small text-muted mt-1" style="white-space: pre-line;">
+                            How to pay {{ t.creditor.display_name|default:t.creditor }}:
+                            {{ t.creditor.payment_info }}
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            All settled.
+        </p>
+    {% endif %}
+{% endblock %}

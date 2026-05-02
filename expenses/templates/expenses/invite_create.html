@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    Invite to {{ event.name }} · {{ block.super }}
+{% endblock %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Invite
+            </li>
+        </ol>
+    </nav>
+    <h1>
+        Invite to {{ event.name }}
+    </h1>
+    <form method="post" class="mt-4" style="max-width: 480px;">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button type="submit" class="btn btn-primary">
+            Send invite
+        </button>
+        <a class="btn btn-outline-secondary"
+           href="{% url 'expenses:event_overview' event_id=event.pk %}">Cancel</a>
+    </form>
+    {% if pending %}
+        <h2 class="h5 mt-5">
+            Pending invitations
+        </h2>
+        <ul class="list-group" style="max-width: 480px;">
+            {% for invite in pending %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <div>
+                        <div>
+                            {{ invite.email }}
+                        </div>
+                        {% if invite.display_name %}
+                            <small class="text-muted">{{ invite.display_name }}</small>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted align-self-center">
+                        sent {{ invite.sent_at|date:"M j"|default:"—" }}
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

@@ -9,12 +9,13 @@
         <meta charset="UTF-8" />
         <title>
             {% block head_title %}
+                Secret Codes by Mariatta
             {% endblock head_title %}
         </title>
         <meta property="og:title"
-              content="{% block og_title %}Secret Codes{% endblock og_title %}" />
+              content="{% block og_title %}Secret Codes by Mariatta{% endblock og_title %}" />
         <meta property="og:description"
-              content="{% block og_description %}Mariatta's Secret Codes{% endblock og_description %}" />
+              content="{% block og_description %}Mariatta's Secret Codes — small useful tools, open source.{% endblock og_description %}" />
         <meta property="og:type"
               content="{% block og_type %}website{% endblock og_type %}" />
         <meta property="og:url"
@@ -23,7 +24,7 @@
               content="{% block og_image %}{% endblock og_image %}" />
         <meta property="og:image:alt"
               content="{% block og_image_alt %}{% endblock og_image_alt %}">
-        <meta property="og:site_name" content="Secret Codes" />
+        <meta property="og:site_name" content="Secret Codes by Mariatta" />
         <meta property="og:locale" content="en_US">
         <link rel="icon"
               type="image/svg+xml"
@@ -47,7 +48,7 @@
             <div class="container-fluid">
                 <a class="navbar-brand sc-brand-link d-inline-flex align-items-center"
                    href="https://secretcodes.dev"
-                   aria-label="Secret Codes">
+                   aria-label="Secret Codes by Mariatta">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          viewBox="0 0 560 180"
                          role="img"
@@ -125,6 +126,11 @@
                                         </li>
                                     {% endif %}
                                 </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link{% if ns == 'expenses' %} active{% endif %}"
+                                   {% if ns == 'expenses' %}aria-current="page"{% endif %}
+                                   href="{% url 'expenses:event_list' %}">Expenses</a>
                             </li>
                         </ul>
                     {% endwith %}
@@ -211,6 +217,8 @@
                     <a href="{% url 'agents' %}">Agents</a>
                     ·
                     <a href="{% url 'qrcode_generator' %}">QR</a>
+                    ·
+                    <a href="{% url 'expenses:event_list' %}">Expenses</a>
                     ·
                     <a href="https://github.com/Mariatta/secretcodes">Source</a>
                     ·

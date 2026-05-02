@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Settle up · {{ event.name }} · {{ block.super }}
+{% endblock %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Settle up
+            </li>
+        </ol>
+    </nav>
+    <h1>
+        Mark as paid
+    </h1>
+    <p class="lead">
+        <strong>{{ debtor.display_name|default:debtor }}</strong>
+        →
+        <strong>{{ creditor.display_name|default:creditor }}</strong>:
+        <span class="font-monospace">{{ total }} {{ event.base_currency }}</span>
+    </p>
+    {% if shares %}
+        <p class="text-muted">
+            This will mark the following {{ shares|length }} share{{ shares|length|pluralize }} as reimbursed:
+        </p>
+        <ul class="list-group mb-4" style="max-width: 640px;">
+            {% for share in shares %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ share.expense.description }} <small class="text-muted">({{ share.expense.paid_at|date:"M j" }})</small></span>
+                    <span class="font-monospace">{{ share.share_amount }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+                Confirm — mark as paid
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_overview' event_id=event.pk %}">Cancel</a>
+        </form>
+    {% else %}
+        <p class="text-muted">
+            Nothing to settle here.
+        </p>
+        <a class="btn btn-outline-secondary"
+           href="{% url 'expenses:event_overview' event_id=event.pk %}">Back</a>
+    {% endif %}
+{% endblock %}

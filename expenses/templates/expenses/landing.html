@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Expenses · {{ block.super }}
+{% endblock %}
+{% block content %}
+    <section class="sc-hero py-4 mb-5">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">04</span>Expenses
+        </div>
+        <h1 class="sc-display mb-4">
+            Shared expenses, <em class="sc-italic">untangled</em>.
+        </h1>
+        <p class="sc-muted sc-lede mb-4">
+            A small expense tracker for trips and gatherings.
+            Log who paid for what, split it among the people who were there,
+            and see at a glance who owes whom. Receipts kept private.
+            No ads, no tracking.
+        </p>
+        <p class="sc-muted mb-4">
+            <strong>Friends and family only, for now.</strong>
+            {% if user.is_authenticated %}
+                You're signed in but don't have access yet — send a signal and I'll add you.
+            {% endif %}
+        </p>
+        {% if not user.is_authenticated %}
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'account_login' %}" class="sc-btn sc-btn--accent">
+                    Sign in
+                </a>
+            </div>
+        {% endif %}
+    </section>
+    <div class="sc-coords mb-4">
+        <span><b>STATUS</b> invitation only</span>
+        <span><b>SIGNAL</b> ·  ·  · —</span>
+        <span><b>OWNER</b> @mariatta</span>
+    </div>
+{% endblock %}

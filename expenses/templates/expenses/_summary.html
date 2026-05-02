@@ -1,0 +1,41 @@
+{# Per-event + per-viewer running totals card. Expects `summary` and `event` in context. #}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">
+                    Event total
+                </div>
+                <div class="h4 mb-0 font-monospace">
+                    {{ summary.event_total }} {{ event.base_currency }}
+                </div>
+            </div>
+            {% if summary.viewer %}
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">
+                        You paid
+                    </div>
+                    <div class="h4 mb-0 font-monospace">
+                        {{ summary.my_paid }} {{ event.base_currency }}
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">
+                        Your share
+                    </div>
+                    <div class="h4 mb-0 font-monospace">
+                        {{ summary.my_shared }} {{ event.base_currency }}
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">
+                        Net
+                    </div>
+                    <div class="h4 mb-0 font-monospace {% if summary.my_balance > 0 %}text-success{% elif summary.my_balance < 0 %}text-danger{% endif %}">
+                        {{ summary.my_balance }} {{ event.base_currency }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
