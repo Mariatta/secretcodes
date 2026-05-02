@@ -31,6 +31,11 @@ class QRCode(BaseModel):
     visit_count = models.IntegerField("visit_count", default=0)
     last_visited = models.DateTimeField("last_visited", blank=True, null=True)
 
+    class Meta:
+        permissions = [
+            ("create_slug_qrcode", "Can create slug-style QR codes"),
+        ]
+
     def __str__(self):
         return self.description
 

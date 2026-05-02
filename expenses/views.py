@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Sum
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden
@@ -20,7 +20,6 @@ from .models import (
     Participant,
 )
 from .permissions import (
-    EXPENSES_GROUP,
     event_participant_required,
     is_expenses_user,
 )
@@ -458,9 +457,11 @@ def _accept_with_signup(request, invitation):
 
 
 def _accept_invitation(invitation: ExpenseInvitation, user) -> None:
-    """Mark accepted, add user to expenses group, link Participant."""
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    user.groups.add(group)
+    """Mark accepted, grant access permission, link Participant."""
+    perm = Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
+    user.user_permissions.add(perm)
     participant, _ = Participant.objects.get_or_create(
         event=invitation.event,
         invited_email=invitation.email,

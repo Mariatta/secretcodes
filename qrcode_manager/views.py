@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -7,9 +7,10 @@ from django.utils import timezone
 
 from .forms import QRCodePreviewForm, QRCodeWithSlugPreviewForm
 from .models import QRCode
+from .permissions import is_qr_slug_user
 
 
-@login_required
+@user_passes_test(is_qr_slug_user)
 def qrcode_slug_generator(request):
     context = {"name": request.user.username}
 

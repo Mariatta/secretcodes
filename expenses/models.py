@@ -95,6 +95,9 @@ class Event(BaseModel):
 
     class Meta:
         ordering = ["-start_date", "-creation_date"]
+        permissions = [
+            ("access_expenses", "Can access the expenses module"),
+        ]
 
     def __str__(self):
         return self.name

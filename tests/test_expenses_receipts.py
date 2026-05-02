@@ -8,7 +8,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
@@ -21,7 +21,6 @@ from expenses.models import (
     Expense,
     Participant,
 )
-from expenses.permissions import EXPENSES_GROUP
 from expenses.storage import EncryptedFileSystemStorage
 
 User = get_user_model()
@@ -153,8 +152,10 @@ def test_receipt_download_serves_decrypted_to_participant(
     assert form.is_valid()
     expense = form.save()
 
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    payer.user.groups.add(group)
+    perm = Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
+    payer.user.user_permissions.add(perm)
     payer.user.set_password("pw")
     payer.user.save()
     client.login(username=payer.user.username, password="pw")
@@ -176,8 +177,10 @@ def test_expense_create_view_persists_uploaded_receipt(
     """Regression: the view must pass request.FILES into the form, or
     the FileField never gets the upload and receipt stays empty."""
     payer, *_ = participants
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    payer.user.groups.add(group)
+    perm = Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
+    payer.user.user_permissions.add(perm)
     payer.user.set_password("pw")
     payer.user.save()
     client.login(username=payer.user.username, password="pw")
@@ -216,8 +219,11 @@ def test_receipt_download_blocked_for_non_participant(
     expense = form.save()
 
     outsider = User.objects.create_user(username="rando", password="pw")
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    outsider.groups.add(group)
+    outsider.user_permissions.add(
+        Permission.objects.get(
+            codename="access_expenses", content_type__app_label="expenses"
+        )
+    )
     client.login(username="rando", password="pw")
 
     response = client.get(

@@ -5,19 +5,19 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from expenses.models import Category, Event, Expense, ExpenseShare, Participant
-from expenses.permissions import EXPENSES_GROUP
 
 User = get_user_model()
 
 
 @pytest.fixture
-def expenses_group(db):
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    return group
+def expenses_perm(db):
+    return Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
 
 
 @pytest.fixture
@@ -48,26 +48,26 @@ def test_event_list_landing_visible_to_unauthorized_user(client):
     assert b"don't have access yet" in response.content
 
 
-def test_event_list_renders_for_group_member(client, expenses_group):
+def test_event_list_renders_for_group_member(client, expenses_perm):
     user = _login(client, "insider")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     response = client.get(reverse("expenses:event_list"))
     assert response.status_code == 200
 
 
-def test_event_overview_hidden_from_non_participants(client, expenses_group, event):
+def test_event_overview_hidden_from_non_participants(client, expenses_perm, event):
     """Even with the group, non-participants get a 404."""
     user = _login(client, "stranger")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     response = client.get(
         reverse("expenses:event_overview", kwargs={"event_id": event.pk})
     )
     assert response.status_code == 404
 
 
-def test_event_overview_visible_to_participant(client, expenses_group, event):
+def test_event_overview_visible_to_participant(client, expenses_perm, event):
     user = _login(client, "member")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     Participant.objects.create(event=event, user=user, display_name="Member")
     response = client.get(
         reverse("expenses:event_overview", kwargs={"event_id": event.pk})
@@ -95,9 +95,9 @@ def _make_expense(event, payer_participant, *, created_by):
     return expense
 
 
-def test_expense_delete_creator_succeeds(client, expenses_group, event):
+def test_expense_delete_creator_succeeds(client, expenses_perm, event):
     creator = _login(client, "creator")
-    creator.groups.add(expenses_group)
+    creator.user_permissions.add(expenses_perm)
     part = Participant.objects.create(event=event, user=creator, display_name="C")
     expense = _make_expense(event, part, created_by=creator)
     response = client.post(
@@ -110,7 +110,7 @@ def test_expense_delete_creator_succeeds(client, expenses_group, event):
     assert not Expense.objects.filter(pk=expense.pk).exists()
 
 
-def test_expense_edit_non_creator_forbidden(client, expenses_group, event):
+def test_expense_edit_non_creator_forbidden(client, expenses_perm, event):
     """Edit requires creator or superuser, same as delete."""
     creator = User.objects.create_user(username="orig3")
     Participant.objects.create(event=event, user=creator, display_name="Orig3")
@@ -118,7 +118,7 @@ def test_expense_edit_non_creator_forbidden(client, expenses_group, event):
     expense = _make_expense(event, part_creator, created_by=creator)
 
     other = _login(client, "other_edit")
-    other.groups.add(expenses_group)
+    other.user_permissions.add(expenses_perm)
     Participant.objects.create(event=event, user=other, display_name="OtherEdit")
 
     response = client.get(
@@ -138,9 +138,9 @@ def test_expense_edit_non_creator_forbidden(client, expenses_group, event):
     assert response.status_code == 403
 
 
-def test_expense_edit_creator_succeeds(client, expenses_group, event):
+def test_expense_edit_creator_succeeds(client, expenses_perm, event):
     creator = _login(client, "creator_edit")
-    creator.groups.add(expenses_group)
+    creator.user_permissions.add(expenses_perm)
     part = Participant.objects.create(event=event, user=creator, display_name="C")
     expense = _make_expense(event, part, created_by=creator)
     response = client.get(
@@ -152,14 +152,14 @@ def test_expense_edit_creator_succeeds(client, expenses_group, event):
     assert response.status_code == 200
 
 
-def test_expense_delete_non_creator_forbidden(client, expenses_group, event):
+def test_expense_delete_non_creator_forbidden(client, expenses_perm, event):
     creator = User.objects.create_user(username="orig")
     Participant.objects.create(event=event, user=creator, display_name="Orig")
     part_creator = Participant.objects.get(user=creator)
     expense = _make_expense(event, part_creator, created_by=creator)
 
     other = _login(client, "other")
-    other.groups.add(expenses_group)
+    other.user_permissions.add(expenses_perm)
     Participant.objects.create(event=event, user=other, display_name="Other")
 
     response = client.post(
@@ -172,7 +172,7 @@ def test_expense_delete_non_creator_forbidden(client, expenses_group, event):
     assert Expense.objects.filter(pk=expense.pk).exists()
 
 
-def test_expense_delete_superuser_succeeds(client, expenses_group, event):
+def test_expense_delete_superuser_succeeds(client, expenses_perm, event):
     creator = User.objects.create_user(username="orig2")
     Participant.objects.create(event=event, user=creator, display_name="Orig2")
     part_creator = Participant.objects.get(user=creator)
@@ -190,7 +190,7 @@ def test_expense_delete_superuser_succeeds(client, expenses_group, event):
     assert not Expense.objects.filter(pk=expense.pk).exists()
 
 
-def test_event_list_superuser_sees_all_events(client, expenses_group, event):
+def test_event_list_superuser_sees_all_events(client, expenses_perm, event):
     """Superusers see every event regardless of participation."""
     User.objects.create_superuser(username="rootadmin", password="pw")
     client.login(username="rootadmin", password="pw")
@@ -199,18 +199,17 @@ def test_event_list_superuser_sees_all_events(client, expenses_group, event):
     assert event.name.encode() in response.content
 
 
-def test_expenses_user_required_returns_403_for_event_view(
-    client, expenses_group, event
-):
-    """Logged-in users without the expenses_users group hitting an event-level
-    URL hit the expenses_user_required gate before event participation is
-    checked."""
+def test_expenses_user_required_redirects_without_perm(client, expenses_perm, event):
+    """Logged-in users without the access_expenses permission hitting an
+    event-level URL get redirected by user_passes_test to the login page,
+    before event participation is checked."""
     User.objects.create_user(username="lurker", password="pw")
     client.login(username="lurker", password="pw")
     response = client.get(
         reverse("expenses:event_overview", kwargs={"event_id": event.pk})
     )
-    assert response.status_code == 403
+    assert response.status_code == 302
+    assert "/accounts/login/" in response.url
 
 
 def test_viewer_participant_returns_none_for_anonymous(db, event):
@@ -224,7 +223,7 @@ def test_viewer_participant_returns_none_for_anonymous(db, event):
 
 
 def test_accept_invite_get_renders_confirm_page_for_existing_user(
-    client, expenses_group, event
+    client, expenses_perm, event
 ):
     """Existing user logged in as the invited account — GET shows confirm page."""
     from expenses.models import ExpenseInvitation
@@ -234,7 +233,7 @@ def test_accept_invite_get_renders_confirm_page_for_existing_user(
         event=event, email="g2@x", inviter=owner, display_name="G2"
     )
     user = User.objects.create_user(username="g2user", password="pw", email="g2@x")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     client.login(username="g2user", password="pw")
     response = client.get(
         reverse("expenses:accept_invite", kwargs={"key": invitation.key})
@@ -243,10 +242,10 @@ def test_accept_invite_get_renders_confirm_page_for_existing_user(
     assert event.name.encode() in response.content
 
 
-def test_expense_edit_post_persists_changes(client, expenses_group, event):
+def test_expense_edit_post_persists_changes(client, expenses_perm, event):
     """Edit POST runs the form save path and redirects."""
     creator = _login(client, "edit_post_user")
-    creator.groups.add(expenses_group)
+    creator.user_permissions.add(expenses_perm)
     part = Participant.objects.create(event=event, user=creator, display_name="C")
     expense = _make_expense(event, part, created_by=creator)
     cat = expense.category
@@ -270,9 +269,9 @@ def test_expense_edit_post_persists_changes(client, expenses_group, event):
     assert expense.description == "renamed"
 
 
-def test_expense_create_get_renders_blank_form(client, expenses_group, event):
+def test_expense_create_get_renders_blank_form(client, expenses_perm, event):
     user = _login(client, "create_get_user")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     Participant.objects.create(event=event, user=user, display_name="U")
     response = client.get(
         reverse("expenses:expense_create", kwargs={"event_id": event.pk})
@@ -280,9 +279,9 @@ def test_expense_create_get_renders_blank_form(client, expenses_group, event):
     assert response.status_code == 200
 
 
-def test_expense_delete_get_renders_confirmation_page(client, expenses_group, event):
+def test_expense_delete_get_renders_confirmation_page(client, expenses_perm, event):
     creator = _login(client, "delete_get_user")
-    creator.groups.add(expenses_group)
+    creator.user_permissions.add(expenses_perm)
     part = Participant.objects.create(event=event, user=creator, display_name="C")
     expense = _make_expense(event, part, created_by=creator)
     response = client.get(
@@ -295,10 +294,10 @@ def test_expense_delete_get_renders_confirmation_page(client, expenses_group, ev
     assert b"Delete this expense" in response.content
 
 
-def test_receipt_download_404_when_no_receipt(client, expenses_group, event):
+def test_receipt_download_404_when_no_receipt(client, expenses_perm, event):
     """An expense without a receipt should 404 on the download endpoint."""
     user = _login(client, "noreceipt_user")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     part = Participant.objects.create(event=event, user=user, display_name="N")
     expense = _make_expense(event, part, created_by=user)
     assert not expense.receipt
@@ -311,10 +310,10 @@ def test_receipt_download_404_when_no_receipt(client, expenses_group, event):
     assert response.status_code == 404
 
 
-def test_event_list_filters_to_user_events(client, expenses_group):
+def test_event_list_filters_to_user_events(client, expenses_perm):
     """Users only see events they participate in."""
     user = _login(client, "viewer")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
 
     other_owner = User.objects.create_user(username="other_owner")
     mine = Event.objects.create(name="Mine", owner=other_owner, base_currency="USD")

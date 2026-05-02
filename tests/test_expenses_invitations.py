@@ -4,26 +4,26 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from expenses.forms import InvitationForm
 from expenses.models import Event, ExpenseInvitation, Participant
-from expenses.permissions import EXPENSES_GROUP
 
 User = get_user_model()
 
 
 @pytest.fixture
-def expenses_group(db):
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
-    return group
+def expenses_perm(db):
+    return Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
 
 
 @pytest.fixture
-def owner(db, expenses_group):
+def owner(db, expenses_perm):
     user = User.objects.create_user(username="owner", password="pw", email="o@x")
-    user.groups.add(expenses_group)
+    user.user_permissions.add(expenses_perm)
     return user
 
 
@@ -67,7 +67,11 @@ def test_invitation_form_rejects_duplicate_pending(event, owner):
 def test_invite_create_view_owner_only(client, event, owner):
     other = User.objects.create_user(username="rando", password="pw")
     Participant.objects.create(event=event, user=other, display_name="Rando")
-    other.groups.add(Group.objects.get(name=EXPENSES_GROUP))
+    other.user_permissions.add(
+        Permission.objects.get(
+            codename="access_expenses", content_type__app_label="expenses"
+        )
+    )
     client.login(username="rando", password="pw")
     response = client.get(
         reverse("expenses:invite_create", kwargs={"event_id": event.pk})
@@ -101,7 +105,7 @@ def test_accept_invite_links_user_and_grants_group(client, event, owner):
     assert response.status_code == 302
     invitation.refresh_from_db()
     assert invitation.is_accepted
-    assert guest.groups.filter(name=EXPENSES_GROUP).exists()
+    assert guest.has_perm("expenses.access_expenses")
     participant = event.participants.get(invited_email="g@x")
     assert participant.user == guest
     assert participant.joined_at is not None
@@ -168,7 +172,7 @@ def test_accept_invite_signup_creates_user_and_links(client, event, owner):
     user = User.objects.get(username="newbie")
     assert user.email == "newbie@x"
     assert user.check_password("S3curePass!23")
-    assert user.groups.filter(name=EXPENSES_GROUP).exists()
+    assert user.has_perm("expenses.access_expenses")
     invitation.refresh_from_db()
     assert invitation.is_accepted
     assert event.participants.get(invited_email="newbie@x").user == user
@@ -237,7 +241,11 @@ def test_accept_invite_already_accepted_redirects(client, event, owner):
     user = User.objects.create_user(
         username="aa", password="pw", email="alreadyaccepted@x"
     )
-    user.groups.add(Group.objects.get(name=EXPENSES_GROUP))
+    user.user_permissions.add(
+        Permission.objects.get(
+            codename="access_expenses", content_type__app_label="expenses"
+        )
+    )
     client.login(username="aa", password="pw")
     response = client.get(
         reverse("expenses:accept_invite", kwargs={"key": invitation.key})
@@ -254,7 +262,11 @@ def test_accept_invite_expired_redirects_to_event_list(client, event, owner):
     invitation.creation_date = _ages_ago()
     invitation.save()
     user = User.objects.create_user(username="ex", password="pw", email="expired@x")
-    user.groups.add(Group.objects.get(name=EXPENSES_GROUP))
+    user.user_permissions.add(
+        Permission.objects.get(
+            codename="access_expenses", content_type__app_label="expenses"
+        )
+    )
     client.login(username="ex", password="pw")
     response = client.get(
         reverse("expenses:accept_invite", kwargs={"key": invitation.key})
