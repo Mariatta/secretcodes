@@ -120,7 +120,7 @@
                                     <li>
                                         <a class="dropdown-item" href="{% url 'qrcode_generator' %}">QR generator</a>
                                     </li>
-                                    {% if user.is_authenticated %}
+                                    {% if perms.qrcode_manager.create_slug_qrcode %}
                                         <li>
                                             <a class="dropdown-item" href="{% url 'qrcode_slug_generator' %}">QR + slug</a>
                                         </li>

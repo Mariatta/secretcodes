@@ -162,7 +162,7 @@
                 </div>
             </a>
         </div>
-        {% if user.is_authenticated %}
+        {% if perms.qrcode_manager.create_slug_qrcode %}
             <div class="col-md-4">
                 <a href="{% url 'qrcode_slug_generator' %}" class="sc-card sc-tile">
                     <div class="sc-eyebrow">

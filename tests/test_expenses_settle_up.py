@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from expenses.models import (
@@ -15,23 +15,24 @@ from expenses.models import (
     ExpenseShare,
     Participant,
 )
-from expenses.permissions import EXPENSES_GROUP
 
 User = get_user_model()
 
 
 @pytest.fixture
 def setup(db):
-    group, _ = Group.objects.get_or_create(name=EXPENSES_GROUP)
+    perm = Permission.objects.get(
+        codename="access_expenses", content_type__app_label="expenses"
+    )
     owner = User.objects.create_user(username="owner", password="pw")
-    owner.groups.add(group)
+    owner.user_permissions.add(perm)
     event = Event.objects.create(name="Trip", owner=owner, base_currency="USD")
     alice = Participant.objects.create(event=event, user=owner, display_name="Alice")
     bob_user = User.objects.create_user(username="bob", password="pw")
-    bob_user.groups.add(group)
+    bob_user.user_permissions.add(perm)
     bob = Participant.objects.create(event=event, user=bob_user, display_name="Bob")
     carol_user = User.objects.create_user(username="carol", password="pw")
-    carol_user.groups.add(group)
+    carol_user.user_permissions.add(perm)
     carol = Participant.objects.create(
         event=event, user=carol_user, display_name="Carol"
     )
@@ -221,7 +222,11 @@ def test_csv_export_lists_one_row_per_share(client, setup):
 
 def test_settle_up_requires_event_membership(client, setup):
     other_user = User.objects.create_user(username="rando", password="pw")
-    other_user.groups.add(Group.objects.get(name=EXPENSES_GROUP))
+    other_user.user_permissions.add(
+        Permission.objects.get(
+            codename="access_expenses", content_type__app_label="expenses"
+        )
+    )
     client.login(username="rando", password="pw")
     response = client.get(
         reverse(

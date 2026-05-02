@@ -7,23 +7,26 @@ from django.db import migrations, models
 import expenses.models
 import expenses.storage
 
-CATEGORY_NAMES = ["Food", "Lodging", "Transit", "Activities", "Shopping", "Other"]
-EXPENSES_GROUP = "expenses_users"
+CATEGORY_NAMES = [
+    "Food",
+    "Lodging",
+    "Transportation",
+    "Activities",
+    "Shopping",
+    "Other",
+]
 
 
 def seed_forward(apps, schema_editor):
-    """Create the predefined categories and the expenses_users group."""
+    """Create the predefined expense categories."""
     Category = apps.get_model("expenses", "Category")
-    Group = apps.get_model("auth", "Group")
     for name in CATEGORY_NAMES:
         Category.objects.get_or_create(name=name)
-    Group.objects.get_or_create(name=EXPENSES_GROUP)
 
 
 def seed_reverse(apps, schema_editor):
-    """Remove the seeded group; leave categories alone (may have FK refs)."""
-    Group = apps.get_model("auth", "Group")
-    Group.objects.filter(name=EXPENSES_GROUP).delete()
+    """No-op — categories may have FK references; let admin clean up."""
+    pass
 
 
 class Migration(migrations.Migration):
