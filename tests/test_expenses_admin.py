@@ -7,7 +7,6 @@ import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
 
 from expenses.admin import EventAdmin, ExpenseAdmin
@@ -85,9 +84,12 @@ def test_download_receipt_link_returns_dash_when_no_receipt(setup):
 
 
 def test_download_receipt_link_renders_anchor_when_receipt_present(setup):
-    """When a receipt is attached, the cell renders an <a> tag."""
-    upload = SimpleUploadedFile("r.png", b"PNGdata", content_type="image/png")
-    expense = Expense(
+    """When a receipt is attached, the cell renders an <a> tag.
+
+    Receipt is set as a path string directly so the test doesn't try to
+    write to MEDIA_ROOT — the admin method only inspects metadata.
+    """
+    expense = Expense.objects.create(
         event=setup["event"],
         description="with-receipt",
         category=setup["category"],
@@ -95,11 +97,10 @@ def test_download_receipt_link_renders_anchor_when_receipt_present(setup):
         original_currency="USD",
         payer=setup["payer"],
         paid_at=date(2026, 5, 1),
+        receipt="receipts/1/abc.png",
         receipt_original_filename="r.png",
         receipt_content_type="image/png",
     )
-    expense.receipt = upload
-    expense.save()
     admin = ExpenseAdmin(Expense, AdminSite())
     rendered = admin.download_receipt_link(expense)
     assert "<a " in rendered

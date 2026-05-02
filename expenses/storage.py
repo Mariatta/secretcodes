@@ -27,11 +27,23 @@ def _fernet():
 
 
 class EncryptedFileSystemStorage(FileSystemStorage):
-    """Encrypts on write, decrypts on read. Same path layout as parent."""
+    """Encrypts on write, decrypts on read. Same path layout as parent.
 
-    def __init__(self, location=None, base_url=None, **kwargs):
-        location = location or os.path.join(settings.MEDIA_ROOT, "encrypted")
-        super().__init__(location=location, base_url=base_url, **kwargs)
+    `base_location` is a property (not @cached_property) so test
+    `override_settings(MEDIA_ROOT=...)` is honored — the model's
+    storage instance is created at import time and would otherwise
+    bake the original MEDIA_ROOT.
+    """
+
+    @property
+    def base_location(self):
+        if self._location is not None:
+            return self._location
+        return os.path.join(settings.MEDIA_ROOT, "encrypted")
+
+    @property
+    def location(self):
+        return os.path.abspath(self.base_location)
 
     def _save(self, name, content):
         plaintext = content.read()
