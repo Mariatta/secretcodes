@@ -7,7 +7,7 @@
         Privacy Policy
     </h1>
     <p class="text-muted">
-        Last updated: 2026-04-23
+        Last updated: 2026-05-02
     </p>
     <h2>
         What this site collects
@@ -60,6 +60,84 @@
         account (if any) created which QR code, any per-visitor record of who
         followed a short URL, or anything else that would link a QR code back
         to a specific person.
+    </p>
+    <h3>
+        From people who use the Expenses module
+    </h3>
+    <p>
+        The Expenses module is an invitation-only group expense tracker for
+        friends and family. Sign-up is not open to the public — accounts are
+        created only when someone is invited to an event by an existing
+        member.
+    </p>
+    <p>
+        When you accept an invitation, the following is stored:
+    </p>
+    <ul>
+        <li>
+            Your <strong>email address</strong> — used to deliver the
+            invitation and to match you to the placeholder participant row.
+        </li>
+        <li>
+            A <strong>username</strong> and <strong>password</strong> (hashed
+            using Django's default PBKDF2 password hasher; the plaintext is
+            never stored).
+        </li>
+        <li>
+            A <strong>display name</strong> for use within an event (chosen by
+            the inviter or by you).
+        </li>
+        <li>
+            Optional, free-text <strong>payment instructions</strong> you may
+            supply per event so others know how to pay you back (e.g. a PayPal
+            handle, e-transfer email, or wire details). This is shown only to
+            participants of the same event when they owe you money.
+        </li>
+    </ul>
+    <p>
+        For each event you participate in, the site stores:
+    </p>
+    <ul>
+        <li>
+            Event metadata: name, optional start/end dates, base currency,
+            FX rates for any non-base currencies.
+        </li>
+        <li>
+            Each <strong>expense</strong> you log: description, amount and
+            currency, computed base-currency amount, category, payer, date,
+            and who created it.
+        </li>
+        <li>
+            Per-participant <strong>shares</strong> derived from the expense's
+            equal split, and a per-share <strong>reimbursed</strong> flag.
+        </li>
+        <li>
+            <strong>Receipt files</strong> you attach. Receipts are
+            <strong>encrypted at rest</strong> using Fernet symmetric
+            encryption (the same key and pattern used for OAuth refresh
+            tokens, above) and are only decrypted on the fly when served back
+            to a participant of the event. Original filenames and
+            content-types are stored alongside the encrypted file so the
+            download view can serve the right type. There is no public URL —
+            all reads route through an authentication-checked view.
+        </li>
+        <li>
+            <strong>Invitation tokens</strong>: a random 64-character key
+            generated when an invite is created, embedded in the email link.
+            Tokens expire 14 days after sending and become single-use once
+            accepted.
+        </li>
+    </ul>
+    <p>
+        Invitation emails are dispatched through an SMTP relay (currently
+        Mailgun). The relay processes the recipient address and message body
+        in transit; it does not retain expense data.
+    </p>
+    <p>
+        Expenses data (events, expenses, participants, shares, invitations,
+        receipts) is retained until the event owner archives the event or a
+        site administrator deletes the records. There is no automated
+        retention window.
     </p>
     <h3>
         From Google accounts connected by the site owner
