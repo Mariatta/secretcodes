@@ -2,8 +2,6 @@
 
 from decimal import Decimal
 
-import pytest
-
 from expenses.services.settlement import (
     compute_net_balances,
     suggest_settlements,

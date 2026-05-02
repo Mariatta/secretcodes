@@ -113,7 +113,7 @@ def test_accept_invite_rejects_email_mismatch(client, event, owner):
         event=event, email="invited@x", inviter=owner, display_name="Invited"
     )
     User.objects.create_user(username="invited_user", password="pw", email="invited@x")
-    other = User.objects.create_user(username="other", password="pw", email="other@x")
+    User.objects.create_user(username="other", password="pw", email="other@x")
     client.login(username="other", password="pw")
     response = client.post(
         reverse("expenses:accept_invite", kwargs={"key": invitation.key})
@@ -268,9 +268,7 @@ def test_accept_invite_signup_blocks_authenticated_user(client, event, owner):
     invitation = ExpenseInvitation.create(
         event=event, email="brand_new@x", inviter=owner, display_name="N"
     )
-    other = User.objects.create_user(
-        username="someoneelse", password="pw", email="other@x"
-    )
+    User.objects.create_user(username="someoneelse", password="pw", email="other@x")
     client.login(username="someoneelse", password="pw")
     response = client.get(
         reverse("expenses:accept_invite", kwargs={"key": invitation.key})

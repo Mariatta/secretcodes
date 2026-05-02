@@ -5,7 +5,6 @@ import os
 import shutil
 import tempfile
 from datetime import date
-from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model

@@ -22,7 +22,6 @@ from .models import (
 from .permissions import (
     EXPENSES_GROUP,
     event_participant_required,
-    expenses_user_required,
     is_expenses_user,
 )
 from .services.invitations import send_invitation_email

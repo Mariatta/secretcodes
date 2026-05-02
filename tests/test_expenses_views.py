@@ -178,7 +178,7 @@ def test_expense_delete_superuser_succeeds(client, expenses_group, event):
     part_creator = Participant.objects.get(user=creator)
     expense = _make_expense(event, part_creator, created_by=creator)
 
-    admin = User.objects.create_superuser(username="root", password="pw")
+    User.objects.create_superuser(username="root", password="pw")
     client.login(username="root", password="pw")
     response = client.post(
         reverse(
@@ -192,7 +192,7 @@ def test_expense_delete_superuser_succeeds(client, expenses_group, event):
 
 def test_event_list_superuser_sees_all_events(client, expenses_group, event):
     """Superusers see every event regardless of participation."""
-    admin = User.objects.create_superuser(username="rootadmin", password="pw")
+    User.objects.create_superuser(username="rootadmin", password="pw")
     client.login(username="rootadmin", password="pw")
     response = client.get(reverse("expenses:event_list"))
     assert response.status_code == 200
