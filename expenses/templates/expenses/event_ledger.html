@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block head_title %}
+    {{ event.name }} · Ledger · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Ledger
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            {{ event.name }} ledger
+        </h1>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_export_csv' event_id=event.pk %}">Export CSV</a>
+            <a class="btn btn-primary"
+               href="{% url 'expenses:expense_create' event_id=event.pk %}">Log expense</a>
+        </div>
+    </div>
+    {% if categories %}
+        <form method="get" class="mb-3 d-flex gap-2 align-items-center">
+            <label for="category-filter" class="form-label mb-0">
+                Filter:
+            </label>
+            <select id="category-filter"
+                    name="category"
+                    class="form-select form-select-sm"
+                    style="max-width: 220px"
+                    onchange="this.form.submit()">
+                <option value="">
+                    All categories
+                </option>
+                {% for cat in categories %}
+                    <option value="{{ cat.pk }}"
+                            {% if selected_category|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if selected_category %}
+                <a class="btn btn-sm btn-outline-secondary"
+                   href="{% url 'expenses:event_ledger' event_id=event.pk %}">Clear</a>
+            {% endif %}
+        </form>
+    {% endif %}
+    {% include "expenses/_summary.html" %}
+    {% if rows %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>
+                            Date
+                        </th>
+                        <th>
+                            Description
+                        </th>
+                        <th>
+                            Paid by
+                        </th>
+                        <th>
+                            Category
+                        </th>
+                        <th class="text-end">
+                            Amount
+                        </th>
+                        <th>
+                            Shared by
+                        </th>
+                        <th class="text-end">
+                            Your share
+                        </th>
+                        <th>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr {% if row.all_reimbursed %}class="text-muted opacity-50"{% endif %}>
+                            <td class="font-monospace">
+                                {{ row.expense.paid_at|date:"M j" }}
+                            </td>
+                            <td>
+                                {{ row.expense.description }}
+                                {% if row.expense.receipt %}
+                                    <a class="ms-1 small text-decoration-none"
+                                       title="View receipt"
+                                       href="{% url 'expenses:receipt_download' event_id=event.pk expense_id=row.expense.pk %}">
+                                        📎 receipt
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ row.expense.payer.display_name|default:row.expense.payer }}
+                            </td>
+                            <td>
+                                {{ row.expense.category.name }}
+                            </td>
+                            <td class="text-end font-monospace">
+                                {{ row.expense.original_amount }} {{ row.expense.original_currency }}
+                                {% if row.expense.original_currency != event.base_currency %}
+                                    <br>
+                                    <small class="text-muted">≈ {{ row.expense.base_amount }} {{ event.base_currency }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>
+                                    {% for p in row.shared_by %}
+                                        {{ p.display_name|default:p }}
+                                        {% if not forloop.last %}
+                                            ,
+                                        {% endif %}
+                                    {% endfor %}
+                                </small>
+                            </td>
+                            <td class="text-end font-monospace">
+                                {% if row.my_share is not None %}
+                                    {{ row.my_share }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                {% if row.can_modify %}
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       href="{% url 'expenses:expense_edit' event_id=event.pk expense_id=row.expense.pk %}">Edit</a>
+                                    <a class="btn btn-sm btn-outline-danger"
+                                       href="{% url 'expenses:expense_delete' event_id=event.pk expense_id=row.expense.pk %}">Delete</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted">
+            No expenses logged yet.
+        </p>
+    {% endif %}
+{% endblock content %}

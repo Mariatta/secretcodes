@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if mode == 'edit' %}
+        Edit
+    {% else %}
+        Log
+    {% endif %}
+    expense · {{ event.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if mode == 'edit' %}
+                    Edit expense
+                {% else %}
+                    Log expense
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+    <h1>
+        {% if mode == 'edit' %}
+            Edit expense
+        {% else %}
+            Log expense
+        {% endif %}
+    </h1>
+    <p class="text-muted">
+        Base currency: {{ event.base_currency }}
+    </p>
+    <form method="post"
+          enctype="multipart/form-data"
+          class="mt-4"
+          style="max-width: 640px">
+        {% csrf_token %}
+        {% if mode == 'edit' and expense.receipt %}
+            <p class="small text-muted mb-2">
+                Current receipt:
+                <a href="{% url 'expenses:receipt_download' event_id=event.pk expense_id=expense.pk %}">
+                    {{ expense.receipt_original_filename|default:"download" }}
+                </a>
+                — uploading a new file replaces it.
+            </p>
+        {% endif %}
+        {% bootstrap_form form %}
+        <div class="d-flex justify-content-between">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Save
+                </button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:event_ledger' event_id=event.pk %}">Cancel</a>
+            </div>
+            {% if mode == 'edit' and can_delete %}
+                <a class="btn btn-outline-danger"
+                   href="{% url 'expenses:expense_delete' event_id=event.pk expense_id=expense.pk %}">Delete</a>
+            {% endif %}
+        </div>
+    </form>
+{% endblock content %}

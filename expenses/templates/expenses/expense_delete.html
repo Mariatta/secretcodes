@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Delete expense · {{ event.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Delete expense
+            </li>
+        </ol>
+    </nav>
+    <h1>
+        Delete this expense?
+    </h1>
+    <div class="card mb-4" style="max-width: 640px;">
+        <div class="card-body">
+            <h5 class="card-title">
+                {{ expense.description }}
+            </h5>
+            <p class="card-text mb-1">
+                {{ expense.original_amount }} {{ expense.original_currency }}
+                · paid by {{ expense.payer.display_name|default:expense.payer }}
+                · {{ expense.paid_at|date:"M j, Y" }}
+            </p>
+            <p class="card-text text-muted small mb-0">
+                Deleting also removes {{ expense.shares.count }} share{{ expense.shares.count|pluralize }}.
+            </p>
+        </div>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+            Yes, delete
+        </button>
+        <a class="btn btn-outline-secondary"
+           href="{% url 'expenses:event_ledger' event_id=event.pk %}">Cancel</a>
+    </form>
+{% endblock content %}
