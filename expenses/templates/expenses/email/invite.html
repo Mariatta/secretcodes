@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Secret Codes — Expenses invitation</title>
+        <style>
+            a { color: #D84C2F; text-decoration: underline; }
+            p { margin: 0 0 1em 0; }
+            code { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 13px; background: #F2ECDD; padding: 1px 4px; }
+        </style>
+    </head>
+    <body style="margin:0;
+                 padding:0;
+                 background:#F2ECDD;
+                 font-family:'Inter','Helvetica Neue',Arial,sans-serif;
+                 color:#0E1730;
+                 line-height:1.5">
+        <table role="presentation"
+               width="100%"
+               cellpadding="0"
+               cellspacing="0"
+               border="0"
+               style="background:#F2ECDD">
+            <tr>
+                <td align="center" style="padding:32px 16px;">
+                    <table role="presentation"
+                           width="600"
+                           cellpadding="0"
+                           cellspacing="0"
+                           border="0"
+                           style="max-width:600px;
+                                  background:#FFFFFF;
+                                  border:1px solid #0E1730">
+                        <tr>
+                            <td style="padding:24px 32px; background:#0E1730; color:#F2ECDD;">
+                                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="vertical-align:middle; padding-right:16px;">
+                                            <img src="{{ favicon_url }}"
+                                                 width="48"
+                                                 height="48"
+                                                 alt="Secret Codes"
+                                                 style="display:block;
+                                                        border:0">
+                                        </td>
+                                        <td style="vertical-align:middle;
+                                                   font-family:Georgia,'Times New Roman',serif;
+                                                   font-style:italic;
+                                                   font-size:32px;
+                                                   font-weight:500;
+                                                   line-height:1;
+                                                   color:#F2ECDD">
+                                            Secret <span style="color:#D84C2F;">Codes</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:32px;">
+                                {{ body|safe }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:16px 32px;
+                                       background:#F2ECDD;
+                                       border-top:1px solid #0E1730;
+                                       font-family:'JetBrains Mono',Menlo,Consolas,monospace;
+                                       font-size:10px;
+                                       letter-spacing:2px;
+                                       color:#0E1730;
+                                       text-align:center">
+                                ·&nbsp;·&nbsp;·&nbsp;—&nbsp;&nbsp;&nbsp;secretcodes.dev&nbsp;&nbsp;&nbsp;—&nbsp;·&nbsp;·
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
