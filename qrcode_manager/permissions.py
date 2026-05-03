@@ -8,7 +8,9 @@ Templates can use `{% if perms.qrcode_manager.create_slug_qrcode %}`
 directly — the `auth` context processor exposes `perms` automatically.
 """
 
-QR_SLUG_PERM = "qrcode_manager.create_slug_qrcode"
+QR_SLUG_CODENAME = "create_slug_qrcode"
+QR_SLUG_PERM = f"qrcode_manager.{QR_SLUG_CODENAME}"
+QR_SLUG_USER_GROUP = "QR Slug User"
 
 
 def is_qr_slug_user(user):
