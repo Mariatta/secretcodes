@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block head_title %}
     Events · Expenses · {{ block.super }}
 {% endblock head_title %}
@@ -48,7 +49,7 @@
                                 </div>
                                 <div class="col-7">
                                     <div class="fs-2 fw-semibold mb-0 font-monospace lh-1 text-nowrap">
-                                        {{ event.total_spent|floatformat:2 }}
+                                        {{ event.total_spent|floatformat:2|intcomma }}
                                     </div>
                                     <div class="text-muted small text-uppercase mt-2">
                                         {{ event.base_currency }} spent

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block head_title %}
     Settle up · {{ event.name }} · {{ block.super }}
 {% endblock head_title %}
@@ -23,7 +24,7 @@
         <strong>{{ debtor.display_name|default:debtor }}</strong>
         →
         <strong>{{ creditor.display_name|default:creditor }}</strong>:
-        <span class="font-monospace">{{ total }} {{ event.base_currency }}</span>
+        <span class="font-monospace">{{ total|floatformat:2|intcomma }} {{ event.base_currency }}</span>
     </p>
     {% if shares %}
         <p class="text-muted">
@@ -33,7 +34,7 @@
             {% for share in shares %}
                 <li class="list-group-item d-flex justify-content-between">
                     <span>{{ share.expense.description }} <small class="text-muted">({{ share.expense.paid_at|date:"M j" }})</small></span>
-                    <span class="font-monospace">{{ share.share_amount }}</span>
+                    <span class="font-monospace">{{ share.share_amount|floatformat:2|intcomma }}</span>
                 </li>
             {% endfor %}
         </ul>

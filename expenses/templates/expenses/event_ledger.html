@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block head_title %}
     {{ event.name }} · Ledger · {{ block.super }}
 {% endblock head_title %}
@@ -107,10 +108,10 @@
                                 {{ row.expense.category.name }}
                             </td>
                             <td class="text-end font-monospace">
-                                {{ row.expense.original_amount }} {{ row.expense.original_currency }}
+                                {{ row.expense.original_amount|floatformat:2|intcomma }} {{ row.expense.original_currency }}
                                 {% if row.expense.original_currency != event.base_currency %}
                                     <br>
-                                    <small class="text-muted">≈ {{ row.expense.base_amount }} {{ event.base_currency }}</small>
+                                    <small class="text-muted">≈ {{ row.expense.base_amount|floatformat:2|intcomma }} {{ event.base_currency }}</small>
                                 {% endif %}
                             </td>
                             <td>
@@ -125,7 +126,7 @@
                             </td>
                             <td class="text-end font-monospace">
                                 {% if row.my_share is not None %}
-                                    {{ row.my_share }}
+                                    {{ row.my_share|floatformat:2|intcomma }}
                                 {% else %}
                                     —
                                 {% endif %}

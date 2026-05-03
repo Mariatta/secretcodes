@@ -1,3 +1,4 @@
+{% load humanize %}
 {# Per-event + per-viewer running totals card. Expects `summary` and `event` in context. #}
 <div class="card mb-4">
     <div class="card-body">
@@ -7,7 +8,7 @@
                     Event total
                 </div>
                 <div class="h4 mb-0 font-monospace">
-                    {{ summary.event_total }} {{ event.base_currency }}
+                    {{ summary.event_total|floatformat:2|intcomma }} {{ event.base_currency }}
                 </div>
             </div>
             {% if summary.viewer %}
@@ -16,7 +17,7 @@
                         You paid
                     </div>
                     <div class="h4 mb-0 font-monospace">
-                        {{ summary.my_paid }} {{ event.base_currency }}
+                        {{ summary.my_paid|floatformat:2|intcomma }} {{ event.base_currency }}
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -24,7 +25,7 @@
                         Your share
                     </div>
                     <div class="h4 mb-0 font-monospace">
-                        {{ summary.my_shared }} {{ event.base_currency }}
+                        {{ summary.my_shared|floatformat:2|intcomma }} {{ event.base_currency }}
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -32,7 +33,7 @@
                         Net
                     </div>
                     <div class="h4 mb-0 font-monospace {% if summary.my_balance > 0 %}text-success{% elif summary.my_balance < 0 %}text-danger{% endif %}">
-                        {{ summary.my_balance }} {{ event.base_currency }}
+                        {{ summary.my_balance|floatformat:2|intcomma }} {{ event.base_currency }}
                     </div>
                 </div>
             {% endif %}
