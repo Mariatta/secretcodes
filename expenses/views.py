@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Sum
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden
@@ -20,6 +20,8 @@ from .models import (
     Participant,
 )
 from .permissions import (
+    ACCESS_EXPENSES_CODENAME,
+    EXPENSES_USER_GROUP,
     event_participant_required,
     is_expenses_user,
 )
@@ -457,11 +459,19 @@ def _accept_with_signup(request, invitation):
 
 
 def _accept_invitation(invitation: ExpenseInvitation, user) -> None:
-    """Mark accepted, grant access permission, link Participant."""
+    """Mark accepted, add user to the Expenses User group, link Participant.
+
+    Group membership grants `expenses.access_expenses`. The migration
+    (0005) sets this up at deploy time; the view re-asserts the
+    group→perm link on every accept so the flow works even in test
+    environments where data migrations are skipped.
+    """
     perm = Permission.objects.get(
-        codename="access_expenses", content_type__app_label="expenses"
+        codename=ACCESS_EXPENSES_CODENAME, content_type__app_label="expenses"
     )
-    user.user_permissions.add(perm)
+    group, _ = Group.objects.get_or_create(name=EXPENSES_USER_GROUP)
+    group.permissions.add(perm)
+    user.groups.add(group)
     participant, _ = Participant.objects.get_or_create(
         event=invitation.event,
         invited_email=invitation.email,
