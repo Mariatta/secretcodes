@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block head_title %}
     {{ event.name }} · Overview · {{ block.super }}
 {% endblock head_title %}
@@ -69,13 +70,13 @@
                                 {{ row.participant.display_name|default:row.participant }}
                             </td>
                             <td class="text-end font-monospace">
-                                {{ row.paid }}
+                                {{ row.paid|floatformat:2|intcomma }}
                             </td>
                             <td class="text-end font-monospace">
-                                {{ row.shared }}
+                                {{ row.shared|floatformat:2|intcomma }}
                             </td>
                             <td class="text-end font-monospace {% if row.balance > 0 %}text-success{% elif row.balance < 0 %}text-danger{% endif %}">
-                                {{ row.balance }}
+                                {{ row.balance|floatformat:2|intcomma }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -101,7 +102,7 @@
                             <strong>{{ t.creditor.display_name|default:t.creditor }}</strong>
                         </span>
                         <div class="d-flex align-items-center gap-3">
-                            <span class="font-monospace">{{ t.amount }} {{ event.base_currency }}</span>
+                            <span class="font-monospace">{{ t.amount|floatformat:2|intcomma }} {{ event.base_currency }}</span>
                             <a class="btn btn-sm btn-outline-success"
                                href="{% url 'expenses:settle_up' event_id=event.pk debtor_id=t.debtor.pk creditor_id=t.creditor.pk %}">Mark as paid</a>
                         </div>

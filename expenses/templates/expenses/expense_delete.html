@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block head_title %}
     Delete expense · {{ event.name }} · {{ block.super }}
 {% endblock head_title %}
@@ -25,7 +26,7 @@
                 {{ expense.description }}
             </h5>
             <p class="card-text mb-1">
-                {{ expense.original_amount }} {{ expense.original_currency }}
+                {{ expense.original_amount|floatformat:2|intcomma }} {{ expense.original_currency }}
                 · paid by {{ expense.payer.display_name|default:expense.payer }}
                 · {{ expense.paid_at|date:"M j, Y" }}
             </p>
