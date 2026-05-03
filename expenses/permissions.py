@@ -20,7 +20,9 @@ from django.shortcuts import get_object_or_404
 
 from .models import Event
 
-ACCESS_EXPENSES_PERM = "expenses.access_expenses"
+ACCESS_EXPENSES_CODENAME = "access_expenses"
+ACCESS_EXPENSES_PERM = f"expenses.{ACCESS_EXPENSES_CODENAME}"
+EXPENSES_USER_GROUP = "Expenses User"
 
 
 def is_expenses_user(user):
