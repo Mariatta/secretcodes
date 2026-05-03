@@ -1,31 +1,27 @@
 """Send the accept-invite email for an ExpenseInvitation.
 
-Email body lives as a single markdown template (`invite.md`). On send
-we render Django template tags first, then dispatch the result two
-ways: as the plain-text body (markdown is intentionally readable as
-plain text), and as an `EmailMultiAlternatives` HTML alternative
-produced by the `markdown` library. Email clients pick the best.
+Email body lives as a single markdown template (`invite.md`). The HTML
+wrapper lives as a separate template (`invite.html`). On send we render
+the markdown once, use it as the plain-text body, then convert markdown
+→ HTML and inject it into the branded wrapper for the
+`EmailMultiAlternatives` HTML alternative. Both templates render via
+`django.template.loader.render_to_string`.
 """
 
 import markdown
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 
-INVITE_TEMPLATE = "expenses/email/invite.md"
-HTML_WRAPPER = (
-    '<!doctype html><html><body style="font-family: -apple-system, '
-    "BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
-    'max-width: 600px; margin: 0 auto; padding: 1.5rem;">'
-    "{body}"
-    "</body></html>"
-)
+INVITE_TEXT_TEMPLATE = "expenses/email/invite.md"
+INVITE_HTML_TEMPLATE = "expenses/email/invite.html"
 
 
 def _render_invite_bodies(invitation, request):
-    """Render the markdown template once, return (text_body, html_body)."""
+    """Render the markdown source then wrap into branded HTML."""
     context = {
         "invitation": invitation,
         "accept_url": request.build_absolute_uri(
@@ -35,9 +31,14 @@ def _render_invite_bodies(invitation, request):
         "terms_url": request.build_absolute_uri(reverse("terms")),
         "expiry_days": settings.EXPENSES_INVITATION_EXPIRY_DAYS,
     }
-    text_body = render_to_string(INVITE_TEMPLATE, context)
-    html_body = HTML_WRAPPER.format(
-        body=markdown.markdown(text_body, extensions=["extra"])
+    text_body = render_to_string(INVITE_TEXT_TEMPLATE, context)
+    rendered_html = markdown.markdown(text_body, extensions=["extra"])
+    html_body = render_to_string(
+        INVITE_HTML_TEMPLATE,
+        {
+            "body": rendered_html,
+            "favicon_url": request.build_absolute_uri(static("brand/favicon.png")),
+        },
     )
     return text_body, html_body
 
