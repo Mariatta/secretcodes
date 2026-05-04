@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.core.cache import cache
 from django.test import override_settings
+from google.auth.exceptions import RefreshError
 
 from availability.models import GoogleAccount, TrackedCalendar
 from availability.services.availability import BusyBlock
@@ -201,6 +202,63 @@ def test_fetch_busy_blocks_for_all_aggregates_across_accounts():
         blocks = fetch_busy_blocks_for_all(*_range())
 
     assert len(blocks) == 2
+
+
+@pytest.mark.django_db
+def test_fetch_returns_empty_and_clears_token_when_refresh_fails():
+    account = _make_account()
+    _add_calendar(account)
+
+    service = MagicMock()
+    service.freebusy().query().execute.side_effect = RefreshError(
+        "invalid_grant: Token has been expired or revoked.",
+        {"error": "invalid_grant"},
+    )
+
+    with patch("availability.services.google.build", return_value=service):
+        blocks = fetch_busy_blocks(account, *_range())
+
+    assert blocks == []
+    account.refresh_from_db()
+    assert account.refresh_token == ""
+
+
+@pytest.mark.django_db
+def test_fetch_for_all_continues_when_one_account_token_is_revoked():
+    bad = _make_account(email="bad@example.com", refresh_token="bad-token")
+    good = _make_account(email="good@example.com", refresh_token="good-token")
+    _add_calendar(bad)
+    _add_calendar(good)
+
+    good_service = MagicMock()
+    good_service.freebusy().query().execute.return_value = {
+        "calendars": {
+            "primary": {
+                "busy": [
+                    {
+                        "start": "2026-05-04T10:00:00+00:00",
+                        "end": "2026-05-04T11:00:00+00:00",
+                    }
+                ]
+            }
+        }
+    }
+    bad_service = MagicMock()
+    bad_service.freebusy().query().execute.side_effect = RefreshError(
+        "invalid_grant", {"error": "invalid_grant"}
+    )
+
+    def fake_build(*args, credentials, **kwargs):
+        return bad_service if credentials.refresh_token == "bad-token" else good_service
+
+    with patch("availability.services.google.build", side_effect=fake_build):
+        blocks = fetch_busy_blocks_for_all(*_range())
+
+    assert len(blocks) == 1
+    bad.refresh_from_db()
+    good.refresh_from_db()
+    assert bad.refresh_token == ""
+    assert good.refresh_token == "good-token"
 
 
 @override_settings(GOOGLE_CLIENT_ID="cid", GOOGLE_CLIENT_SECRET="csecret")
