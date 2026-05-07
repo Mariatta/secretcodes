@@ -6,7 +6,6 @@ so each test temporarily disables debug to exercise the real handler.
 
 import pytest
 from django.test import override_settings
-from django.urls import reverse
 
 
 @override_settings(DEBUG=False, ALLOWED_HOSTS=["*"])
