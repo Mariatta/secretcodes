@@ -61,12 +61,25 @@ def ensure_short_url(survey: Survey) -> QRCode | None:
     ``QRCode.slug`` = a random short slug. Saving the QRCode triggers
     ``generate_qr()`` which uploads the PNG via the existing S3 wrapper.
 
+    On subsequent calls, ``QRCode.url`` is re-synced to the survey's
+    current respondent URL — so changing ``survey.slug`` reroutes the
+    short link without invalidating the QR image (the image only
+    encodes ``QRCode.slug``, which doesn't change).
+
     Skipped silently when ``USE_SPACES`` is not configured (e.g. local
     dev without S3/Spaces credentials) — saving the survey still works,
     just no QR is created. Re-call once S3 is configured to backfill.
     """
     if survey.short_url_id:
-        return survey.short_url
+        qr = survey.short_url
+        expected_url = _respondent_url(survey)
+        if qr.url != expected_url:
+            """Sync via .update() to skip ``QRCode.save()`` — re-uploading
+            the PNG would be wasteful since the image encodes the short
+            slug, which hasn't changed."""
+            QRCode.objects.filter(pk=qr.pk).update(url=expected_url)
+            qr.url = expected_url
+        return qr
     if survey.status != Survey.Status.PUBLISHED:
         return None
     if not _s3_configured():

@@ -61,6 +61,31 @@ def test_ensure_short_url_is_idempotent(owner):
 
 
 @pytest.mark.django_db
+def test_changing_survey_slug_resyncs_qr_destination(owner):
+    """Editing survey.slug must reroute the short link to the new URL.
+
+    The QR image encodes only the QR slug (which doesn't change), so
+    the same printed/scanned QR keeps working after a slug rename.
+    """
+    survey = Survey.objects.create(
+        owner=owner,
+        title="X",
+        slug="original",
+        status=Survey.Status.PUBLISHED,
+    )
+    qr = ensure_short_url(survey)
+    original_qr_slug = qr.slug
+    assert qr.url.endswith("/surveys/original/")
+
+    survey.slug = "renamed"
+    survey.save()
+    second = ensure_short_url(survey)
+    assert second.id == qr.id
+    assert second.slug == original_qr_slug  # short slug unchanged
+    assert second.url.endswith("/surveys/renamed/")
+
+
+@pytest.mark.django_db
 def test_short_url_persists_after_status_change_to_closed(owner):
     """Closing a published survey must NOT remove the short URL."""
     survey = Survey.objects.create(
