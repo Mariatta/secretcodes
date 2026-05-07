@@ -132,6 +132,11 @@
                                    {% if ns == 'expenses' %}aria-current="page"{% endif %}
                                    href="{% url 'expenses:event_list' %}">Expenses</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link{% if ns == 'surveys' %} active{% endif %}"
+                                   {% if ns == 'surveys' %}aria-current="page"{% endif %}
+                                   href="{% url 'surveys:dashboard' %}">Surveys</a>
+                            </li>
                         </ul>
                     {% endwith %}
                     {% if user.is_authenticated %}
@@ -212,13 +217,7 @@
                     ·
                     <a href="{% url 'about' %}">About</a>
                     ·
-                    <a href="{% url 'availability:week_grid' %}">Availability</a>
-                    ·
                     <a href="{% url 'agents' %}">Agents</a>
-                    ·
-                    <a href="{% url 'qrcode_generator' %}">QR</a>
-                    ·
-                    <a href="{% url 'expenses:event_list' %}">Expenses</a>
                     ·
                     <a href="https://github.com/Mariatta/secretcodes">Source</a>
                     ·
@@ -278,7 +277,7 @@
                     </li>
                 </ul>
                 <div class="small sc-mono sc-footer__by">
-                    by <a href="https://mariatta.ca" target="_blank" rel="noopener">mariatta.ca</a>
+                    by <a href="https://mariatta.ca" target="_blank" rel="noopener">Mariatta</a>
                 </div>
             </div>
         </footer>

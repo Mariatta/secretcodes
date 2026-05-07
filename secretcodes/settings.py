@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     "availability",
     "expenses",
     "qrcode_manager",
+    "surveys",
     "solo",
     "timezone_field",
     "whitenoise",

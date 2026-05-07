@@ -1,0 +1,27 @@
+{% extends "surveys/_respondent_base.html" %}
+{% load static %}
+{% block head_title %}
+    Closed — {{ survey.title }}
+{% endblock head_title %}
+{% block hero %}
+{% endblock hero %}
+{% block content %}
+    <div class="text-center">
+        <h2 class="h3 mb-3">
+            This survey is closed.
+        </h2>
+        <p class="text-muted mb-1">
+            <strong>{{ survey.title }}</strong> is no longer accepting responses.
+        </p>
+        <p class="text-muted">
+            Thanks for your interest.
+        </p>
+        <img src="{% static 'brand/logo-monogram.svg' %}"
+             alt=""
+             aria-hidden="true"
+             width="120"
+             height="120"
+             class="mt-5"
+             title="Don't give up — on secret codes.">
+    </div>
+{% endblock content %}

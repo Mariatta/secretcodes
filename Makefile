@@ -69,7 +69,12 @@ reformat: .state/docker-build-web
 	docker compose run --rm web djlint . --reformat
 
 test: .state/docker-build-web
-	docker compose run --rm web pytest --cov --reuse-db --no-migrations --cov-fail-under=100 --cov-report html --cov-report term
+	docker compose run --rm web pytest --cov --reuse-db --no-migrations --cov-fail-under=100 --cov-report html --cov-report term $(ARGS)
+
+# One-shot: rebuild the test database from current models, then run as usual.
+# Use after a schema change. Drops --reuse-db so pytest creates a fresh test DB.
+test-rebuild: .state/docker-build-web
+	docker compose run --rm web pytest --cov --create-db --no-migrations --cov-fail-under=100 --cov-report term
 
 check: test lint
 
@@ -86,4 +91,4 @@ clean:
 	rm -f .state/db-initialized
 	rm -f .state/db-migrated
 
-.PHONY: default serve shell dbshell manage migrations migrate lint reformat test check create_translations compile_translations clean
+.PHONY: default serve shell dbshell manage migrations migrate lint reformat test test-rebuild check create_translations compile_translations clean

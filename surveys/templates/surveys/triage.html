@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block head_title %}
+    Triage · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    <style>
+        :root {
+            --bg-secondary: #F5F4ED;
+            --bg-tertiary: #E8E6DC;
+            --text-tertiary: #8A8983;
+            --accent: #534AB7;
+            --accent-fg: #3C3489;
+            --accent-bg: #EEEDFE;
+            --rating-5: #1D9E75;
+        }
+        /* Top strip — survey breadcrumb + peek link */
+        .triage-strip {
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 12px; margin-bottom: 16px;
+            border-bottom: 1px solid var(--bg-tertiary);
+            font-size: 13px;
+        }
+        .triage-strip .crumb { color: var(--text-tertiary); }
+        .triage-strip .crumb-current { color: #1F1E1B; font-weight: 500; }
+        .triage-strip .side-peek {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--accent);
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .triage-strip .side-peek:hover { text-decoration: underline; }
+
+        /* Progress bar */
+        .progress-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 18px;
+        }
+        .progress-track {
+            flex: 1; height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--rating-5);
+            border-radius: 3px;
+            transition: width 0.2s;
+        }
+        .progress-text {
+            font-size: 12px; color: #5C5B57;
+            white-space: nowrap;
+        }
+        .progress-text strong { color: #1F1E1B; font-weight: 500; }
+
+        /* Response meta pills */
+        .response-meta {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+            font-size: 11px; color: var(--text-tertiary);
+            flex-wrap: wrap;
+        }
+        .meta-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 6px;
+            background: var(--bg-tertiary);
+        }
+
+        /* Response quote — serif, purple accent */
+        .triage-callout {
+            font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+            font-size: 17px;
+            line-height: 1.6;
+            padding: 16px 18px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            white-space: pre-wrap;
+            margin-bottom: 16px;
+        }
+
+        /* Theme chips — selected state in brand purple */
+        .theme-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin: 0.2rem 0.25rem 0.2rem 0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px;
+            background: #fff;
+            color: #1F1E1B;
+        }
+        .theme-chip:hover { border-color: #C7C5BB; }
+        .theme-chip input { display: none; }
+        .theme-chip .count {
+            color: var(--text-tertiary);
+            font-size: 11px;
+        }
+        .theme-chip.checked {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent-fg);
+        }
+        .theme-chip.checked .count { color: var(--accent); }
+        .theme-chip.checked .kbd {
+            background: #CECBF6;
+            color: var(--accent-fg);
+        }
+
+        .new-theme-chip {
+            display: inline-flex;
+            align-items: center;
+            border: 1px dashed #C7C5BB;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin: 0.2rem 0;
+            font-size: 13px;
+            color: #5C5B57;
+        }
+        .new-theme-chip input {
+            border: none; outline: none; background: transparent;
+            min-width: 8rem;
+        }
+
+        /* Quick actions row */
+        .quick-actions {
+            display: flex; gap: 0.5rem; flex-wrap: wrap;
+            padding: 12px 0; margin: 4px 0;
+            border-top: 1px solid var(--bg-tertiary);
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        /* Keyboard hint chips */
+        .kbd {
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: #5C5B57;
+        }
+        .kbd-light {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="triage-strip">
+                <a class="crumb text-decoration-none"
+                   href="{% url 'surveys:results' slug=survey.slug %}">
+                    {{ survey.title }}
+                </a>
+                <span style="color: var(--text-tertiary);">›</span>
+                <span class="crumb-current">Triage</span>
+                <a class="side-peek"
+                   href="{% url 'surveys:actions' slug=survey.slug %}"
+                   target="_blank"
+                   rel="noopener"
+                   title="Open the action items dashboard in a new tab">
+                    👁 peek action items
+                </a>
+            </div>
+            <div class="progress-row"
+                 role="progressbar"
+                 aria-valuemin="0"
+                 aria-valuemax="{{ total }}"
+                 aria-valuenow="{{ reviewed }}">
+                <span class="progress-text">
+                    <strong>{{ reviewed }}</strong> of {{ total }} reviewed
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill"
+                         style="width: {% if total %}{% widthratio reviewed total 100 %}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+                <span class="progress-text">
+                    {% if total %}
+                        {% widthratio reviewed total 100 %}
+                    {% else %}
+                        0
+                    {% endif %}
+                    %
+                </span>
+            </div>
+            <div class="response-meta">
+                <span class="meta-pill">💬 {{ response.question.text|truncatechars:60 }}</span>
+                <span class="meta-pill">🕶 anonymous</span>
+                <span class="meta-pill">🕓 submitted {{ response.submitted_at|naturaltime }}</span>
+                {% if response.is_flagged %}
+                    <span class="meta-pill" style="background: #fff3e0; color: #b06b00;">⚑ flagged</span>
+                {% endif %}
+            </div>
+            <div class="triage-callout">
+                {{ response.value }}
+            </div>
+            <form method="post" id="triage-form">
+                {% csrf_token %}
+                <input type="hidden" name="response_id" value="{{ response.id }}">
+                <p class="small text-secondary mb-2 fw-medium">
+                    Tag with theme(s)
+                </p>
+                <div class="mb-3">
+                    {% for theme in themes %}
+                        <label class="theme-chip" data-index="{{ forloop.counter }}">
+                            <input type="checkbox"
+                                   name="theme_ids"
+                                   value="{{ theme.id }}"
+                                   {% if theme.id in tagged_theme_ids %}checked{% endif %}>
+                            {% if forloop.counter < 10 %}
+                                <span class="kbd">{{ forloop.counter }}</span>
+                            {% endif %}
+                            {{ theme.name }}
+                            <span class="count">· {{ theme.responses.count }}</span>
+                        </label>
+                    {% endfor %}
+                    <label class="new-theme-chip">
+                        +
+                        <input type="text"
+                               name="new_theme_name"
+                               placeholder="new theme"
+                               aria-label="New theme name">
+                    </label>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-success text-white"
+                            type="submit"
+                            name="action"
+                            value="appreciation">
+                        Appreciation <span class="kbd kbd-light ms-1">A</span>
+                    </button>
+                    <button class="btn btn-secondary text-white"
+                            type="submit"
+                            name="action"
+                            value="not_actionable">
+                        Not actionable <span class="kbd kbd-light ms-1">N</span>
+                    </button>
+                    <button class="btn btn-warning text-dark"
+                            type="submit"
+                            name="action"
+                            value="flag">
+                        {% if response.is_flagged %}
+                            ⚑ Unflag
+                        {% else %}
+                            ⚑ Flag for follow-up
+                        {% endif %}
+                        <span class="kbd ms-1">F</span>
+                    </button>
+                    <button class="btn btn-outline-secondary"
+                            type="submit"
+                            name="action"
+                            value="skip">
+                        Skip <span class="kbd ms-1">S</span>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="small text-muted">
+                        <span class="kbd">1</span>–<span class="kbd">9</span> themes ·
+                        <span class="kbd">←</span> <span class="kbd">→</span> prev / next ·
+                        <span class="kbd">↵</span> save & next
+                    </span>
+                    <button class="btn btn-primary" type="submit" name="action" value="next">
+                        Save &amp; next
+                    </button>
+                </div>
+            </form>
+            <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small">
+                {% if prev_id %}
+                    <a class="btn btn-link btn-sm p-0"
+                       id="triage-prev-link"
+                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ prev_id }}">
+                        ← Previous
+                    </a>
+                {% else %}
+                    <span class="text-muted">Start of queue</span>
+                {% endif %}
+                {% if next_id %}
+                    <a class="btn btn-link btn-sm p-0"
+                       id="triage-next-link"
+                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ next_id }}">
+                        Next without saving →
+                    </a>
+                {% else %}
+                    <span class="text-muted">End of queue</span>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const form = document.getElementById('triage-form');
+            if (!form) return;
+
+            const chips = form.querySelectorAll('.theme-chip');
+            chips.forEach(chip => {
+                const cb = chip.querySelector('input[type=checkbox]');
+                const sync = () => chip.classList.toggle('checked', cb.checked);
+                cb.addEventListener('change', sync);
+                sync();
+            });
+
+            const click = (selector) => {
+                const el = form.querySelector(selector);
+                if (el) el.click();
+            };
+            const toggleByIndex = (idx) => {
+                const chip = form.querySelector(`.theme-chip[data-index="${idx}"]`);
+                if (!chip) return;
+                const cb = chip.querySelector('input[type=checkbox]');
+                cb.checked = !cb.checked;
+                cb.dispatchEvent(new Event('change'));
+            };
+
+            document.addEventListener('keydown', (e) => {
+                const tag = (e.target.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                if (/^[1-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    toggleByIndex(e.key);
+                } else if (e.key === 'a' || e.key === 'A') {
+                    e.preventDefault();
+                    click('button[value="appreciation"]');
+                } else if (e.key === 'n' || e.key === 'N') {
+                    e.preventDefault();
+                    click('button[value="not_actionable"]');
+                } else if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    click('button[value="flag"]');
+                } else if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    click('button[value="skip"]');
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    click('button[value="next"]');
+                } else if (e.key === 'ArrowLeft') {
+                    const link = document.getElementById('triage-prev-link');
+                    if (link) {
+                        e.preventDefault();
+                        window.location = link.href;
+                    }
+                } else if (e.key === 'ArrowRight') {
+                    const link = document.getElementById('triage-next-link');
+                    if (link) {
+                        e.preventDefault();
+                        window.location = link.href;
+                    }
+                }
+            });
+        })();
+    </script>
+{% endblock content %}

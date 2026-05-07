@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {{ theme.name }} · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_ui.html" %}
+    <style>
+        .response-quote {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.05rem;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+        .response-card.is-rep {
+            border-left: 4px solid #c89b3c;
+            background: #fffaf0;
+        }
+        .star-btn.starred { color: #c89b3c; }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <nav class="small text-muted mb-2">
+                <a href="{% url 'surveys:dashboard' %}">Surveys</a> ·
+                <a href="{% url 'surveys:edit' slug=survey.slug %}">{{ survey.title }}</a> ·
+                <a href="{% url 'surveys:actions' slug=survey.slug %}">Action items</a> ·
+                Theme
+            </nav>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="h3 mb-1">
+                        {{ theme.name }}
+                    </h1>
+                    <div class="small text-muted">
+                        {{ response_themes|length }}
+                        {% if response_themes|length == 1 %}
+                            response
+                        {% else %}
+                            responses
+                        {% endif %}
+                        · status:
+                        <span class="badge {% if theme.status == 'resolved' %}bg-success{% elif theme.status == 'in_progress' %}bg-info{% else %}bg-secondary{% endif %}">
+                            {{ theme.get_status_display }}
+                        </span>
+                        · priority:
+                        <span class="badge {% if theme.priority == 'high' %}bg-danger{% elif theme.priority == 'medium' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                            {{ theme.get_priority_display }}
+                        </span>
+                    </div>
+                </div>
+                <a class="btn btn-link"
+                   href="{% url 'surveys:triage' slug=survey.slug %}">
+                    Back to triage →
+                </a>
+            </div>
+            {% if co_occurring %}
+                <div class="small text-muted mb-3">
+                    Co-occurs with:
+                    {% for other, n in co_occurring %}
+                        <a href="{% url 'surveys:theme_detail' slug=survey.slug theme_id=other.id %}">{{ other.name }}</a> ({{ n }})
+                        {% if not forloop.last %}
+                            ,
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">
+                        Action item
+                    </h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                {% bootstrap_field form.name %}
+                            </div>
+                            <div class="col-12 col-md-4">
+                                {% bootstrap_field form.tag %}
+                            </div>
+                            <div class="col-12">
+                                {% bootstrap_field form.action_item %}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small text-muted">
+                                    Priority
+                                </label>
+                                <div class="pillgroup d-flex flex-wrap gap-2">
+                                    {% include "surveys/_pill_radio.html" with field=form.priority class_prefix="priority" %}
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small text-muted">
+                                    Status
+                                </label>
+                                <div class="pillgroup d-flex flex-wrap gap-2">
+                                    {% include "surveys/_pill_radio.html" with field=form.status class_prefix="theme-status" %}
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">
+                            Save action item
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% if other_themes %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="h6 mb-2">
+                            Merge into another theme
+                        </h3>
+                        <form method="post"
+                              action="{% url 'surveys:theme_merge' slug=survey.slug theme_id=theme.id %}"
+                              class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            <select class="form-select form-select-sm" name="target_theme_id" required>
+                                <option value="">
+                                    Choose target…
+                                </option>
+                                {% for other in other_themes %}
+                                    <option value="{{ other.id }}">
+                                        {{ other.name }} ({{ other.responses.count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    onclick="return confirm('Move all responses from \'{{ theme.name|escapejs }}\' into the chosen theme? This deletes \'{{ theme.name|escapejs }}\'.');">
+                                Merge
+                            </button>
+                        </form>
+                        <div class="form-text small">
+                            All responses on this theme move to the target. This theme is deleted.
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <h2 class="h5 mb-2">
+                Responses ({{ response_themes|length }})
+            </h2>
+            {% for rt in response_themes %}
+                <div class="card mb-2 response-card {% if rt.is_representative %}is-rep{% endif %}">
+                    <div class="card-body">
+                        <div class="response-quote mb-2">
+                            {{ rt.response.value }}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                            <div>
+                                On: {{ rt.response.question.text }}
+                                · {{ rt.response.submitted_at|date:"Y-m-d H:i" }}
+                                {% if rt.is_representative %}
+                                    · <strong class="text-warning-emphasis">representative</strong>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-1">
+                                <form method="post"
+                                      action="{% url 'surveys:theme_star' slug=survey.slug theme_id=theme.id response_id=rt.response.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-link text-decoration-none star-btn {% if rt.is_representative %}starred{% endif %}"
+                                            title="{% if rt.is_representative %}Unstar{% else %}Mark as representative quote{% endif %}">
+                                        {% if rt.is_representative %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <form method="post"
+                                      action="{% url 'surveys:theme_untag' slug=survey.slug theme_id=theme.id response_id=rt.response.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Remove this response from this theme?');">
+                                        Untag
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">
+                    No responses tagged on this theme.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock content %}
