@@ -12,13 +12,11 @@
                 </h1>
                 <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">← All surveys</a>
             </div>
-
             <p class="text-muted">
                 Upload a markdown file describing a survey. Creates the survey
                 and its questions in one step. Responses are <strong>not</strong>
                 imported.
             </p>
-
             <form method="post" enctype="multipart/form-data" class="mb-4">
                 {% csrf_token %}
                 {% bootstrap_form form %}
@@ -26,7 +24,6 @@
                     Import
                 </button>
             </form>
-
             <div class="card">
                 <div class="card-body">
                     <h2 class="h6 mb-3">
@@ -39,7 +36,6 @@
                         lines.
                     </p>
                     <pre class="bg-light p-3 small mb-0" style="border-radius: 6px; white-space: pre-wrap;"><code># Post-event feedback
-
 slug: post-event
 status: draft
 

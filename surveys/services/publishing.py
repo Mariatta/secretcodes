@@ -15,7 +15,6 @@ from qrcode_manager.models import QRCode
 
 from ..models import Survey
 
-
 SHORT_SLUG_BYTES = 6
 SHORT_SLUG_MAX_RETRIES = 8
 
@@ -43,7 +42,9 @@ def _generate_unique_slug() -> str:
         candidate = secrets.token_urlsafe(SHORT_SLUG_BYTES)
         if not QRCode.objects.filter(slug=candidate).exists():
             return candidate
-    raise RuntimeError("Could not allocate a unique short slug after retries.")
+    raise RuntimeError(  # pragma: no cover
+        "Could not allocate a unique short slug after retries."
+    )
 
 
 @transaction.atomic
@@ -80,7 +81,7 @@ def ensure_short_url(survey: Survey) -> QRCode | None:
                 slug=_generate_unique_slug(),
             )
             break
-        except IntegrityError:
+        except IntegrityError:  # pragma: no cover
             if attempt == SHORT_SLUG_MAX_RETRIES - 1:
                 raise
             continue

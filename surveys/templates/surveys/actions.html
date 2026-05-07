@@ -87,7 +87,6 @@
                        href="{% url 'surveys:edit' slug=survey.slug %}">← Edit</a>
                 </div>
             </div>
-
             <div class="d-flex gap-2 mb-4">
                 <span class="stat-pill"><strong>{{ items|length }}</strong> action items</span>
                 <span class="stat-pill"><strong>{{ open_count }}</strong> open</span>
@@ -96,7 +95,6 @@
                     <span class="stat-pill"><strong>{{ drafts|length }}</strong> drafts</span>
                 {% endif %}
             </div>
-
             {% if items %}
                 {% for theme in items %}
                     <div class="card mb-2 ai-card {% if theme.status == 'resolved' %}resolved{% endif %}">
@@ -108,7 +106,8 @@
                                               action="{% url 'surveys:theme_resolve' slug=survey.slug theme_id=theme.id %}"
                                               class="d-inline m-0">
                                             {% csrf_token %}
-                                            <input type="hidden" name="next"
+                                            <input type="hidden"
+                                                   name="next"
                                                    value="{% url 'surveys:actions' slug=survey.slug %}">
                                             <label class="resolve-checkbox"
                                                    title="{% if theme.status == 'resolved' %}Reopen{% else %}Mark resolved{% endif %}">
@@ -128,7 +127,11 @@
                                         {% endif %}
                                         <span class="small text-muted">
                                             {{ theme.mention_count }}
-                                            {% if theme.mention_count == 1 %}mention{% else %}mentions{% endif %}
+                                            {% if theme.mention_count == 1 %}
+                                                mention
+                                            {% else %}
+                                                mentions
+                                            {% endif %}
                                         </span>
                                         <span class="badge {% if theme.priority == 'high' %}bg-danger{% elif theme.priority == 'medium' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
                                             {{ theme.get_priority_display }}
@@ -141,7 +144,9 @@
                                         {{ theme.action_item|linebreaksbr }}
                                     </div>
                                     {% if theme.rep_response %}
-                                        <div class="rep-quote">{{ theme.rep_response.value }}</div>
+                                        <div class="rep-quote">
+                                            {{ theme.rep_response.value }}
+                                        </div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -156,7 +161,6 @@
                     open a theme, and write what you'll do about it.
                 </div>
             {% endif %}
-
             {% if drafts %}
                 <h2 class="h5 mt-5 mb-2 text-muted">
                     Drafts — themes that don't have an action item yet
@@ -173,7 +177,11 @@
                             </span>
                             <span class="small text-muted">
                                 {{ theme.mention_count }}
-                                {% if theme.mention_count == 1 %}mention{% else %}mentions{% endif %}
+                                {% if theme.mention_count == 1 %}
+                                    mention
+                                {% else %}
+                                    mentions
+                                {% endif %}
                                 · open →
                             </span>
                         </a>

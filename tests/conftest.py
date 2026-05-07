@@ -2,6 +2,7 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
+from django.contrib.auth.models import Permission
 from django.core.cache import cache
 
 os.environ.setdefault("FERNET_KEY", "kTdjP9joWZr9JfnWHGmcQOOPxFEKfCB3_Hx7OgHD6LU=")
@@ -25,6 +26,14 @@ def _assume_connected_calendars(monkeypatch):
     """
     monkeypatch.setattr("availability.views.has_active_calendars", lambda: True)
     monkeypatch.setattr("availability.services.mcp.has_active_calendars", lambda: True)
+
+
+@pytest.fixture
+def surveys_user_perm(db):
+    """The ``access_surveys`` permission, looked up once per test that needs it."""
+    return Permission.objects.get(
+        codename="access_surveys", content_type__app_label="surveys"
+    )
 
 
 @pytest.fixture(autouse=True)

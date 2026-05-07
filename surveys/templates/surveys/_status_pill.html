@@ -1,8 +1,13 @@
 {# Renders a small status pill with a colored dot. Caller passes `survey`. #}
 <span class="status-pill status-{{ survey.status }}">
     <span class="dot"></span>
-    {% if survey.status == "published" %}Live
-    {% elif survey.status == "draft" %}Draft
-    {% elif survey.status == "closed" %}Closed
-    {% else %}{{ survey.get_status_display }}{% endif %}
+    {% if survey.status == "published" %}
+        Live
+    {% elif survey.status == "draft" %}
+        Draft
+    {% elif survey.status == "closed" %}
+        Closed
+    {% else %}
+        {{ survey.get_status_display }}
+    {% endif %}
 </span>

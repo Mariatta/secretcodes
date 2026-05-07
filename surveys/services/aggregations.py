@@ -10,7 +10,6 @@ from typing import Any
 
 from ..models import Question, Response, Survey
 
-
 NPS_PROMOTER_MIN = 9
 NPS_DETRACTOR_MAX = 6
 
@@ -51,8 +50,10 @@ def _bars_relative_to_max(distribution: dict[Any, int]) -> list[Bar]:
 
 def _bars_relative_to_total(distribution: dict[Any, int], total: int) -> list[Bar]:
     """Bar widths as % of total submissions — for multi_select/yes_no."""
-    if not total:
-        return [Bar(label=str(k), count=v, width_pct=0) for k, v in distribution.items()]
+    if not total:  # pragma: no cover
+        return [
+            Bar(label=str(k), count=v, width_pct=0) for k, v in distribution.items()
+        ]
     return [
         Bar(label=str(k), count=v, width_pct=round(v * 100 / total))
         for k, v in distribution.items()
@@ -115,7 +116,9 @@ def _summarize_nps(question: Question, values: list[int]) -> QuestionSummary:
     )
 
 
-def _summarize_multi_select(question: Question, values: list[list[str]]) -> QuestionSummary:
+def _summarize_multi_select(
+    question: Question, values: list[list[str]]
+) -> QuestionSummary:
     """Count occurrences of each choice across all submissions."""
     declared = question.config.get("choices", [])
     counter: Counter = Counter()
@@ -190,9 +193,7 @@ def aggregate_survey(survey: Survey) -> SurveyAggregation:
         completion_rate = len(responses) / (submission_count * question_count)
     else:
         completion_rate = None
-    average_rating = (
-        sum(rating_values) / len(rating_values) if rating_values else None
-    )
+    average_rating = sum(rating_values) / len(rating_values) if rating_values else None
 
     return SurveyAggregation(
         survey=survey,

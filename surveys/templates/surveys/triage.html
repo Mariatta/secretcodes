@@ -155,52 +155,60 @@
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
-
             <div class="triage-strip">
-                <a class="crumb text-decoration-none" href="{% url 'surveys:results' slug=survey.slug %}">
+                <a class="crumb text-decoration-none"
+                   href="{% url 'surveys:results' slug=survey.slug %}">
                     {{ survey.title }}
                 </a>
                 <span style="color: var(--text-tertiary);">›</span>
                 <span class="crumb-current">Triage</span>
                 <a class="side-peek"
                    href="{% url 'surveys:actions' slug=survey.slug %}"
-                   target="_blank" rel="noopener"
+                   target="_blank"
+                   rel="noopener"
                    title="Open the action items dashboard in a new tab">
                     👁 peek action items
                 </a>
             </div>
-
-            <div class="progress-row" role="progressbar"
-                 aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ reviewed }}">
+            <div class="progress-row"
+                 role="progressbar"
+                 aria-valuemin="0"
+                 aria-valuemax="{{ total }}"
+                 aria-valuenow="{{ reviewed }}">
                 <span class="progress-text">
                     <strong>{{ reviewed }}</strong> of {{ total }} reviewed
                 </span>
                 <div class="progress-track">
                     <div class="progress-fill"
-                         style="width: {% if total %}{% widthratio reviewed total 100 %}{% else %}0{% endif %}%"></div>
+                         style="width: {% if total %}{% widthratio reviewed total 100 %}{% else %}0{% endif %}%">
+                    </div>
                 </div>
                 <span class="progress-text">
-                    {% if total %}{% widthratio reviewed total 100 %}{% else %}0{% endif %}%
+                    {% if total %}
+                        {% widthratio reviewed total 100 %}
+                    {% else %}
+                        0
+                    {% endif %}
+                    %
                 </span>
             </div>
-
             <div class="response-meta">
                 <span class="meta-pill">💬 {{ response.question.text|truncatechars:60 }}</span>
                 <span class="meta-pill">🕶 anonymous</span>
                 <span class="meta-pill">🕓 submitted {{ response.submitted_at|naturaltime }}</span>
                 {% if response.is_flagged %}
-                    <span class="meta-pill"
-                          style="background: #fff3e0; color: #b06b00;">⚑ flagged</span>
+                    <span class="meta-pill" style="background: #fff3e0; color: #b06b00;">⚑ flagged</span>
                 {% endif %}
             </div>
-
-            <div class="triage-callout">{{ response.value }}</div>
-
+            <div class="triage-callout">
+                {{ response.value }}
+            </div>
             <form method="post" id="triage-form">
                 {% csrf_token %}
                 <input type="hidden" name="response_id" value="{{ response.id }}">
-
-                <p class="small text-secondary mb-2 fw-medium">Tag with theme(s)</p>
+                <p class="small text-secondary mb-2 fw-medium">
+                    Tag with theme(s)
+                </p>
                 <div class="mb-3">
                     {% for theme in themes %}
                         <label class="theme-chip" data-index="{{ forloop.counter }}">
@@ -223,23 +231,37 @@
                                aria-label="New theme name">
                     </label>
                 </div>
-
                 <div class="quick-actions">
-                    <button class="btn btn-success text-white" type="submit" name="action" value="appreciation">
+                    <button class="btn btn-success text-white"
+                            type="submit"
+                            name="action"
+                            value="appreciation">
                         Appreciation <span class="kbd kbd-light ms-1">A</span>
                     </button>
-                    <button class="btn btn-secondary text-white" type="submit" name="action" value="not_actionable">
+                    <button class="btn btn-secondary text-white"
+                            type="submit"
+                            name="action"
+                            value="not_actionable">
                         Not actionable <span class="kbd kbd-light ms-1">N</span>
                     </button>
-                    <button class="btn btn-warning text-dark" type="submit" name="action" value="flag">
-                        {% if response.is_flagged %}⚑ Unflag{% else %}⚑ Flag for follow-up{% endif %}
+                    <button class="btn btn-warning text-dark"
+                            type="submit"
+                            name="action"
+                            value="flag">
+                        {% if response.is_flagged %}
+                            ⚑ Unflag
+                        {% else %}
+                            ⚑ Flag for follow-up
+                        {% endif %}
                         <span class="kbd ms-1">F</span>
                     </button>
-                    <button class="btn btn-outline-secondary" type="submit" name="action" value="skip">
+                    <button class="btn btn-outline-secondary"
+                            type="submit"
+                            name="action"
+                            value="skip">
                         Skip <span class="kbd ms-1">S</span>
                     </button>
                 </div>
-
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <span class="small text-muted">
                         <span class="kbd">1</span>–<span class="kbd">9</span> themes ·
@@ -251,7 +273,6 @@
                     </button>
                 </div>
             </form>
-
             <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small">
                 {% if prev_id %}
                     <a class="btn btn-link btn-sm p-0"
@@ -274,7 +295,6 @@
             </nav>
         </div>
     </div>
-
     <script>
         (function() {
             const form = document.getElementById('triage-form');

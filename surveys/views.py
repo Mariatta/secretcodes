@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.db.models import Count, F
 from django.http import Http404, HttpResponse, HttpResponseRedirect
@@ -14,6 +14,7 @@ from .forms import (
     ThemeForm,
 )
 from .models import Question, Response, ResponseTheme, Survey, Theme
+from .permissions import is_surveys_user
 from .services.aggregations import aggregate_survey
 from .services.exports import build_action_items_markdown, build_csv
 from .services.import_md import (
@@ -22,7 +23,8 @@ from .services.import_md import (
     parse_markdown,
 )
 from .services.publishing import ensure_short_url
-from .services.themes import co_occurring, merge as merge_themes
+from .services.themes import co_occurring
+from .services.themes import merge as merge_themes
 from .services.triage import (
     QUICK_ACTION_THEME_NAMES,
     apply_triage,
@@ -72,14 +74,19 @@ def done(request, slug):
 
 
 def dashboard(request):
-    """Public landing for the surveys app, or list of own surveys for authenticated users."""
-    if not request.user.is_authenticated:
+    """Public landing or list of own surveys.
+
+    Anonymous visitors AND authenticated users without the
+    ``access_surveys`` permission both see the landing page — same
+    pattern as the expenses app.
+    """
+    if not is_surveys_user(request.user):
         return render(request, "surveys/landing.html", {})
     surveys = Survey.objects.filter(owner=request.user).order_by("-creation_date")
     return render(request, "surveys/dashboard.html", {"surveys": surveys})
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def import_view(request):
     """Upload a markdown file → create a Survey + Questions in one shot."""
@@ -106,7 +113,7 @@ def import_view(request):
     return render(request, "surveys/import.html", {"form": form})
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def create(request):
     """Builder for a new survey."""
@@ -135,7 +142,7 @@ def create(request):
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def triage(request, slug):
     """One-response-at-a-time tagging for open-text responses.
@@ -148,18 +155,18 @@ def triage(request, slug):
     if request.method == "POST":
         action = request.POST.get("action", "next")
         response_id = int(request.POST.get("response_id", "0"))
-        response = get_object_or_404(
-            Response, id=response_id, question__survey=survey
-        )
+        response = get_object_or_404(Response, id=response_id, question__survey=survey)
         if action == "skip":
             return HttpResponseRedirect(
-                reverse("surveys:triage", kwargs={"slug": slug}) + f"?after={response.id}"
+                reverse("surveys:triage", kwargs={"slug": slug})
+                + f"?after={response.id}"
             )
         if action == "flag":
             """Flag is a status, not a theme — toggle and stay on the same response."""
             toggle_flag(response)
             return HttpResponseRedirect(
-                reverse("surveys:triage", kwargs={"slug": slug}) + f"?response={response.id}"
+                reverse("surveys:triage", kwargs={"slug": slug})
+                + f"?response={response.id}"
             )
         theme_ids = [int(x) for x in request.POST.getlist("theme_ids") if x.isdigit()]
         new_theme_name = request.POST.get("new_theme_name", "").strip()
@@ -195,7 +202,9 @@ def triage(request, slug):
         )
     themes = list(survey.themes.all().order_by("name"))
     tagged_theme_ids = set(
-        ResponseTheme.objects.filter(response=response).values_list("theme_id", flat=True)
+        ResponseTheme.objects.filter(response=response).values_list(
+            "theme_id", flat=True
+        )
     )
     prev_id, next_id = queue_neighbors(survey, response.id)
     return render(
@@ -214,7 +223,7 @@ def triage(request, slug):
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 def export_csv(request, slug):
     """Owner-only CSV download of all raw responses."""
     survey = get_object_or_404(Survey, slug=slug, owner=request.user)
@@ -226,7 +235,7 @@ def export_csv(request, slug):
     return response
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 def export_action_items(request, slug):
     """Owner-only markdown export of action items — paste-ready for a
     retro doc, GitHub issue, or Notion page."""
@@ -239,7 +248,7 @@ def export_action_items(request, slug):
     return response
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 def results(request, slug):
     """Per-survey aggregated results. Owner-only."""
     survey = get_object_or_404(Survey, slug=slug, owner=request.user)
@@ -263,7 +272,7 @@ _PRIORITY_RANK = {
 }
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 def actions(request, slug):
     """List of action items + drafts (themes still missing an action_item)."""
     survey = get_object_or_404(Survey, slug=slug, owner=request.user)
@@ -307,7 +316,7 @@ def actions(request, slug):
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["POST"])
 def theme_resolve(request, slug, theme_id):
     """Quick toggle status open ↔ resolved from the actions dashboard."""
@@ -324,7 +333,7 @@ def theme_resolve(request, slug, theme_id):
     return HttpResponseRedirect(next_url)
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def theme_detail(request, slug, theme_id):
     """Read all responses for a theme, draft the action item."""
@@ -335,8 +344,9 @@ def theme_detail(request, slug, theme_id):
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(
-                reverse("surveys:theme_detail",
-                        kwargs={"slug": slug, "theme_id": theme.id})
+                reverse(
+                    "surveys:theme_detail", kwargs={"slug": slug, "theme_id": theme.id}
+                )
             )
     else:
         form = ThemeForm(instance=theme)
@@ -345,9 +355,7 @@ def theme_detail(request, slug, theme_id):
         .select_related("response", "response__question")
         .order_by("-is_representative", "response__submitted_at")
     )
-    other_themes = list(
-        survey.themes.exclude(id=theme.id).order_by("name")
-    )
+    other_themes = list(survey.themes.exclude(id=theme.id).order_by("name"))
     return render(
         request,
         "surveys/theme_detail.html",
@@ -362,7 +370,7 @@ def theme_detail(request, slug, theme_id):
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["POST"])
 def theme_star(request, slug, theme_id, response_id):
     """Toggle the representative flag on a response within a theme.
@@ -378,18 +386,17 @@ def theme_star(request, slug, theme_id, response_id):
             rt.is_representative = False
             rt.save(update_fields=["is_representative"])
         else:
-            ResponseTheme.objects.filter(
-                theme=theme, is_representative=True
-            ).update(is_representative=False)
+            ResponseTheme.objects.filter(theme=theme, is_representative=True).update(
+                is_representative=False
+            )
             rt.is_representative = True
             rt.save(update_fields=["is_representative"])
     return HttpResponseRedirect(
-        reverse("surveys:theme_detail",
-                kwargs={"slug": slug, "theme_id": theme_id})
+        reverse("surveys:theme_detail", kwargs={"slug": slug, "theme_id": theme_id})
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["POST"])
 def theme_untag(request, slug, theme_id, response_id):
     """Remove a response's tag on this theme."""
@@ -397,12 +404,11 @@ def theme_untag(request, slug, theme_id, response_id):
     theme = get_object_or_404(Theme, id=theme_id, survey=survey)
     ResponseTheme.objects.filter(theme=theme, response_id=response_id).delete()
     return HttpResponseRedirect(
-        reverse("surveys:theme_detail",
-                kwargs={"slug": slug, "theme_id": theme_id})
+        reverse("surveys:theme_detail", kwargs={"slug": slug, "theme_id": theme_id})
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["POST"])
 def theme_merge(request, slug, theme_id):
     """Merge this theme into the chosen target; redirect to target."""
@@ -412,12 +418,11 @@ def theme_merge(request, slug, theme_id):
     target = get_object_or_404(Theme, id=target_id, survey=survey)
     merge_themes(source, target)
     return HttpResponseRedirect(
-        reverse("surveys:theme_detail",
-                kwargs={"slug": slug, "theme_id": target.id})
+        reverse("surveys:theme_detail", kwargs={"slug": slug, "theme_id": target.id})
     )
 
 
-@login_required
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def edit(request, slug):
     """Builder for an existing survey. Owner-only."""
@@ -430,9 +435,7 @@ def edit(request, slug):
                 survey_form.save()
                 """Shift existing orders out of the way so a swap of N↔M doesn't
                 trip the (survey, order) unique constraint during per-row saves."""
-                Question.objects.filter(survey=survey).update(
-                    order=F("order") + 10000
-                )
+                Question.objects.filter(survey=survey).update(order=F("order") + 10000)
                 formset.save()
             ensure_short_url(survey)
             return HttpResponseRedirect(

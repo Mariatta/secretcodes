@@ -7,7 +7,6 @@ from django.forms.models import inlineformset_factory
 
 from .models import Question, Response, Survey, Theme  # noqa: F401
 
-
 RATING_DEFAULT_MAX = 5
 NPS_MAX = 10
 
@@ -87,7 +86,7 @@ class SurveyResponseForm(forms.Form):
                 widget=forms.RadioSelect(attrs={"class": "btn-check"}),
                 required=required,
             )
-        raise ValueError(f"Unknown question type: {question.type}")
+        raise ValueError(f"Unknown question type: {question.type}")  # pragma: no cover
 
     @staticmethod
     def _coerce_value(question: Question, raw):

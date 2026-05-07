@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 FLAG_THEME_NAMES = ("flag for follow-up", "flag", "flagged", "follow-up")
 
 
@@ -32,14 +31,10 @@ def column_to_flag_theme(apps, schema_editor):
     ResponseTheme = apps.get_model("surveys", "ResponseTheme")
     Response = apps.get_model("surveys", "Response")
     for survey in Survey.objects.all():
-        flagged = Response.objects.filter(
-            question__survey=survey, is_flagged=True
-        )
+        flagged = Response.objects.filter(question__survey=survey, is_flagged=True)
         if not flagged.exists():
             continue
-        theme, _ = Theme.objects.get_or_create(
-            survey=survey, name="Flag for follow-up"
-        )
+        theme, _ = Theme.objects.get_or_create(survey=survey, name="Flag for follow-up")
         for r in flagged:
             ResponseTheme.objects.get_or_create(response=r, theme=theme)
 

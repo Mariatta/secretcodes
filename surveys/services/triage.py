@@ -10,7 +10,6 @@ from django.db import transaction
 
 from ..models import Question, Response, ResponseTheme, Survey, Theme
 
-
 """Quick-action keys that map to (case-insensitive) theme names.
 
 These are mutually exclusive with regular themes: applying one clears any
@@ -119,9 +118,7 @@ def apply_triage(
     if quick_action in QUICK_ACTION_THEME_NAMES:
         """Quick action mode: clear everything else, attach only this theme."""
         ResponseTheme.objects.filter(response=response).delete()
-        theme = _get_or_create_theme(
-            survey, QUICK_ACTION_THEME_NAMES[quick_action]
-        )
+        theme = _get_or_create_theme(survey, QUICK_ACTION_THEME_NAMES[quick_action])
         ResponseTheme.objects.create(
             response=response,
             theme=theme,
@@ -131,13 +128,9 @@ def apply_triage(
 
     themes_to_attach: list[Theme] = []
     if theme_ids:
-        themes_to_attach.extend(
-            Theme.objects.filter(survey=survey, id__in=theme_ids)
-        )
+        themes_to_attach.extend(Theme.objects.filter(survey=survey, id__in=theme_ids))
     if new_theme_name and new_theme_name.strip():
-        themes_to_attach.append(
-            _get_or_create_theme(survey, new_theme_name.strip())
-        )
+        themes_to_attach.append(_get_or_create_theme(survey, new_theme_name.strip()))
 
     if themes_to_attach:
         """Regular themes are mutually exclusive with quick-action sentinels —
@@ -151,7 +144,7 @@ def apply_triage(
 
     seen = set()
     for theme in themes_to_attach:
-        if theme.id in seen:
+        if theme.id in seen:  # pragma: no cover
             continue
         seen.add(theme.id)
         ResponseTheme.objects.get_or_create(

@@ -51,6 +51,9 @@ class Survey(BaseModel):
 
     class Meta:
         ordering = ["-creation_date"]
+        permissions = [
+            ("access_surveys", "Can access the surveys module"),
+        ]
 
     def __str__(self):
         return self.title

@@ -35,13 +35,13 @@
                            href="{% url 'surveys:export_csv' slug=survey.slug %}">
                             <i class="fa-solid fa-download" aria-hidden="true"></i> CSV
                         </a>
-                        <a class="btn btn-link p-0 small" href="{% url 'surveys:edit' slug=survey.slug %}">
+                        <a class="btn btn-link p-0 small"
+                           href="{% url 'surveys:edit' slug=survey.slug %}">
                             Edit survey →
                         </a>
                     </div>
                 </div>
             </div>
-
             <div class="row g-3 mb-4">
                 <div class="col-4">
                     <div class="stat-card">
@@ -49,14 +49,22 @@
                             {{ agg.submission_count }}
                         </div>
                         <div class="stat-label">
-                            {% if agg.submission_count == 1 %}response{% else %}responses{% endif %}
+                            {% if agg.submission_count == 1 %}
+                                response
+                            {% else %}
+                                responses
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="stat-card">
                         <div class="stat-num">
-                            {% if agg.completion_rate is None %}—{% else %}{{ agg.completion_rate|floatformat:0 }}%{% endif %}
+                            {% if agg.completion_rate is None %}
+                                —
+                            {% else %}
+                                {{ agg.completion_rate|floatformat:0 }}%
+                            {% endif %}
                         </div>
                         <div class="stat-label">
                             completion rate
@@ -66,7 +74,11 @@
                 <div class="col-4">
                     <div class="stat-card">
                         <div class="stat-num">
-                            {% if agg.average_rating is None %}—{% else %}{{ agg.average_rating|floatformat:1 }}{% endif %}
+                            {% if agg.average_rating is None %}
+                                —
+                            {% else %}
+                                {{ agg.average_rating|floatformat:1 }}
+                            {% endif %}
                         </div>
                         <div class="stat-label">
                             avg rating
@@ -74,7 +86,6 @@
                     </div>
                 </div>
             </div>
-
             {% for s in agg.summaries %}
                 <div class="card mb-3">
                     <div class="card-body">
@@ -87,27 +98,39 @@
                                     {% include "surveys/_type_pill.html" with type=s.question.type %}
                                     <span>
                                         {{ s.response_count }}
-                                        {% if s.response_count == 1 %}response{% else %}responses{% endif %}
+                                        {% if s.response_count == 1 %}
+                                            response
+                                        {% else %}
+                                            responses
+                                        {% endif %}
                                     </span>
                                 </div>
                             </div>
                             <div class="text-end small">
                                 {% if s.average is not None and s.question.type != 'nps' %}
-                                    <div>avg <strong>{{ s.average|floatformat:1 }}</strong></div>
+                                    <div>
+                                        avg <strong>{{ s.average|floatformat:1 }}</strong>
+                                    </div>
                                 {% endif %}
                                 {% if s.nps_score is not None %}
-                                    <div>NPS <strong>{{ s.nps_score|floatformat:0 }}</strong></div>
+                                    <div>
+                                        NPS <strong>{{ s.nps_score|floatformat:0 }}</strong>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
-
                         {% if s.question.type == 'open_text' %}
                             {% if s.response_count %}
                                 <div class="nudge">
                                     <span class="nudge-icon">💡</span>
                                     <span>
                                         <strong>{{ s.response_count }}</strong>
-                                        open-text {% if s.response_count == 1 %}response{% else %}responses{% endif %}
+                                        open-text
+                                        {% if s.response_count == 1 %}
+                                            response
+                                        {% else %}
+                                            responses
+                                        {% endif %}
                                         — group into themes to extract action items.
                                     </span>
                                     <span class="spacer"></span>
@@ -126,7 +149,8 @@
                                             {{ bar.label }}
                                         </div>
                                         <div class="bar-track">
-                                            <div class="bar-fill" style="width: {{ bar.width_pct }}%"></div>
+                                            <div class="bar-fill" style="width: {{ bar.width_pct }}%">
+                                            </div>
                                         </div>
                                         <div class="bar-count">
                                             {{ bar.count }}

@@ -11,7 +11,12 @@
             <p class="text-muted">
                 {% if total %}
                     You've reviewed all {{ total }}
-                    open-text {% if total == 1 %}response{% else %}responses{% endif %}
+                    open-text
+                    {% if total == 1 %}
+                        response
+                    {% else %}
+                        responses
+                    {% endif %}
                     for <strong>{{ survey.title }}</strong>.
                 {% else %}
                     No open-text responses to triage yet.

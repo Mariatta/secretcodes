@@ -114,66 +114,79 @@
     </style>
 {% endblock extra_head %}
 {% block content %}
-            <h2 class="h3 mb-1">
-                {{ survey.title }}
-            </h2>
-            <p class="text-muted small">
-                Takes about {{ pairs|length }}
-                {% if pairs|length == 1 %}question{% else %}questions{% endif %}.
-            </p>
-            {% if pairs %}
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-                    {% for question, field in pairs %}
-                        <fieldset class="mb-4">
-                            <legend class="h6 fw-semibold">
-                                {{ question.text }}
-                                {% if not question.required %}
-                                    <span class="text-muted small fw-normal">(Optional)</span>
-                                {% endif %}
-                            </legend>
-                            {% if question.type == 'rating' %}
-                                {% bootstrap_field field show_label=False wrapper_class="star-rating-field" %}
-                            {% elif question.type == 'nps' %}
-                                {% bootstrap_field field show_label=False wrapper_class="nps-rating-field" %}
-                                {% if question.config.labels.0 or question.config.labels.10 %}
-                                    <div class="nps-anchors">
-                                        <span>{{ question.config.labels.0|default:"" }}</span>
-                                        <span>{{ question.config.labels.10|default:"" }}</span>
-                                    </div>
-                                {% endif %}
-                            {% elif question.type == 'yes_no' %}
-                                <div class="btn-group yesno-btn-group" role="group" aria-label="{{ question.text }}">
-                                    {% for radio in field %}
-                                        {{ radio.tag }}
-                                        <label class="yesno-btn yesno-{{ radio.data.value }}"
-                                               for="{{ radio.id_for_label }}">
-                                            {% if radio.data.value == 'yes' %}✓ Yes{% else %}✗ No{% endif %}
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">{{ field.errors }}</div>
-                                {% endif %}
-                            {% else %}
-                                {% bootstrap_field field show_label=False %}
-                            {% endif %}
-                        </fieldset>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary w-100">
-                        Submit feedback
-                    </button>
-                </form>
-            {% else %}
-                <p class="text-muted">
-                    This survey has no questions yet.
-                </p>
+    <h2 class="h3 mb-1">
+        {{ survey.title }}
+    </h2>
+    <p class="text-muted small">
+        Takes about {{ pairs|length }}
+        {% if pairs|length == 1 %}
+            question
+        {% else %}
+            questions
+        {% endif %}
+        .
+    </p>
+    {% if pairs %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
             {% endif %}
+            {% for question, field in pairs %}
+                <fieldset class="mb-4">
+                    <legend class="h6 fw-semibold">
+                        {{ question.text }}
+                        {% if not question.required %}
+                            <span class="text-muted small fw-normal">(Optional)</span>
+                        {% endif %}
+                    </legend>
+                    {% if question.type == 'rating' %}
+                        {% bootstrap_field field show_label=False wrapper_class="star-rating-field" %}
+                    {% elif question.type == 'nps' %}
+                        {% bootstrap_field field show_label=False wrapper_class="nps-rating-field" %}
+                        {% if question.config.labels.0 or question.config.labels.10 %}
+                            <div class="nps-anchors">
+                                <span>{{ question.config.labels.0|default:"" }}</span>
+                                <span>{{ question.config.labels.10|default:"" }}</span>
+                            </div>
+                        {% endif %}
+                    {% elif question.type == 'yes_no' %}
+                        <div class="btn-group yesno-btn-group"
+                             role="group"
+                             aria-label="{{ question.text }}">
+                            {% for radio in field %}
+                                {{ radio.tag }}
+                                <label class="yesno-btn yesno-{{ radio.data.value }}"
+                                       for="{{ radio.id_for_label }}">
+                                    {% if radio.data.value == 'yes' %}
+                                        ✓ Yes
+                                    {% else %}
+                                        ✗ No
+                                    {% endif %}
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {% bootstrap_field field show_label=False %}
+                    {% endif %}
+                </fieldset>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary w-100">
+                Submit feedback
+            </button>
+        </form>
+    {% else %}
+        <p class="text-muted">
+            This survey has no questions yet.
+        </p>
+    {% endif %}
     <script>
         (function() {
             document.querySelectorAll('.star-rating-field').forEach((field) => {

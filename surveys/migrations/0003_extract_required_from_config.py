@@ -36,7 +36,5 @@ class Migration(migrations.Migration):
     dependencies = [("surveys", "0002_question_required")]
 
     operations = [
-        migrations.RunPython(
-            extract_required_from_config, restore_required_to_config
-        ),
+        migrations.RunPython(extract_required_from_config, restore_required_to_config),
     ]

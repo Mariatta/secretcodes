@@ -7,7 +7,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8" />
         <title>
-            {% block head_title %}Secret Codes{% endblock head_title %}
+            {% block head_title %}
+                Secret Codes
+            {% endblock head_title %}
         </title>
         <meta name="robots" content="noindex">
         <link rel="icon"
@@ -38,7 +40,7 @@
                             <a class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center text-decoration-none"
                                href="{% url 'index' %}"
                                aria-label="Secret Codes Surveys, by Mariatta"
-                               style="color: var(--sc-ink, #1F1E1B);">
+                               style="color: var(--sc-ink, #1F1E1B)">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      viewBox="0 0 560 180"
                                      role="img"
@@ -67,7 +69,13 @@
                                     <text x="90" y="120" class="sc-opsz-display" font-family="Fraunces, Georgia, serif" font-weight="500" font-style="italic" font-size="128" letter-spacing="-3" fill="currentColor">Secret</text>
                                     <text x="92" y="160" font-family="'JetBrains Mono', ui-monospace, monospace" font-weight="600" font-size="28" letter-spacing="4" fill="currentColor">C · O · D · E · S</text>
                                 </svg>
-                                <span style="font-family: Fraunces, Georgia, serif; font-style: italic; font-weight: 500; font-size: 2.5rem; line-height: 1; color: var(--sc-accent, #D84C2F); letter-spacing: -0.02em;">
+                                <span style="font-family: Fraunces, Georgia, serif;
+                                             font-style: italic;
+                                             font-weight: 500;
+                                             font-size: 2.5rem;
+                                             line-height: 1;
+                                             color: var(--sc-accent, #D84C2F);
+                                             letter-spacing: -0.02em">
                                     Surveys
                                 </span>
                             </a>
@@ -78,7 +86,8 @@
                             </p>
                         </section>
                     {% endblock hero %}
-                    {% block content %}{% endblock content %}
+                    {% block content %}
+                    {% endblock content %}
                 </div>
             </div>
         </main>
