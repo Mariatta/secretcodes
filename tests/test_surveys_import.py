@@ -14,9 +14,9 @@ from surveys.services.import_md import (
 
 
 @pytest.fixture
-def owner(db, surveys_user_perm):
+def owner(db, surveys_user_perm, surveys_create_perm):
     user = get_user_model().objects.create_user(username="owner", password="pw")
-    user.user_permissions.add(surveys_user_perm)
+    user.user_permissions.add(surveys_user_perm, surveys_create_perm)
     return user
 
 

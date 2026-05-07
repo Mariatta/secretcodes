@@ -30,9 +30,17 @@ def _assume_connected_calendars(monkeypatch):
 
 @pytest.fixture
 def surveys_user_perm(db):
-    """The ``access_surveys`` permission, looked up once per test that needs it."""
+    """The ``access_surveys`` permission — required for any creator surface."""
     return Permission.objects.get(
         codename="access_surveys", content_type__app_label="surveys"
+    )
+
+
+@pytest.fixture
+def surveys_create_perm(db):
+    """The ``create_surveys`` permission — required to start a new survey."""
+    return Permission.objects.get(
+        codename="create_surveys", content_type__app_label="surveys"
     )
 
 

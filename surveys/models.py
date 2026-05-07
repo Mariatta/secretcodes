@@ -1,8 +1,13 @@
+import datetime
 import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.timezone import now
+
+INVITATION_KEY_LENGTH = 64
 
 
 class BaseModel(models.Model):
@@ -53,6 +58,7 @@ class Survey(BaseModel):
         ordering = ["-creation_date"]
         permissions = [
             ("access_surveys", "Can access the surveys module"),
+            ("create_surveys", "Can create new surveys"),
         ]
 
     def __str__(self):
@@ -197,3 +203,91 @@ class ResponseTheme(models.Model):
 
     def __str__(self):
         return f"{self.response} ↔ {self.theme}"
+
+
+class SurveyCollaborator(BaseModel):
+    """A non-owner user who can edit + triage a specific survey.
+
+    The survey's ``owner`` field is the implicit owner role — collaborators
+    are additive. Cannot invite further collaborators or delete the survey.
+    """
+
+    class Role(models.TextChoices):
+        COLLABORATOR = "collaborator", "Collaborator"
+
+    survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="collaborators"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="survey_collaborations",
+    )
+    role = models.CharField(
+        "role", max_length=20, choices=Role.choices, default=Role.COLLABORATOR
+    )
+    joined_at = models.DateTimeField("joined_at", auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["survey", "user"],
+                name="surveys_collaborator_unique_user_per_survey",
+            ),
+        ]
+        ordering = ["joined_at"]
+
+    def __str__(self):
+        return f"{self.user} on {self.survey}"
+
+
+class SurveyInvitation(BaseModel):
+    """An email invitation to collaborate on a specific survey.
+
+    Inviter is always the survey owner (enforced at view level). On accept,
+    the recipient is granted the ``access_surveys`` permission and a
+    ``SurveyCollaborator`` row is created bound to their User account.
+    """
+
+    survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="invitations"
+    )
+    email = models.EmailField("email")
+    inviter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="survey_invitations_sent",
+    )
+    key = models.CharField("key", max_length=INVITATION_KEY_LENGTH, unique=True)
+    sent_at = models.DateTimeField("sent_at", null=True, blank=True)
+    accepted_at = models.DateTimeField("accepted_at", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "survey invitation"
+        verbose_name_plural = "survey invitations"
+        ordering = ["-creation_date"]
+
+    def __str__(self):
+        return f"Invite {self.email} to {self.survey.title}"
+
+    @classmethod
+    def create(cls, *, survey, email, inviter):
+        """Mint an invitation with a random url-safe key."""
+        return cls.objects.create(
+            survey=survey,
+            email=email,
+            inviter=inviter,
+            key=get_random_string(INVITATION_KEY_LENGTH).lower(),
+        )
+
+    @property
+    def is_accepted(self) -> bool:
+        return self.accepted_at is not None
+
+    def is_expired(self) -> bool:
+        """True once ``SURVEYS_INVITATION_EXPIRY_DAYS`` have passed since send."""
+        anchor = self.sent_at or self.creation_date
+        cutoff = anchor + datetime.timedelta(
+            days=settings.SURVEYS_INVITATION_EXPIRY_DAYS
+        )
+        return cutoff <= timezone.now()

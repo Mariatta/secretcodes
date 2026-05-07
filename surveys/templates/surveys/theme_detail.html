@@ -23,12 +23,7 @@
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-12 col-lg-9">
-            <nav class="small text-muted mb-2">
-                <a href="{% url 'surveys:dashboard' %}">Surveys</a> ·
-                <a href="{% url 'surveys:edit' slug=survey.slug %}">{{ survey.title }}</a> ·
-                <a href="{% url 'surveys:actions' slug=survey.slug %}">Action items</a> ·
-                Theme
-            </nav>
+            {% include "surveys/_subnav.html" with current="actions" %}
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                     <h1 class="h3 mb-1">

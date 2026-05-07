@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Accept survey invitation
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <h1 class="h3 mb-2">
+                Collaborate on {{ invitation.survey.title }}?
+            </h1>
+            <p class="text-muted">
+                You were invited by
+                {{ invitation.inviter.get_full_name|default:invitation.inviter.get_username }}
+                to join as a collaborator.
+            </p>
+            <div class="card mb-4" style="max-width: 480px;">
+                <div class="card-body">
+                    <h2 class="h5 card-title">
+                        {{ invitation.survey.title }}
+                    </h2>
+                    <p class="card-text text-muted small mb-0">
+                        Status: {{ invitation.survey.get_status_display }}
+                    </p>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    Accept and join
+                </button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'surveys:dashboard' %}">Not now</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    Invite collaborator · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            {% include "surveys/_subnav.html" with current="invite" %}
+            <h1 class="h3 mb-3">
+                Invite a collaborator
+            </h1>
+            <p class="text-muted">
+                Collaborators can edit, triage, and write action items on
+                <strong>{{ survey.title }}</strong>. They cannot invite further
+                collaborators or create new surveys of their own.
+            </p>
+            <form method="post" class="mb-4" style="max-width: 480px;">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <button type="submit" class="btn btn-primary">
+                    Send invite
+                </button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'surveys:edit' slug=survey.slug %}">Cancel</a>
+            </form>
+            {% if collaborators %}
+                <h2 class="h5 mt-5">
+                    Collaborators
+                </h2>
+                <ul class="list-group" style="max-width: 480px;">
+                    {% for c in collaborators %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">
+                                    {{ c.user.get_full_name|default:c.user.get_username }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ c.user.email }}
+                                </small>
+                            </div>
+                            <small class="text-muted align-self-center">
+                                joined {{ c.joined_at|date:"M j" }}
+                            </small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if pending %}
+                <h2 class="h5 mt-5">
+                    Pending invitations
+                </h2>
+                <ul class="list-group" style="max-width: 480px;">
+                    {% for invite in pending %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>
+                                {{ invite.email }}
+                            </div>
+                            <small class="text-muted align-self-center">
+                                sent {{ invite.sent_at|date:"M j"|default:"—" }}
+                            </small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

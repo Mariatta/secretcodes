@@ -1,20 +1,46 @@
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.db.models import Count, F
-from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseRedirect,
+)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .forms import (
     QuestionFormSet,
+    SurveyAcceptInviteSignupForm,
     SurveyForm,
     SurveyImportForm,
+    SurveyInvitationForm,
     SurveyResponseForm,
     ThemeForm,
 )
-from .models import Question, Response, ResponseTheme, Survey, Theme
-from .permissions import is_surveys_user
+from .models import (
+    Question,
+    Response,
+    ResponseTheme,
+    Survey,
+    SurveyCollaborator,
+    SurveyInvitation,
+    Theme,
+)
+from .permissions import (
+    ACCESS_SURVEYS_CODENAME,
+    SURVEY_COLLABORATOR_GROUP,
+    can_access_survey,
+    can_create_surveys,
+    is_surveys_user,
+)
 from .services.aggregations import aggregate_survey
 from .services.exports import build_action_items_markdown, build_csv
 from .services.import_md import (
@@ -22,6 +48,7 @@ from .services.import_md import (
     import_survey,
     parse_markdown,
 )
+from .services.invitations import send_invitation_email
 from .services.publishing import ensure_short_url
 from .services.themes import co_occurring
 from .services.themes import merge as merge_themes
@@ -78,15 +105,30 @@ def dashboard(request):
 
     Anonymous visitors AND authenticated users without the
     ``access_surveys`` permission both see the landing page — same
-    pattern as the expenses app.
+    pattern as the expenses app. Authorized users see surveys they
+    own *plus* surveys they've been invited to as collaborators.
     """
     if not is_surveys_user(request.user):
         return render(request, "surveys/landing.html", {})
-    surveys = Survey.objects.filter(owner=request.user).order_by("-creation_date")
-    return render(request, "surveys/dashboard.html", {"surveys": surveys})
+    owned = Survey.objects.filter(owner=request.user)
+    collab = Survey.objects.filter(collaborators__user=request.user)
+    surveys = (owned | collab).distinct().order_by("-creation_date")
+    """Annotate each survey with the user's role so the template can show a badge."""
+    owned_ids = set(owned.values_list("id", flat=True))
+    surveys = list(surveys)
+    for s in surveys:
+        s.viewer_role = "owner" if s.id in owned_ids else "collaborator"
+    return render(
+        request,
+        "surveys/dashboard.html",
+        {
+            "surveys": surveys,
+            "can_create_surveys": can_create_surveys(request.user),
+        },
+    )
 
 
-@user_passes_test(is_surveys_user)
+@user_passes_test(can_create_surveys)
 @require_http_methods(["GET", "POST"])
 def import_view(request):
     """Upload a markdown file → create a Survey + Questions in one shot."""
@@ -113,7 +155,7 @@ def import_view(request):
     return render(request, "surveys/import.html", {"form": form})
 
 
-@user_passes_test(is_surveys_user)
+@user_passes_test(can_create_surveys)
 @require_http_methods(["GET", "POST"])
 def create(request):
     """Builder for a new survey."""
@@ -151,7 +193,9 @@ def triage(request, slug):
     when called from a Skip action). POST applies the chosen tags and
     redirects back to GET so the next response is shown.
     """
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     if request.method == "POST":
         action = request.POST.get("action", "next")
         response_id = int(request.POST.get("response_id", "0"))
@@ -198,7 +242,12 @@ def triage(request, slug):
         return render(
             request,
             "surveys/triage_done.html",
-            {"survey": survey, "reviewed": reviewed, "total": total},
+            {
+                "survey": survey,
+                "reviewed": reviewed,
+                "total": total,
+                "is_owner": _is_survey_owner(request.user, survey),
+            },
         )
     themes = list(survey.themes.all().order_by("name"))
     tagged_theme_ids = set(
@@ -219,6 +268,7 @@ def triage(request, slug):
             "tagged_theme_ids": tagged_theme_ids,
             "prev_id": prev_id,
             "next_id": next_id,
+            "is_owner": _is_survey_owner(request.user, survey),
         },
     )
 
@@ -226,7 +276,9 @@ def triage(request, slug):
 @user_passes_test(is_surveys_user)
 def export_csv(request, slug):
     """Owner-only CSV download of all raw responses."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     body = build_csv(survey)
     response = HttpResponse(body, content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = (
@@ -239,7 +291,9 @@ def export_csv(request, slug):
 def export_action_items(request, slug):
     """Owner-only markdown export of action items — paste-ready for a
     retro doc, GitHub issue, or Notion page."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     body = build_action_items_markdown(survey)
     response = HttpResponse(body, content_type="text/markdown; charset=utf-8")
     response["Content-Disposition"] = (
@@ -251,12 +305,18 @@ def export_action_items(request, slug):
 @user_passes_test(is_surveys_user)
 def results(request, slug):
     """Per-survey aggregated results. Owner-only."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     aggregation = aggregate_survey(survey)
     return render(
         request,
         "surveys/results.html",
-        {"survey": survey, "agg": aggregation},
+        {
+            "survey": survey,
+            "agg": aggregation,
+            "is_owner": _is_survey_owner(request.user, survey),
+        },
     )
 
 
@@ -275,7 +335,9 @@ _PRIORITY_RANK = {
 @user_passes_test(is_surveys_user)
 def actions(request, slug):
     """List of action items + drafts (themes still missing an action_item)."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     themes = list(
         survey.themes.annotate(
             mention_count=Count("responses", distinct=True)
@@ -312,6 +374,7 @@ def actions(request, slug):
             "drafts": drafts,
             "open_count": open_count,
             "resolved_count": resolved_count,
+            "is_owner": _is_survey_owner(request.user, survey),
         },
     )
 
@@ -320,7 +383,9 @@ def actions(request, slug):
 @require_http_methods(["POST"])
 def theme_resolve(request, slug, theme_id):
     """Quick toggle status open ↔ resolved from the actions dashboard."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     theme = get_object_or_404(Theme, id=theme_id, survey=survey)
     if theme.status == Theme.Status.RESOLVED:
         theme.status = Theme.Status.OPEN
@@ -337,7 +402,9 @@ def theme_resolve(request, slug, theme_id):
 @require_http_methods(["GET", "POST"])
 def theme_detail(request, slug, theme_id):
     """Read all responses for a theme, draft the action item."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     theme = get_object_or_404(Theme, id=theme_id, survey=survey)
     if request.method == "POST":
         form = ThemeForm(request.POST, instance=theme)
@@ -366,6 +433,7 @@ def theme_detail(request, slug, theme_id):
             "response_themes": response_themes,
             "other_themes": other_themes,
             "co_occurring": co_occurring(theme),
+            "is_owner": _is_survey_owner(request.user, survey),
         },
     )
 
@@ -378,7 +446,9 @@ def theme_star(request, slug, theme_id, response_id):
     Only one representative is allowed per theme (DB constraint), so
     starring a new one un-stars the previous in the same transaction.
     """
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     theme = get_object_or_404(Theme, id=theme_id, survey=survey)
     rt = get_object_or_404(ResponseTheme, theme=theme, response_id=response_id)
     with transaction.atomic():
@@ -400,7 +470,9 @@ def theme_star(request, slug, theme_id, response_id):
 @require_http_methods(["POST"])
 def theme_untag(request, slug, theme_id, response_id):
     """Remove a response's tag on this theme."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     theme = get_object_or_404(Theme, id=theme_id, survey=survey)
     ResponseTheme.objects.filter(theme=theme, response_id=response_id).delete()
     return HttpResponseRedirect(
@@ -412,7 +484,9 @@ def theme_untag(request, slug, theme_id, response_id):
 @require_http_methods(["POST"])
 def theme_merge(request, slug, theme_id):
     """Merge this theme into the chosen target; redirect to target."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     source = get_object_or_404(Theme, id=theme_id, survey=survey)
     target_id = request.POST.get("target_theme_id")
     target = get_object_or_404(Theme, id=target_id, survey=survey)
@@ -426,7 +500,9 @@ def theme_merge(request, slug, theme_id):
 @require_http_methods(["GET", "POST"])
 def edit(request, slug):
     """Builder for an existing survey. Owner-only."""
-    survey = get_object_or_404(Survey, slug=slug, owner=request.user)
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
     if request.method == "POST":
         survey_form = SurveyForm(request.POST, instance=survey)
         formset = QuestionFormSet(request.POST, instance=survey)
@@ -452,5 +528,160 @@ def edit(request, slug):
             "survey_form": survey_form,
             "formset": formset,
             "is_new": False,
+            "is_owner": request.user == survey.owner or request.user.is_superuser,
         },
     )
+
+
+@user_passes_test(is_surveys_user)
+@require_http_methods(["GET"])
+def team(request, slug):
+    """Read-only roster of everyone with access to this survey.
+
+    Visible to the owner and any collaborator so the team can see who
+    else is on the survey. Pending invitations are NOT shown here —
+    those remain on the owner-only invite_create page to avoid leaking
+    invitee emails.
+    """
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
+    collaborators = survey.collaborators.select_related("user").order_by("joined_at")
+    return render(
+        request,
+        "surveys/team.html",
+        {
+            "survey": survey,
+            "collaborators": collaborators,
+            "is_owner": _is_survey_owner(request.user, survey),
+        },
+    )
+
+
+def _is_survey_owner(user, survey) -> bool:
+    return user.is_authenticated and (user == survey.owner or user.is_superuser)
+
+
+@user_passes_test(is_surveys_user)
+@require_http_methods(["GET", "POST"])
+def invite_create(request, slug):
+    """Owner-only form to invite a collaborator to a survey by email."""
+    survey = get_object_or_404(Survey, slug=slug)
+    if not _is_survey_owner(request.user, survey):
+        return HttpResponseForbidden("Only the survey owner can send invitations.")
+    if request.method == "POST":
+        form = SurveyInvitationForm(request.POST, survey=survey, inviter=request.user)
+        if form.is_valid():
+            invitation = form.save()
+            send_invitation_email(invitation, request)
+            messages.success(request, f"Invitation sent to {invitation.email}.")
+            return redirect("surveys:invite_create", slug=survey.slug)
+    else:
+        form = SurveyInvitationForm(survey=survey, inviter=request.user)
+    pending = survey.invitations.filter(accepted_at__isnull=True).order_by(
+        "-creation_date"
+    )
+    collaborators = survey.collaborators.select_related("user").order_by("joined_at")
+    return render(
+        request,
+        "surveys/invite_create.html",
+        {
+            "survey": survey,
+            "form": form,
+            "pending": pending,
+            "collaborators": collaborators,
+            "is_owner": True,
+        },
+    )
+
+
+def accept_invite(request, key):
+    """Accept-invite landing page.
+
+    Three paths based on whether a User already exists for the invited
+    email:
+      - User exists & is logged in as them: confirm-and-accept.
+      - User exists, anonymous: redirect to login (then back here).
+      - No user yet: render a signup form; on submit, create the user,
+        log them in, and accept.
+    """
+    invitation = get_object_or_404(SurveyInvitation, key=key)
+    if invitation.is_accepted:
+        messages.info(request, "This invitation has already been accepted.")
+        return redirect("surveys:results", slug=invitation.survey.slug)
+    if invitation.is_expired():
+        messages.error(request, "This invitation has expired.")
+        return redirect("surveys:dashboard")
+
+    User = get_user_model()
+    user_exists = User.objects.filter(email__iexact=invitation.email).exists()
+
+    if not user_exists:
+        return _accept_with_signup(request, invitation)
+
+    if not request.user.is_authenticated:
+        messages.info(
+            request,
+            f"An account already exists for {invitation.email}. "
+            "Please log in to accept this invitation.",
+        )
+        return redirect_to_login(request.get_full_path())
+    if request.user.email.lower() != invitation.email.lower():
+        return HttpResponseForbidden(
+            "This invitation was sent to a different email address. "
+            "Please log in as the invited account."
+        )
+    if request.method == "POST":
+        _accept_invitation(invitation, request.user)
+        messages.success(request, f"Welcome to {invitation.survey.title}!")
+        return redirect("surveys:results", slug=invitation.survey.slug)
+    return render(request, "surveys/accept_invite.html", {"invitation": invitation})
+
+
+def _accept_with_signup(request, invitation):
+    """Render and process the signup form for a brand-new invitee."""
+    if request.user.is_authenticated:
+        return HttpResponseForbidden(
+            "You're already logged in. Sign out before accepting an invite "
+            "for a different email address."
+        )
+    if request.method == "POST":
+        form = SurveyAcceptInviteSignupForm(request.POST, email=invitation.email)
+        if form.is_valid():
+            user = form.save()
+            user.backend = "django.contrib.auth.backends.ModelBackend"
+            login(request, user)
+            _accept_invitation(invitation, user)
+            messages.success(request, f"Welcome to {invitation.survey.title}!")
+            return redirect("surveys:results", slug=invitation.survey.slug)
+    else:
+        form = SurveyAcceptInviteSignupForm(email=invitation.email)
+    return render(
+        request,
+        "surveys/accept_invite_signup.html",
+        {"invitation": invitation, "form": form},
+    )
+
+
+def _accept_invitation(invitation: "SurveyInvitation", user) -> None:
+    """Mark invitation accepted, add user to the Survey Collaborator group,
+    create the SurveyCollaborator row.
+
+    Group membership grants ``surveys.access_surveys``. The migration
+    seeds this at deploy time; this view re-asserts the group→perm link
+    on every accept so the flow works even in test environments where
+    data migrations are skipped (``--no-migrations``).
+    """
+    perm = Permission.objects.get(
+        codename=ACCESS_SURVEYS_CODENAME, content_type__app_label="surveys"
+    )
+    group, _ = Group.objects.get_or_create(name=SURVEY_COLLABORATOR_GROUP)
+    group.permissions.add(perm)
+    user.groups.add(group)
+    SurveyCollaborator.objects.get_or_create(
+        survey=invitation.survey,
+        user=user,
+        defaults={"role": SurveyCollaborator.Role.COLLABORATOR},
+    )
+    invitation.accepted_at = timezone.now()
+    invitation.save(update_fields=["accepted_at", "modified_date"])
