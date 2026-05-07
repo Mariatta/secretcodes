@@ -5,6 +5,7 @@
 {% endblock head_title %}
 {% block extra_head %}
     {{ block.super }}
+    {% include "surveys/_force_light.html" %}
     <style>
         :root {
             --bg-secondary: #F5F4ED;

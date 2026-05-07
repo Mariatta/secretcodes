@@ -1,0 +1,10 @@
+{% comment %}
+Surveys CSS is designed for light mode only — until dark variants land,
+force-light the page so prefers-color-scheme:dark doesn't break legibility.
+The brand stylesheet treats :root.sc-light as opt-out of its dark media query.
+data-bs-theme="light" pins Bootstrap 5.3+'s own theming.
+{% endcomment %}
+<script>
+    document.documentElement.classList.add('sc-light');
+    document.documentElement.setAttribute('data-bs-theme', 'light');
+</script>
