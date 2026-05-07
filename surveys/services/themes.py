@@ -4,8 +4,6 @@ Single-row Theme edits go through the regular ModelForm; this module
 holds the cross-row stuff (co-occurrence reads, merge writes).
 """
 
-from collections import Counter
-
 from django.db import transaction
 from django.db.models import Count
 
