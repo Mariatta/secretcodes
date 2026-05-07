@@ -155,7 +155,8 @@
 {% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
+        <div class="col-12 col-lg-9">
+            {% include "surveys/_subnav.html" with current="triage" %}
             <div class="triage-strip">
                 <a class="crumb text-decoration-none"
                    href="{% url 'surveys:results' slug=survey.slug %}">

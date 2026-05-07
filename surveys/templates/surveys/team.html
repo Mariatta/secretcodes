@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Team · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            {% include "surveys/_subnav.html" with current="team" %}
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="h3 mb-0">
+                        {{ survey.title }}
+                    </h1>
+                    <div class="small text-muted">
+                        Team
+                    </div>
+                </div>
+                {% if is_owner %}
+                    <a class="btn btn-sm btn-primary"
+                       href="{% url 'surveys:invite_create' slug=survey.slug %}">
+                        + Invite collaborator
+                    </a>
+                {% endif %}
+            </div>
+            <p class="text-muted">
+                Everyone listed here can edit, triage, and write action items on
+                <strong>{{ survey.title }}</strong>.
+            </p>
+            <h2 class="h5 mt-4">
+                Owner
+            </h2>
+            <ul class="list-group mb-4" style="max-width: 480px;">
+                <li class="list-group-item d-flex justify-content-between">
+                    <div>
+                        <div class="fw-semibold">
+                            {{ survey.owner.get_full_name|default:survey.owner.get_username }}
+                        </div>
+                        <small class="text-muted">
+                            {{ survey.owner.email }}
+                        </small>
+                    </div>
+                    <small class="text-muted align-self-center">
+                        owner
+                    </small>
+                </li>
+            </ul>
+            <h2 class="h5">
+                Collaborators
+                <span class="text-muted">({{ collaborators|length }})</span>
+            </h2>
+            {% if collaborators %}
+                <ul class="list-group" style="max-width: 480px;">
+                    {% for c in collaborators %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">
+                                    {{ c.user.get_full_name|default:c.user.get_username }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ c.user.email }}
+                                </small>
+                            </div>
+                            <small class="text-muted align-self-center">
+                                joined {{ c.joined_at|date:"M j" }}
+                            </small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">
+                    No collaborators yet.
+                    {% if is_owner %}
+                        <a href="{% url 'surveys:invite_create' slug=survey.slug %}">Invite someone →</a>
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

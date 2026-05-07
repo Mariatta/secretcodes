@@ -9,6 +9,8 @@ urlpatterns = [
     path("new/", views.create, name="new"),
     path("import/", views.import_view, name="import"),
     path("<slug:slug>/edit/", views.edit, name="edit"),
+    path("<slug:slug>/invite/", views.invite_create, name="invite_create"),
+    path("<slug:slug>/team/", views.team, name="team"),
     path("<slug:slug>/results/", views.results, name="results"),
     path("<slug:slug>/export.csv", views.export_csv, name="export_csv"),
     path(
@@ -44,5 +46,6 @@ urlpatterns = [
         name="theme_merge",
     ),
     path("<slug:slug>/done/", views.done, name="done"),
+    path("i/<str:key>/", views.accept_invite, name="accept_invite"),
     path("<slug:slug>/", views.respond, name="respond"),
 ]

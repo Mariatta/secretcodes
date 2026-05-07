@@ -2,10 +2,22 @@ import json
 import uuid
 
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.forms.models import inlineformset_factory
 
-from .models import Question, Response, Survey, Theme  # noqa: F401
+from .models import (  # noqa: F401
+    Question,
+    Response,
+    Survey,
+    SurveyCollaborator,
+    SurveyInvitation,
+    Theme,
+)
+
+User = get_user_model()
 
 RATING_DEFAULT_MAX = 5
 NPS_MAX = 10
@@ -249,3 +261,101 @@ class ThemeForm(forms.ModelForm):
             "priority": forms.RadioSelect(attrs={"class": "btn-check"}),
             "status": forms.RadioSelect(attrs={"class": "btn-check"}),
         }
+
+
+class SurveyInvitationForm(forms.Form):
+    """Owner-only form to invite a collaborator to a survey by email."""
+
+    email = forms.EmailField(label="Email")
+
+    def __init__(self, *args, survey, inviter, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.survey = survey
+        self.inviter = inviter
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if self.inviter.email and self.inviter.email.lower() == email:
+            raise ValidationError(
+                "You're the survey owner — no need to invite yourself."
+            )
+        already_invited = SurveyInvitation.objects.filter(
+            survey=self.survey, email__iexact=email, accepted_at__isnull=True
+        ).exists()
+        if already_invited:
+            raise ValidationError(
+                "There's already a pending invitation for this email on this survey."
+            )
+        already_collaborator = self.survey.collaborators.filter(
+            user__email__iexact=email
+        ).exists()
+        if already_collaborator:
+            raise ValidationError(
+                "This person is already a collaborator on this survey."
+            )
+        return email
+
+    @transaction.atomic
+    def save(self):
+        return SurveyInvitation.create(
+            survey=self.survey,
+            email=self.cleaned_data["email"],
+            inviter=self.inviter,
+        )
+
+
+class SurveyAcceptInviteSignupForm(forms.Form):
+    """Sign-up form rendered when an invitee has no account yet.
+
+    Email is fixed to the invitation's email (not editable). Collects
+    username + password, creates a fresh User, returns it so the view
+    can ``login()`` and proceed.
+    """
+
+    username = forms.CharField(
+        label="Username",
+        max_length=150,
+        help_text="Used to log in. Letters, digits and @/./+/-/_ only.",
+    )
+    first_name = forms.CharField(label="First name", max_length=150, required=False)
+    password1 = forms.CharField(
+        label="Password", widget=forms.PasswordInput, strip=False
+    )
+    password2 = forms.CharField(
+        label="Password (again)", widget=forms.PasswordInput, strip=False
+    )
+
+    def __init__(self, *args, email, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.email = email
+
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise ValidationError("That username is taken.")
+        return username
+
+    def clean(self):
+        cleaned = super().clean()
+        if User.objects.filter(email__iexact=self.email).exists():
+            raise ValidationError(
+                "This email address already has an account. "
+                "Please log in instead of signing up."
+            )
+        p1, p2 = cleaned.get("password1"), cleaned.get("password2")
+        if p1 and p2 and p1 != p2:
+            self.add_error("password2", "Passwords don't match.")
+        if p1:
+            try:
+                validate_password(p1)
+            except ValidationError as exc:
+                self.add_error("password1", exc)
+        return cleaned
+
+    def save(self):
+        return User.objects.create_user(
+            username=self.cleaned_data["username"],
+            email=self.email,
+            password=self.cleaned_data["password1"],
+            first_name=self.cleaned_data.get("first_name", ""),
+        )

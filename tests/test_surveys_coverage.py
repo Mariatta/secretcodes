@@ -38,9 +38,9 @@ User = get_user_model()
 
 
 @pytest.fixture
-def owner(db, surveys_user_perm):
+def owner(db, surveys_user_perm, surveys_create_perm):
     user = User.objects.create_user(username="cov-owner", password="pw")
-    user.user_permissions.add(surveys_user_perm)
+    user.user_permissions.add(surveys_user_perm, surveys_create_perm)
     return user
 
 

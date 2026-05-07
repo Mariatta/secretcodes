@@ -133,6 +133,7 @@ ACCOUNT_ADAPTER = "secretcodes.account_adapter.SecretCodesAccountAdapter"
 
 # Expense-app invitations: how long the email link stays valid.
 EXPENSES_INVITATION_EXPIRY_DAYS = 14
+SURVEYS_INVITATION_EXPIRY_DAYS = 14
 # Email transport. compose.yml uses maildev (port 1025, no auth/TLS).
 # In production set Mailgun SMTP creds via env: DJANGO_EMAIL_HOST=smtp.mailgun.org,
 # DJANGO_EMAIL_PORT=587, DJANGO_EMAIL_HOST_USER=postmaster@<domain>,

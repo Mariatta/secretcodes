@@ -13,21 +13,30 @@
                 <h1 class="h3 mb-0">
                     My surveys
                 </h1>
-                <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary" href="{% url 'surveys:import' %}">
-                        <i class="fa-solid fa-file-import" aria-hidden="true"></i> Import
-                    </a>
-                    <a class="btn btn-primary" href="{% url 'surveys:new' %}">+ New survey</a>
-                </div>
+                {% if can_create_surveys %}
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-secondary" href="{% url 'surveys:import' %}">
+                            <i class="fa-solid fa-file-import" aria-hidden="true"></i> Import
+                        </a>
+                        <a class="btn btn-primary" href="{% url 'surveys:new' %}">+ New survey</a>
+                    </div>
+                {% endif %}
             </div>
             {% if surveys %}
                 <div class="list-group">
                     {% for survey in surveys %}
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <a class="fw-semibold" href="{% url 'surveys:edit' slug=survey.slug %}">
+                                <a class="fw-semibold"
+                                   href="{% url 'surveys:results' slug=survey.slug %}">
                                     {{ survey.title }}
                                 </a>
+                                {% if survey.viewer_role == 'collaborator' %}
+                                    <span class="badge bg-light text-dark border ms-1"
+                                          title="You're a collaborator on this survey">
+                                        collaborator
+                                    </span>
+                                {% endif %}
                                 <div class="small text-muted">
                                     /{{ survey.slug }} ·
                                     {{ survey.questions.count }}
@@ -49,7 +58,7 @@
                                        aria-hidden="true"></i>
                                 </a>
                                 <a class="btn btn-sm btn-outline-secondary"
-                                   href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
+                                   href="{% url 'surveys:edit' slug=survey.slug %}">Edit</a>
                                 <a class="btn btn-sm btn-outline-secondary"
                                    href="{% url 'surveys:actions' slug=survey.slug %}">Actions</a>
                                 {% include "surveys/_status_pill.html" with survey=survey %}
@@ -60,7 +69,9 @@
             {% else %}
                 <p class="text-muted">
                     You don't have any surveys yet.
-                    <a href="{% url 'surveys:new' %}">Create your first one →</a>
+                    {% if can_create_surveys %}
+                        <a href="{% url 'surveys:new' %}">Create your first one →</a>
+                    {% endif %}
                 </p>
             {% endif %}
         </div>
