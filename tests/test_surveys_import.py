@@ -1,4 +1,3 @@
-import io
 import textwrap
 
 import pytest

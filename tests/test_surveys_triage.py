@@ -355,7 +355,7 @@ def test_triage_view_specific_response_via_query(client, survey_with_open_text, 
     """`?response=<id>` opens that specific response, even if already triaged."""
     survey, q = survey_with_open_text
     r1 = _new_response(q, "first")
-    r2 = _new_response(q, "second")
+    _new_response(q, "second")
     theme = Theme.objects.create(survey=survey, name="X")
     ResponseTheme.objects.create(response=r1, theme=theme, tagged_by=owner)
     client.force_login(owner)
@@ -388,9 +388,9 @@ def test_triage_renders_progress_bar(client, survey_with_open_text, owner):
     """Visual progress bar with role/aria + width % matching reviewed/total."""
     survey, q = survey_with_open_text
     r1 = _new_response(q, "first")
-    r2 = _new_response(q, "second")
-    r3 = _new_response(q, "third")
-    r4 = _new_response(q, "fourth")
+    _new_response(q, "second")
+    _new_response(q, "third")
+    _new_response(q, "fourth")
     theme = Theme.objects.create(survey=survey, name="X")
     ResponseTheme.objects.create(response=r1, theme=theme, tagged_by=owner)
     client.force_login(owner)

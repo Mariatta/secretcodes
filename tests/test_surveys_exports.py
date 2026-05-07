@@ -107,7 +107,7 @@ def test_csv_yes_no_renders_as_words(survey):
 @pytest.mark.django_db
 def test_csv_missing_answer_renders_empty(survey):
     a = _q(survey, Question.Type.RATING, 1, text="A")
-    b = _q(survey, Question.Type.OPEN_TEXT, 2, text="B")
+    _q(survey, Question.Type.OPEN_TEXT, 2, text="B")
     _submit({a: 5})  # no B
     rows = _read_csv(build_csv(survey))
     assert rows[1][2] == "5"

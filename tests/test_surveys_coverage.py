@@ -11,7 +11,7 @@ import pytest
 from django import forms as django_forms
 from django.contrib.auth import get_user_model
 
-from surveys.forms import QuestionForm, ThemeForm
+from surveys.forms import QuestionForm
 from surveys.models import (
     Question,
     Response,
@@ -158,7 +158,7 @@ def test_csv_picks_earliest_submitted_at_per_submission(owner):
         survey=survey, text="Q2", type=Question.Type.OPEN_TEXT, config={}, order=2
     )
     sid = uuid.uuid4()
-    r1 = Response.objects.create(question=q1, submission_uuid=sid, value="a")
+    Response.objects.create(question=q1, submission_uuid=sid, value="a")
     r2 = Response.objects.create(question=q2, submission_uuid=sid, value="b")
     """Force r2 to have a later submitted_at than r1 (newer record)."""
     Response.objects.filter(pk=r2.pk).update(submitted_at=r2.submitted_at)

@@ -186,7 +186,7 @@ def test_results_view_open_text_callout(client, owner):
 @pytest.mark.django_db
 def test_results_view_shows_status_pill(client, owner):
     """Top-right status pill: green=Live, amber=Draft, red=Closed."""
-    survey = Survey.objects.create(
+    Survey.objects.create(
         owner=owner, title="P", slug="p", status=Survey.Status.PUBLISHED
     )
     client.force_login(owner)
@@ -198,9 +198,7 @@ def test_results_view_shows_status_pill(client, owner):
 
 @pytest.mark.django_db
 def test_results_view_status_pill_for_draft(client, owner):
-    survey = Survey.objects.create(
-        owner=owner, title="D", slug="d", status=Survey.Status.DRAFT
-    )
+    Survey.objects.create(owner=owner, title="D", slug="d", status=Survey.Status.DRAFT)
     client.force_login(owner)
     response = client.get(reverse("surveys:results", kwargs={"slug": "d"}))
     assert response.status_code == 200
