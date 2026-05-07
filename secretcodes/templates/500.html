@@ -1,0 +1,28 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block head_title %}
+    500 — Static interference · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mb-5 text-center">
+        <div class="sc-eyebrow mb-3 justify-content-center">
+            <span class="sc-num">500</span>Server error
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            Static <em class="sc-italic">interference</em>.
+        </h1>
+        <p class="sc-prose-lead">
+            Something on this end went wrong. The signal didn't make it
+            through. The error has been logged; if it keeps happening,
+            you can <a href="https://github.com/Mariatta/secretcodes/issues">open an issue</a>.
+        </p>
+        <p class="sc-muted">
+            <a href="{% url 'index' %}">← Return to base</a>
+        </p>
+        <img src="{% static 'brand/logo-monogram.svg' %}"
+             alt=""
+             aria-hidden="true"
+             width="120" height="120"
+             class="mt-4">
+    </section>
+{% endblock content %}

@@ -1,0 +1,27 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block head_title %}
+    403 — Restricted frequency · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mb-5 text-center">
+        <div class="sc-eyebrow mb-3 justify-content-center">
+            <span class="sc-num">403</span>Forbidden
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            Restricted <em class="sc-italic">frequency</em>.
+        </h1>
+        <p class="sc-prose-lead">
+            You don't have access to this channel. If you think you
+            should — and you have an account here — try signing in.
+        </p>
+        <p class="sc-muted">
+            <a href="{% url 'index' %}">← Return to base</a>
+        </p>
+        <img src="{% static 'brand/logo-monogram.svg' %}"
+             alt=""
+             aria-hidden="true"
+             width="120" height="120"
+             class="mt-4">
+    </section>
+{% endblock content %}

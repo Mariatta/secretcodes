@@ -1,0 +1,27 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block head_title %}
+    400 — Bad signal · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mb-5 text-center">
+        <div class="sc-eyebrow mb-3 justify-content-center">
+            <span class="sc-num">400</span>Bad request
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            Bad <em class="sc-italic">signal</em>.
+        </h1>
+        <p class="sc-prose-lead">
+            The request didn't decode. Something in the URL or the
+            payload looked malformed.
+        </p>
+        <p class="sc-muted">
+            <a href="{% url 'index' %}">← Return to base</a>
+        </p>
+        <img src="{% static 'brand/logo-monogram.svg' %}"
+             alt=""
+             aria-hidden="true"
+             width="120" height="120"
+             class="mt-4">
+    </section>
+{% endblock content %}
