@@ -2,6 +2,10 @@
 {% block head_title %}
     Triage done · {{ survey.title }}
 {% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6 text-center">
