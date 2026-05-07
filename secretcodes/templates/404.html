@@ -1,0 +1,28 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block head_title %}
+    404 — Lost transmission · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <section class="sc-prose py-4 mb-5 text-center">
+        <div class="sc-eyebrow mb-3 justify-content-center">
+            <span class="sc-num">404</span>Not found
+        </div>
+        <h1 class="sc-display sc-h-tight mb-4">
+            Lost <em class="sc-italic">transmission</em>.
+        </h1>
+        <p class="sc-prose-lead">
+            The page you're looking for isn't here. Maybe it moved, maybe
+            the link was malformed, maybe the signal didn't come through.
+        </p>
+        <p class="sc-muted">
+            <a href="{% url 'index' %}">← Return to base</a>
+        </p>
+        <img src="{% static 'brand/logo-monogram.svg' %}"
+             alt=""
+             aria-hidden="true"
+             width="120"
+             height="120"
+             class="mt-4">
+    </section>
+{% endblock content %}

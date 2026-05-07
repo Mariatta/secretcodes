@@ -15,6 +15,7 @@ from surveys.services.triage import (
     apply_triage,
     next_to_review,
     progress,
+    toggle_flag,
     untriaged_queue,
 )
 
@@ -225,8 +226,6 @@ def test_appreciation_clears_other_themes(survey_with_open_text, owner):
     r = _new_response(q, "feedback")
     scheduling = Theme.objects.create(survey=survey, name="Scheduling")
     ResponseTheme.objects.create(response=r, theme=scheduling, tagged_by=owner)
-    from surveys.services.triage import apply_triage
-
     apply_triage(
         response=r,
         theme_ids=[],
@@ -246,8 +245,6 @@ def test_regular_theme_clears_quick_action_sentinel(survey_with_open_text, owner
     appreciation = Theme.objects.create(survey=survey, name="Appreciation")
     ResponseTheme.objects.create(response=r, theme=appreciation, tagged_by=owner)
     sched = Theme.objects.create(survey=survey, name="Scheduling")
-    from surveys.services.triage import apply_triage
-
     apply_triage(
         response=r,
         theme_ids=[sched.id],
@@ -265,8 +262,6 @@ def test_new_theme_name_matches_case_insensitively(survey_with_open_text, owner)
     survey, q = survey_with_open_text
     r = _new_response(q, "x")
     Theme.objects.create(survey=survey, name="Scheduling")
-    from surveys.services.triage import apply_triage
-
     apply_triage(
         response=r,
         theme_ids=[],
@@ -282,8 +277,6 @@ def test_new_theme_name_matches_case_insensitively(survey_with_open_text, owner)
 def test_toggle_flag_flips_state(survey_with_open_text, owner):
     survey, q = survey_with_open_text
     r = _new_response(q, "x")
-    from surveys.services.triage import toggle_flag
-
     assert r.is_flagged is False
     assert toggle_flag(r) is True
     r.refresh_from_db()

@@ -1,13 +1,15 @@
 """Invitation create + accept flow."""
 
+import datetime
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
+from django.utils import timezone
 
-from expenses.forms import InvitationForm
+from expenses.forms import AcceptInviteSignupForm, InvitationForm
 from expenses.models import Event, ExpenseInvitation, Participant
 
 User = get_user_model()
@@ -331,25 +333,17 @@ def test_accept_invite_signup_uses_first_name_for_display_name(client, event, ow
 
 
 def timezone_now():
-    from django.utils import timezone
-
     return timezone.now()
 
 
 def _ages_ago():
     """A datetime far enough in the past that any invite is expired."""
-    import datetime
-
-    from django.utils import timezone
-
     return timezone.now() - datetime.timedelta(days=365)
 
 
 def test_accept_invite_signup_form_rejects_race_condition(event, owner):
     """Form-level defense: if a user with the email is created between
     view-check and form-submit, the form refuses on clean()."""
-    from expenses.forms import AcceptInviteSignupForm
-
     User.objects.create_user(username="racewinner", password="pw", email="r@x")
     form = AcceptInviteSignupForm(
         {

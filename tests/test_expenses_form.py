@@ -5,8 +5,14 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from expenses.forms import ExpenseForm
+from expenses.forms import (
+    AcceptInviteSignupForm,
+    EventForm,
+    ExpenseForm,
+    InvitationForm,
+)
 from expenses.models import Category, Event, ExpenseShare, Participant
 
 User = get_user_model()
@@ -153,8 +159,6 @@ def test_edit_recreates_shares_with_new_split(event, participants, category):
 
 def test_event_form_locks_base_currency_after_creation(event):
     """On edit, base_currency input is disabled."""
-    from expenses.forms import EventForm
-
     form = EventForm(instance=event)
     assert form.fields["base_currency"].disabled is True
 
@@ -195,8 +199,6 @@ def test_payer_not_in_split_no_remainder_keeps_shares_even(
 
 def test_receipt_rejects_disallowed_content_type(event, participants, category):
     """Even if extension passes, content-type whitelist still applies."""
-    from django.core.files.uploadedfile import SimpleUploadedFile
-
     payer, *_ = participants
     upload = SimpleUploadedFile(
         "looks.jpg", b"\xff\xd8\xff\xe0fake", content_type="application/x-fake"
@@ -211,8 +213,6 @@ def test_receipt_rejects_disallowed_content_type(event, participants, category):
 
 def test_signup_form_rejects_weak_password(event):
     """Django's password validators reject obvious passwords."""
-    from expenses.forms import AcceptInviteSignupForm
-
     form = AcceptInviteSignupForm(
         {
             "username": "weakuser",
@@ -227,8 +227,6 @@ def test_signup_form_rejects_weak_password(event):
 
 def test_invitation_form_rejects_existing_participant_email(event, participants):
     """Inviting an email that belongs to an existing participant is blocked."""
-    from expenses.forms import InvitationForm
-
     payer, *_ = participants
     payer.user.email = "existing@example.com"
     payer.user.save()

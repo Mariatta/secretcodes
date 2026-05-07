@@ -9,8 +9,10 @@ import uuid
 
 import pytest
 from django import forms as django_forms
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 
+from surveys.admin import QuestionAdmin, ResponseAdmin, ThemeAdmin
 from surveys.forms import QuestionForm
 from surveys.models import (
     Question,
@@ -248,14 +250,6 @@ def test_auto_mark_whitespace_returns_false_when_already_tagged(owner):
 @pytest.mark.django_db
 def test_admin_display_methods(owner):
     """Cover the admin display callbacks."""
-    from django.contrib import admin
-
-    from surveys.admin import (
-        QuestionAdmin,
-        ResponseAdmin,
-        ThemeAdmin,
-    )
-
     survey = Survey.objects.create(owner=owner, title="S", slug="cov-admin")
     short_q = Question.objects.create(
         survey=survey, text="Short Q", type=Question.Type.OPEN_TEXT, config={}, order=1
