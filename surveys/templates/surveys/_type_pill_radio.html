@@ -1,0 +1,15 @@
+{# Render a Question.type field as a row of selectable colored pills. #}
+{# Caller passes `field` = a BoundField with RadioSelect widget. #}
+{% for radio in field %}
+    {{ radio.tag }}
+    <label class="type-pill-btn type-pill-btn-{{ radio.data.value }}"
+           for="{{ radio.id_for_label }}">
+        {% if radio.data.value == "rating" %}<span class="icon">★</span>rating
+        {% elif radio.data.value == "multi_select" %}<span class="icon">☷</span>multi-select
+        {% elif radio.data.value == "nps" %}<span class="icon">↗</span>NPS
+        {% elif radio.data.value == "open_text" %}<span class="icon">✎</span>open text
+        {% elif radio.data.value == "yes_no" %}<span class="icon">✓</span>yes / no
+        {% else %}{{ radio.choice_label }}
+        {% endif %}
+    </label>
+{% endfor %}

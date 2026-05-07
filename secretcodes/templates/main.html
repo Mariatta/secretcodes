@@ -162,11 +162,28 @@
                 </div>
             </a>
         </div>
+        <div class="col-md-4">
+            <a href="{% url 'surveys:dashboard' %}" class="sc-card sc-tile">
+                <div class="sc-eyebrow">
+                    <span class="sc-num">05</span>Feedback
+                </div>
+                <h4 class="sc-display sc-tile-title">
+                    Surveys
+                </h4>
+                <p class="sc-muted sc-tile-body">
+                    Anonymous feedback forms for events and side-projects.
+                    Open-text answers turn into themes and action items.
+                </p>
+                <div class="sc-arrow">
+                    open →
+                </div>
+            </a>
+        </div>
         {% if perms.qrcode_manager.create_slug_qrcode %}
             <div class="col-md-4">
                 <a href="{% url 'qrcode_slug_generator' %}" class="sc-card sc-tile">
                     <div class="sc-eyebrow">
-                        <span class="sc-num">05</span>Utility
+                        <span class="sc-num">06</span>Utility
                     </div>
                     <h4 class="sc-display sc-tile-title">
                         QR + slug

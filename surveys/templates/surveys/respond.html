@@ -1,0 +1,207 @@
+{% extends "surveys/_respondent_base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_ui.html" %}
+    <style>
+        .nps-rating-field { display: flex; flex-wrap: wrap; gap: 6px; }
+        .nps-rating-field .form-check {
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+            min-height: auto;
+        }
+        .nps-rating-field .form-check-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0; height: 0;
+        }
+        .nps-rating-field .form-check-label {
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            width: 2.5rem; height: 2.5rem;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            color: #495057;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            margin: 0;
+        }
+        .nps-rating-field .form-check-label:hover {
+            border-color: #534AB7; color: #534AB7;
+        }
+        .nps-rating-field .form-check-input:checked + .form-check-label {
+            background: #534AB7; color: #fff; border-color: #534AB7;
+        }
+        .nps-anchors {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .yesno-btn-group { gap: 8px; }
+        .yesno-btn-group .yesno-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 10px 24px;
+            border: 1.5px solid;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        /* Unselected: muted tinted background + colored text. */
+        .yesno-btn-group .yesno-btn.yesno-yes { background: #f0faf5; color: #1d9e75; border-color: #cce6da; }
+        .yesno-btn-group .yesno-btn.yesno-no  { background: #fdf3f3; color: #a32d2d; border-color: #ecc6c6; }
+        .yesno-btn-group .yesno-btn:hover { transform: translateY(-1px); }
+        /* Selected: bold solid fill — high contrast vs unselected. */
+        .yesno-btn-group .btn-check:checked + .yesno-btn.yesno-yes {
+            background: #1d9e75; color: #fff; border-color: #1d9e75;
+            box-shadow: 0 4px 14px rgba(29, 158, 117, 0.35);
+        }
+        .yesno-btn-group .btn-check:checked + .yesno-btn.yesno-no {
+            background: #a32d2d; color: #fff; border-color: #a32d2d;
+            box-shadow: 0 4px 14px rgba(163, 45, 45, 0.35);
+        }
+        .star-rating-field .form-check {
+            display: inline-block;
+            margin: 0 2px 0 0;
+            padding: 0;
+            min-height: auto;
+        }
+        .star-rating-field .form-check-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0; height: 0;
+        }
+        .star-rating-field .form-check-label {
+            cursor: pointer;
+            width: 2.4rem; height: 2.4rem;
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            color: #d4d4d4;
+            font-size: 0;            /* hide the choice text label */
+            transition: color 0.12s;
+            margin: 0; padding: 0;
+            user-select: none;
+        }
+        .star-rating-field .form-check-label::before {
+            content: "★";
+            font-size: 1.9rem;
+            line-height: 1;
+        }
+        .star-rating-field .form-check-label:hover { color: #f0a500; }
+        .star-rating-field .form-check.filled .form-check-label,
+        .star-rating-field .form-check.preview-filled .form-check-label {
+            color: #f5a623;
+        }
+        .star-rating-field .form-check-input:focus-visible + .form-check-label {
+            outline: 2px solid #0d6efd;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+        .star-rating-field .invalid-feedback { font-size: 0.85rem; }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+            <h2 class="h3 mb-1">
+                {{ survey.title }}
+            </h2>
+            <p class="text-muted small">
+                Takes about {{ pairs|length }}
+                {% if pairs|length == 1 %}question{% else %}questions{% endif %}.
+            </p>
+            {% if pairs %}
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    {% for question, field in pairs %}
+                        <fieldset class="mb-4">
+                            <legend class="h6 fw-semibold">
+                                {{ question.text }}
+                                {% if not question.required %}
+                                    <span class="text-muted small fw-normal">(Optional)</span>
+                                {% endif %}
+                            </legend>
+                            {% if question.type == 'rating' %}
+                                {% bootstrap_field field show_label=False wrapper_class="star-rating-field" %}
+                            {% elif question.type == 'nps' %}
+                                {% bootstrap_field field show_label=False wrapper_class="nps-rating-field" %}
+                                {% if question.config.labels.0 or question.config.labels.10 %}
+                                    <div class="nps-anchors">
+                                        <span>{{ question.config.labels.0|default:"" }}</span>
+                                        <span>{{ question.config.labels.10|default:"" }}</span>
+                                    </div>
+                                {% endif %}
+                            {% elif question.type == 'yes_no' %}
+                                <div class="btn-group yesno-btn-group" role="group" aria-label="{{ question.text }}">
+                                    {% for radio in field %}
+                                        {{ radio.tag }}
+                                        <label class="yesno-btn yesno-{{ radio.data.value }}"
+                                               for="{{ radio.id_for_label }}">
+                                            {% if radio.data.value == 'yes' %}✓ Yes{% else %}✗ No{% endif %}
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors }}</div>
+                                {% endif %}
+                            {% else %}
+                                {% bootstrap_field field show_label=False %}
+                            {% endif %}
+                        </fieldset>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100">
+                        Submit feedback
+                    </button>
+                </form>
+            {% else %}
+                <p class="text-muted">
+                    This survey has no questions yet.
+                </p>
+            {% endif %}
+    <script>
+        (function() {
+            document.querySelectorAll('.star-rating-field').forEach((field) => {
+                const checks = Array.from(field.querySelectorAll('.form-check'));
+                const inputs = checks.map((c) => c.querySelector('input[type=radio]')).filter(Boolean);
+
+                function fillUpTo(idx) {
+                    checks.forEach((c, i) => c.classList.toggle('filled', i <= idx));
+                }
+                function previewUpTo(idx) {
+                    checks.forEach((c, i) => c.classList.toggle('preview-filled', i <= idx));
+                }
+                function clearPreview() {
+                    checks.forEach((c) => c.classList.remove('preview-filled'));
+                }
+
+                inputs.forEach((input, i) => {
+                    input.addEventListener('change', () => fillUpTo(i));
+                });
+                checks.forEach((check, i) => {
+                    check.addEventListener('mouseenter', () => previewUpTo(i));
+                    check.addEventListener('mouseleave', clearPreview);
+                });
+
+                inputs.forEach((input, i) => {
+                    if (input.checked) fillUpTo(i);
+                });
+            });
+        })();
+    </script>
+{% endblock content %}

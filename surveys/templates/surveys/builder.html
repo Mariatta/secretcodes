@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if is_new %}New survey{% else %}Edit · {{ survey.title }}{% endif %}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_ui.html" %}
+    <style>
+        .question-row.removed { display: none; }
+        .drag-handle {
+            cursor: grab;
+            font-size: 1.4rem;
+            line-height: 1;
+            padding: 0.4rem 0.5rem;
+            color: #adb5bd;
+            user-select: none;
+        }
+        .drag-handle:hover { color: #495057; }
+        .question-row.sortable-ghost { opacity: 0.45; }
+        .question-row.sortable-chosen .drag-handle { cursor: grabbing; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0">
+                    {% if is_new %}New survey{% else %}Edit survey{% endif %}
+                </h1>
+                <div class="d-flex gap-2">
+                    {% if not is_new %}
+                        <a class="btn btn-link" href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
+                        <a class="btn btn-link" href="{% url 'surveys:actions' slug=survey.slug %}">Actions</a>
+                    {% endif %}
+                    <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">← All surveys</a>
+                </div>
+            </div>
+            {% if not is_new %}
+                <div class="card mb-3 short-url-card">
+                    <div class="card-body">
+                        {% if survey.short_url %}
+                            <div class="d-flex flex-wrap gap-3 align-items-center mb-3 pb-3 border-bottom">
+                                <img src="{{ survey.short_url.get_qr_image_url }}"
+                                     alt="QR code for {{ survey.title }}"
+                                     width="84" height="84"
+                                     style="border-radius: 6px; flex-shrink: 0;">
+                                <div class="flex-grow-1" style="min-width: 220px;">
+                                    <div class="small text-muted mb-1">Short link & QR</div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <a class="font-monospace small text-break copy-source"
+                                           href="/qr/{{ survey.short_url.slug }}/" target="_blank" rel="noopener">
+                                            {{ request.scheme }}://{{ request.get_host }}/qr/{{ survey.short_url.slug }}
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
+                                            <i class="fa-regular fa-copy" aria-hidden="true"></i> Copy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <div class="small text-muted mb-1">
+                                Respondent URL
+                                {% if survey.status != 'published' %}
+                                    · <span class="text-warning-emphasis">currently {{ survey.get_status_display|lower }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <a class="font-monospace small text-break copy-source"
+                                   href="{% url 'surveys:respond' slug=survey.slug %}"
+                                   target="_blank" rel="noopener">
+                                    {{ request.scheme }}://{{ request.get_host }}{% url 'surveys:respond' slug=survey.slug %}
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
+                                    <i class="fa-regular fa-copy" aria-hidden="true"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <form method="post" novalidate id="builder-form">
+                {% csrf_token %}
+                <fieldset class="mb-4">
+                    <legend class="h5">
+                        Survey
+                    </legend>
+                    {% bootstrap_field survey_form.title %}
+                    {% bootstrap_field survey_form.slug %}
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Status</label>
+                        <div class="btn-group status-btn-group" role="group" aria-label="Survey status">
+                            {% for radio in survey_form.status %}
+                                {{ radio.tag }}
+                                <label class="btn status-btn status-{{ radio.data.value }}"
+                                       for="{{ radio.id_for_label }}">
+                                    <span class="dot"></span>
+                                    {% if radio.data.value == "published" %}Live
+                                    {% elif radio.data.value == "draft" %}Draft
+                                    {% elif radio.data.value == "closed" %}Closed
+                                    {% else %}{{ radio.choice_label }}{% endif %}
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if survey_form.status.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ survey_form.status.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <fieldset class="mb-4">
+                    <legend class="h5">
+                        Questions
+                    </legend>
+                    {{ formset.management_form }}
+                    {% if formset.non_form_errors %}
+                        <div class="alert alert-danger">
+                            {{ formset.non_form_errors }}
+                        </div>
+                    {% endif %}
+                    <div id="question-rows">
+                        {% for form in formset %}
+                            <div class="card mb-3 question-row" data-existing="1">
+                                <div class="card-body">
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    <div class="d-none">{{ form.DELETE }}</div>
+                                    <div class="row g-2 align-items-start">
+                                        <div class="col-auto d-flex align-items-center pt-2">
+                                            <span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="type-pill-btn-group mb-2">
+                                                {% include "surveys/_type_pill_radio.html" with field=form.type %}
+                                            </div>
+                                            {% bootstrap_field form.text %}
+                                        </div>
+                                        <div class="col-12 config-field-wrap">
+                                            {% bootstrap_field form.config %}
+                                        </div>
+                                        <div class="col-12 d-flex justify-content-between align-items-center">
+                                            <div class="form-check">
+                                                {{ form.required }}
+                                                <label class="form-check-label small"
+                                                       for="{{ form.required.id_for_label }}">
+                                                    Required — respondent must answer
+                                                </label>
+                                            </div>
+                                            <button type="button" class="btn btn-link text-danger remove-question">
+                                                <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" id="add-question" class="btn btn-outline-primary mb-3">
+                        + Add question
+                    </button>
+                </fieldset>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </form>
+
+            <template id="question-template">
+                <div class="card mb-3 question-row" data-existing="0">
+                    <div class="card-body">
+                        {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+                        <div class="row g-2 align-items-start">
+                            <div class="col-auto d-flex align-items-center pt-2">
+                                <span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span>
+                            </div>
+                            <div class="col">
+                                <div class="type-pill-btn-group mb-2">
+                                    {% include "surveys/_type_pill_radio.html" with field=formset.empty_form.type %}
+                                </div>
+                                {% bootstrap_field formset.empty_form.text %}
+                            </div>
+                            <div class="col-12 config-field-wrap">
+                                {% bootstrap_field formset.empty_form.config %}
+                            </div>
+                            <div class="col-12 d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    {{ formset.empty_form.required }}
+                                    <label class="form-check-label small"
+                                           for="{{ formset.empty_form.required.id_for_label }}">
+                                        Required — respondent must answer
+                                    </label>
+                                </div>
+                                <button type="button" class="btn btn-link text-danger remove-question">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.copy-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const link = btn.parentElement.querySelector('.copy-source');
+                if (!link) return;
+                const text = (link.textContent || '').trim();
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch (e) {
+                    return;
+                }
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Copied';
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-success');
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-secondary');
+                }, 1500);
+            });
+        });
+    </script>
+    <script>
+        (function() {
+            const form = document.getElementById('builder-form');
+            const rowsContainer = document.getElementById('question-rows');
+            const addBtn = document.getElementById('add-question');
+            const template = document.getElementById('question-template');
+            const totalForms = form.querySelector('input[name="questions-TOTAL_FORMS"]');
+
+            function renumber() {
+                const rows = rowsContainer.querySelectorAll('.question-row:not(.removed)');
+                rows.forEach((row, i) => {
+                    const orderInput = row.querySelector('input[name$="-order"]');
+                    if (orderInput) orderInput.value = String(i + 1);
+                });
+            }
+
+            if (window.Sortable) {
+                Sortable.create(rowsContainer, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    filter: 'input, textarea, select, button',
+                    preventOnFilter: false,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    onEnd: renumber,
+                });
+            }
+
+            const TYPE_CONFIG = {
+                rating: {
+                    show: true,
+                    help: '"max" sets the top of the scale (default 5). "labels" optionally names any score.',
+                    example: '{"max": 5, "labels": {"1": "Poor", "5": "Excellent"}}',
+                },
+                multi_select: {
+                    show: true,
+                    help: 'List of choices the respondent picks from. Required for this type.',
+                    example: '{"choices": ["Talks", "Workshops", "Hallway"]}',
+                },
+                nps: {
+                    show: true,
+                    help: 'Scale is fixed at 0–10. Optionally name the endpoints via "labels". Leave blank if no labels needed.',
+                    example: '{"labels": {"0": "Not at all likely", "10": "Extremely likely"}}',
+                },
+                open_text: { show: false },
+                yes_no: { show: false },
+                '': { show: false },
+            };
+
+            function getRowType(row) {
+                const checked = row.querySelector('input[type="radio"][name$="-type"]:checked');
+                return checked ? checked.value : '';
+            }
+
+            function syncRow(row) {
+                const wrap = row.querySelector('.config-field-wrap');
+                if (!wrap) return;
+                const textarea = wrap.querySelector('textarea');
+                const cfg = TYPE_CONFIG[getRowType(row)] || { show: false };
+                if (cfg.show) {
+                    wrap.style.display = '';
+                    if (textarea) textarea.placeholder = '';
+                    let help = wrap.querySelector('.config-help-dynamic');
+                    if (!help) {
+                        help = document.createElement('div');
+                        help.className = 'form-text small config-help-dynamic';
+                        wrap.appendChild(help);
+                    }
+                    help.replaceChildren();
+                    if (cfg.help) {
+                        help.appendChild(document.createTextNode(cfg.help + ' '));
+                    }
+                    if (cfg.example) {
+                        const exLabel = document.createElement('span');
+                        exLabel.textContent = 'Example: ';
+                        help.appendChild(exLabel);
+                        const code = document.createElement('code');
+                        code.textContent = cfg.example;
+                        help.appendChild(code);
+                    }
+                } else {
+                    wrap.style.display = 'none';
+                    if (textarea) textarea.value = '';
+                }
+            }
+
+            document.querySelectorAll('.question-row').forEach(syncRow);
+            renumber();
+
+            form.addEventListener('change', (e) => {
+                if (e.target.matches('input[type="radio"][name$="-type"]')) {
+                    syncRow(e.target.closest('.question-row'));
+                }
+            });
+
+            addBtn.addEventListener('click', () => {
+                const idx = parseInt(totalForms.value, 10);
+                const html = template.innerHTML.replaceAll('__prefix__', idx);
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                const newRow = wrapper.firstElementChild;
+                rowsContainer.appendChild(newRow);
+                totalForms.value = idx + 1;
+                syncRow(newRow);
+                renumber();
+            });
+
+            rowsContainer.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('remove-question')) return;
+                const row = e.target.closest('.question-row');
+                if (!row) return;
+                const isExisting = row.dataset.existing === '1';
+                if (isExisting) {
+                    const del = row.querySelector('input[name$="-DELETE"]');
+                    if (del) {
+                        del.checked = true;
+                    }
+                } else {
+                    row.querySelectorAll('input:not([type=hidden]), textarea, select').forEach((el) => {
+                        if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+                        else el.value = '';
+                    });
+                }
+                row.classList.add('removed');
+                renumber();
+            });
+        })();
+    </script>
+{% endblock content %}

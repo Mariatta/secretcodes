@@ -28,10 +28,16 @@ def _assume_connected_calendars(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_s3_wrapper(monkeypatch):
+def mock_s3_wrapper(monkeypatch, settings):
+    """The S3 wrapper is replaced with a MagicMock so QR generation
+    doesn't try to hit DigitalOcean Spaces. ``AWS_S3_ENDPOINT_URL`` is
+    also stubbed so code that gates on the setting (e.g.
+    ``surveys.services.publishing._s3_configured``) treats the test
+    environment as configured."""
     mock_class = MagicMock()
     mock_instance = mock_class.return_value
     mock_instance.generate_qr.return_value = "http://mocked/qr.png"
     mock_instance.generate_url.return_value = "http://mocked/qr.png"
     monkeypatch.setattr("qrcode_manager.models.S3Wrapper", mock_class)
+    settings.AWS_S3_ENDPOINT_URL = "http://mocked.test"
     return mock_instance

@@ -1,0 +1,10 @@
+{# Renders one colored type pill. Caller passes `type` = question.type code. #}
+<span class="type-pill {{ type }}">
+    {% if type == "rating" %}<span class="icon">★</span>rating
+    {% elif type == "multi_select" %}<span class="icon">☷</span>multi-select
+    {% elif type == "nps" %}<span class="icon">↗</span>NPS
+    {% elif type == "open_text" %}<span class="icon">✎</span>open text
+    {% elif type == "yes_no" %}<span class="icon">✓</span>yes / no
+    {% else %}<span>{{ type }}</span>
+    {% endif %}
+</span>

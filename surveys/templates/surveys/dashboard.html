@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block head_title %}
+    My surveys
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_ui.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0">
+                    My surveys
+                </h1>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'surveys:import' %}">
+                        <i class="fa-solid fa-file-import" aria-hidden="true"></i> Import
+                    </a>
+                    <a class="btn btn-primary" href="{% url 'surveys:new' %}">+ New survey</a>
+                </div>
+            </div>
+            {% if surveys %}
+                <div class="list-group">
+                    {% for survey in surveys %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <a class="fw-semibold" href="{% url 'surveys:edit' slug=survey.slug %}">
+                                    {{ survey.title }}
+                                </a>
+                                <div class="small text-muted">
+                                    /{{ survey.slug }} ·
+                                    {{ survey.questions.count }}
+                                    {% if survey.questions.count == 1 %}question{% else %}questions{% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="{% url 'surveys:respond' slug=survey.slug %}"
+                                   target="_blank" rel="noopener"
+                                   title="Open the public respondent form">
+                                    Open
+                                    <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
+                                </a>
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="{% url 'surveys:actions' slug=survey.slug %}">Actions</a>
+                                {% include "surveys/_status_pill.html" with survey=survey %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">
+                    You don't have any surveys yet.
+                    <a href="{% url 'surveys:new' %}">Create your first one →</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

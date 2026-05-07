@@ -1,0 +1,146 @@
+{# Shared survey-specific UI bits: type pills + nudge callout. #}
+{# Include from any survey template's {% block extra_head %}. #}
+<style>
+    .type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.4;
+        white-space: nowrap;
+    }
+    .type-pill .icon { font-size: 12px; line-height: 1; }
+    .type-pill.rating       { background: #FAEEDA; color: #633806; }
+    .type-pill.multi_select { background: #EEEDFE; color: #3C3489; }
+    .type-pill.nps          { background: #E1F5EE; color: #085041; }
+    .type-pill.open_text    { background: #E6F1FB; color: #0C447C; }
+    .type-pill.yes_no       { background: #FFF3E0; color: #5C3A12; }
+
+    .nudge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #E6F1FB;
+        color: #0C447C;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    .nudge .nudge-icon { font-size: 16px; line-height: 1; }
+    .nudge a { color: inherit; font-weight: 500; }
+    .nudge .spacer { flex: 1; }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        background: #f1f3f5;
+        color: #495057;
+        border: 1px solid #dee2e6;
+        white-space: nowrap;
+    }
+    .status-pill .dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.6);
+    }
+    .status-pill.status-published { color: #1d9e75; background: #e6f7f1; border-color: #b6e0d3; }
+    .status-pill.status-draft     { color: #b06b00; background: #fff3e0; border-color: #ffd9a0; }
+    .status-pill.status-closed    { color: #a32d2d; background: #fde8e8; border-color: #f5c2c2; }
+
+    .status-btn-group .status-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 4px 12px;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        color: #6c757d;
+    }
+    .status-btn-group .status-btn .dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.4;
+    }
+    .status-btn-group .btn-check:checked + .status-btn .dot { opacity: 1; }
+    .status-btn-group .btn-check:checked + .status-btn.status-published { background: #e6f7f1; color: #1d9e75; border-color: #b6e0d3; }
+    .status-btn-group .btn-check:checked + .status-btn.status-draft     { background: #fff3e0; color: #b06b00; border-color: #ffd9a0; }
+    .status-btn-group .btn-check:checked + .status-btn.status-closed    { background: #fde8e8; color: #a32d2d; border-color: #f5c2c2; }
+
+    .type-pill-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .type-pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid;
+        cursor: pointer;
+        line-height: 1.3;
+        opacity: 0.8;
+        transition: opacity 0.15s, box-shadow 0.15s;
+    }
+    .type-pill-btn:hover { opacity: 1; }
+    .type-pill-btn .icon { font-size: 13px; line-height: 1; }
+
+    /* Each type gets its own colors at all times. Selectors are doubled
+       to out-specific Bootstrap's .btn rules that load after this stylesheet. */
+    .type-pill-btn-group .type-pill-btn-rating       { background: #FAEEDA; color: #633806; border-color: #E5C892; }
+    .type-pill-btn-group .type-pill-btn-multi_select { background: #EEEDFE; color: #3C3489; border-color: #BDB9F0; }
+    .type-pill-btn-group .type-pill-btn-nps          { background: #E1F5EE; color: #085041; border-color: #A0D9C5; }
+    .type-pill-btn-group .type-pill-btn-open_text    { background: #E6F1FB; color: #0C447C; border-color: #A8C8E5; }
+    .type-pill-btn-group .type-pill-btn-yes_no       { background: #FFF3E0; color: #5C3A12; border-color: #E5C5A0; }
+
+    /* Selected: full opacity + a colored ring matching the pill. */
+    .type-pill-btn-group .btn-check:checked + .type-pill-btn {
+        opacity: 1;
+        box-shadow: 0 0 0 2px currentColor;
+    }
+
+    /* Theme priority + status — same dot+label pattern as the survey status pill. */
+    .pillgroup .pillgroup-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 4px 12px;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        color: #6c757d;
+        border-radius: 999px;
+        cursor: pointer;
+    }
+    .pillgroup .pillgroup-btn .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor;
+        opacity: 0.4;
+    }
+    .pillgroup .btn-check:checked + .pillgroup-btn .dot { opacity: 1; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.priority-low    { background: #f1f3f5; color: #6c757d; border-color: #ced4da; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.priority-medium { background: #fff3e0; color: #b06b00; border-color: #ffd9a0; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.priority-high   { background: #fde8e8; color: #a32d2d; border-color: #f5c2c2; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.theme-status-open        { background: #f1f3f5; color: #495057; border-color: #ced4da; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.theme-status-in_progress { background: #e6f1fb; color: #0c447c; border-color: #a8c8e5; }
+    .pillgroup .btn-check:checked + .pillgroup-btn.theme-status-resolved    { background: #e6f7f1; color: #1d9e75; border-color: #b6e0d3; }
+</style>
+
+{# Macro-ish: render a pill for a question-type code. Use via include with `with` #}
+{# example: {% include "surveys/_type_pill.html" with type=question.type %} #}

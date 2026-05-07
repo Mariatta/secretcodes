@@ -17,11 +17,12 @@
             (free/busy from my calendar, no event details),
             <a href="{% url 'agents' %}">an MCP endpoint</a>
             (so agents can read the same shadow on my behalf),
-            and <a href="{% url 'qrcode_generator' %}">a couple of QR utilities</a>
-            (make a code for any URL). Nothing here is trying to be a product.
-            It's <a href="https://github.com/Mariatta/secretcodes">open source</a>,
+            <a href="{% url 'qrcode_generator' %}">a couple of QR utilities</a>
+            (make a code for any URL),
+            and <a href="{% url 'surveys:dashboard' %}">a survey runner</a>
+            (anonymous post-event feedback that I turn into action items).
+            <a href="https://github.com/Mariatta/secretcodes">Open source</a>,
             self-hosted, and runs without trackers, cookies, or accounts.
-            You're welcome to fork it.
         </p>
         <p class="sc-muted">
             Built and maintained by <a href="https://mariatta.ca">Mariatta</a> in Vancouver, BC.

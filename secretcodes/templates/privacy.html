@@ -140,6 +140,60 @@
         retention window.
     </p>
     <h3>
+        From people who fill out a Survey
+    </h3>
+    <p>
+        The Surveys module collects feedback for events Mariatta is involved
+        in. Each survey is reachable only via a direct link or QR code shared
+        by the survey owner. Filling out a survey:
+    </p>
+    <ul>
+        <li>
+            <strong>Does not require a login.</strong> No account is created.
+        </li>
+        <li>
+            <strong>Does not set cookies.</strong> The respondent page is
+            genuinely cookieless.
+        </li>
+        <li>
+            <strong>Does not capture your IP address, browser fingerprint,
+            or user agent</strong> in survey records. Standard web-server
+            access logs (described above) still apply, but they are not
+            joined to your responses.
+        </li>
+    </ul>
+    <p>
+        When you submit a survey, the following is stored:
+    </p>
+    <ul>
+        <li>
+            Your <strong>answers</strong> to each question — as the chosen
+            rating, NPS score, multi-select choices, free-text reply, or
+            yes/no value.
+        </li>
+        <li>
+            A random <strong>submission identifier</strong> that groups the
+            answers from one fill together. The identifier is generated
+            server-side and is not linked to any other system.
+        </li>
+        <li>
+            The <strong>timestamp</strong> of submission.
+        </li>
+    </ul>
+    <p>
+        A survey response is <strong>structurally anonymous</strong> — there
+        is no field on a response row that ties it back to a person, and the
+        site code is audited (and tested) to keep it that way. The survey
+        owner can later read all responses, group free-text answers into
+        themes, and write action items based on those themes; none of that
+        processing reveals respondent identities, because none were collected.
+    </p>
+    <p>
+        Survey responses are retained until the survey owner deletes the
+        survey or a site administrator deletes the records. There is no
+        automated retention window.
+    </p>
+    <h3>
         From Google accounts connected by the site owner
     </h3>
     <p>

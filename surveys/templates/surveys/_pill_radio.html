@@ -1,0 +1,10 @@
+{# Render a RadioSelect bound field as a row of dot+label pills. #}
+{# Caller passes `field` (BoundField) and `class_prefix` (CSS class root, e.g. "priority" or "theme-status"). #}
+{% for radio in field %}
+    {{ radio.tag }}
+    <label class="pillgroup-btn {{ class_prefix }}-{{ radio.data.value }}"
+           for="{{ radio.id_for_label }}">
+        <span class="dot"></span>
+        {{ radio.choice_label }}
+    </label>
+{% endfor %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Results · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_ui.html" %}
+    <style>
+        .bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; font-size: 0.9rem; }
+        .bar-label { width: 6ch; text-align: right; color: #6c757d; flex-shrink: 0; }
+        .bar-track { flex: 1; background: #f1f3f5; border-radius: 0.25rem; height: 1.25rem; overflow: hidden; }
+        .bar-fill  { height: 100%; background: #0d6efd; transition: width 0.2s; }
+        .bar-count { width: 4ch; text-align: left; color: #495057; flex-shrink: 0; }
+        .stat-card { padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; text-align: center; }
+        .stat-card .stat-num { font-size: 1.75rem; font-weight: 600; }
+        .stat-card .stat-label { font-size: 0.85rem; color: #6c757d; }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="h3 mb-0">
+                        {{ survey.title }}
+                    </h1>
+                    <div class="small text-muted">
+                        Results
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-end gap-1">
+                    {% include "surveys/_status_pill.html" with survey=survey %}
+                    <div class="d-flex gap-2 align-items-center">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{% url 'surveys:export_csv' slug=survey.slug %}">
+                            <i class="fa-solid fa-download" aria-hidden="true"></i> CSV
+                        </a>
+                        <a class="btn btn-link p-0 small" href="{% url 'surveys:edit' slug=survey.slug %}">
+                            Edit survey →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-4">
+                    <div class="stat-card">
+                        <div class="stat-num">
+                            {{ agg.submission_count }}
+                        </div>
+                        <div class="stat-label">
+                            {% if agg.submission_count == 1 %}response{% else %}responses{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card">
+                        <div class="stat-num">
+                            {% if agg.completion_rate is None %}—{% else %}{{ agg.completion_rate|floatformat:0 }}%{% endif %}
+                        </div>
+                        <div class="stat-label">
+                            completion rate
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card">
+                        <div class="stat-num">
+                            {% if agg.average_rating is None %}—{% else %}{{ agg.average_rating|floatformat:1 }}{% endif %}
+                        </div>
+                        <div class="stat-label">
+                            avg rating
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% for s in agg.summaries %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <div class="fw-semibold">
+                                    {{ s.question.text }}
+                                </div>
+                                <div class="small text-muted d-flex align-items-center gap-2 mt-1">
+                                    {% include "surveys/_type_pill.html" with type=s.question.type %}
+                                    <span>
+                                        {{ s.response_count }}
+                                        {% if s.response_count == 1 %}response{% else %}responses{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-end small">
+                                {% if s.average is not None and s.question.type != 'nps' %}
+                                    <div>avg <strong>{{ s.average|floatformat:1 }}</strong></div>
+                                {% endif %}
+                                {% if s.nps_score is not None %}
+                                    <div>NPS <strong>{{ s.nps_score|floatformat:0 }}</strong></div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if s.question.type == 'open_text' %}
+                            {% if s.response_count %}
+                                <div class="nudge">
+                                    <span class="nudge-icon">💡</span>
+                                    <span>
+                                        <strong>{{ s.response_count }}</strong>
+                                        open-text {% if s.response_count == 1 %}response{% else %}responses{% endif %}
+                                        — group into themes to extract action items.
+                                    </span>
+                                    <span class="spacer"></span>
+                                    <a href="{% url 'surveys:triage' slug=survey.slug %}">Open triage →</a>
+                                </div>
+                            {% else %}
+                                <div class="text-muted small">
+                                    No responses yet.
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            {% if s.bars %}
+                                {% for bar in s.bars %}
+                                    <div class="bar-row">
+                                        <div class="bar-label">
+                                            {{ bar.label }}
+                                        </div>
+                                        <div class="bar-track">
+                                            <div class="bar-fill" style="width: {{ bar.width_pct }}%"></div>
+                                        </div>
+                                        <div class="bar-count">
+                                            {{ bar.count }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted small">
+                                    No responses yet.
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock content %}

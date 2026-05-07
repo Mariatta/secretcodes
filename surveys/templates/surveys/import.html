@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    Import survey
+{% endblock head_title %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0">
+                    Import a survey
+                </h1>
+                <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">← All surveys</a>
+            </div>
+
+            <p class="text-muted">
+                Upload a markdown file describing a survey. Creates the survey
+                and its questions in one step. Responses are <strong>not</strong>
+                imported.
+            </p>
+
+            <form method="post" enctype="multipart/form-data" class="mb-4">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <button type="submit" class="btn btn-primary">
+                    Import
+                </button>
+            </form>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">
+                        Markdown format
+                    </h2>
+                    <p class="small text-muted mb-2">
+                        One <code>#</code> heading for the survey title, then
+                        survey metadata, then one <code>##</code> heading per
+                        question with its properties as <code>- key: value</code>
+                        lines.
+                    </p>
+                    <pre class="bg-light p-3 small mb-0" style="border-radius: 6px; white-space: pre-wrap;"><code># Post-event feedback
+
+slug: post-event
+status: draft
+
+## How would you rate the event?
+- type: rating
+- max: 5
+- labels: {"1": "Poor", "5": "Excellent"}
+
+## Which sessions did you attend?
+- type: multi_select
+- choices: ["Talks", "Workshops", "Hallway"]
+- required: false
+
+## How likely are you to recommend us?
+- type: nps
+
+## Anything else?
+- type: open_text
+- required: false
+
+## Would you come again?
+- type: yes_no
+</code></pre>
+                    <ul class="small text-muted mt-3 mb-0">
+                        <li>
+                            <code>type</code> is required. One of:
+                            <code>rating</code>, <code>multi_select</code>,
+                            <code>nps</code>, <code>open_text</code>,
+                            <code>yes_no</code>.
+                        </li>
+                        <li>
+                            <code>required</code> defaults to <code>true</code>;
+                            set <code>required: false</code> to make a question
+                            optional.
+                        </li>
+                        <li>
+                            JSON values (lists, objects) are parsed as JSON.
+                            Bare numbers parse as integers.
+                        </li>
+                        <li>
+                            <code>slug</code> defaults to a slugified title if
+                            you omit it. <code>status</code> defaults to <code>draft</code>.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

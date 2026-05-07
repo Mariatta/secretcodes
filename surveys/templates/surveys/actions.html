@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Action items · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    <style>
+        .ai-card.resolved { opacity: 0.65; }
+        .ai-card.resolved .ai-name { text-decoration: line-through; }
+        .resolve-checkbox {
+            display: inline-flex;
+            cursor: pointer;
+            margin: 0; padding: 0;
+            user-select: none;
+        }
+        .resolve-checkbox input[type=checkbox] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0; height: 0;
+        }
+        .resolve-box {
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            width: 22px; height: 22px;
+            border: 2px solid #ced4da;
+            border-radius: 4px;
+            background: #fff;
+            transition: background 0.15s, border-color 0.15s;
+            color: transparent;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .resolve-checkbox:hover .resolve-box {
+            border-color: #1d9e75;
+        }
+        .resolve-checkbox input:checked ~ .resolve-box {
+            background: #1d9e75;
+            border-color: #1d9e75;
+            color: #fff;
+        }
+        .resolve-checkbox input:focus-visible ~ .resolve-box {
+            outline: 2px solid #534AB7;
+            outline-offset: 2px;
+        }
+        .rep-quote {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 0.95rem;
+            color: #495057;
+            border-left: 3px solid #c89b3c;
+            padding: 0.4rem 0.75rem;
+            background: #fffaf0;
+            margin-top: 0.5rem;
+        }
+        .stat-pill {
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            background: #f1f3f5;
+            color: #495057;
+        }
+    </style>
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h3 mb-0">
+                        Action items
+                    </h1>
+                    <div class="small text-muted">
+                        {{ survey.title }}
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'surveys:export_action_items' slug=survey.slug %}">
+                        <i class="fa-solid fa-download" aria-hidden="true"></i> Markdown
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'surveys:triage' slug=survey.slug %}">Triage</a>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
+                    <a class="btn btn-sm btn-link"
+                       href="{% url 'surveys:edit' slug=survey.slug %}">← Edit</a>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <span class="stat-pill"><strong>{{ items|length }}</strong> action items</span>
+                <span class="stat-pill"><strong>{{ open_count }}</strong> open</span>
+                <span class="stat-pill"><strong>{{ resolved_count }}</strong> resolved</span>
+                {% if drafts %}
+                    <span class="stat-pill"><strong>{{ drafts|length }}</strong> drafts</span>
+                {% endif %}
+            </div>
+
+            {% if items %}
+                {% for theme in items %}
+                    <div class="card mb-2 ai-card {% if theme.status == 'resolved' %}resolved{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <form method="post"
+                                              action="{% url 'surveys:theme_resolve' slug=survey.slug theme_id=theme.id %}"
+                                              class="d-inline m-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next"
+                                                   value="{% url 'surveys:actions' slug=survey.slug %}">
+                                            <label class="resolve-checkbox"
+                                                   title="{% if theme.status == 'resolved' %}Reopen{% else %}Mark resolved{% endif %}">
+                                                <input type="checkbox"
+                                                       {% if theme.status == 'resolved' %}checked{% endif %}
+                                                       onchange="this.form.submit()"
+                                                       aria-label="{% if theme.status == 'resolved' %}Reopen{% else %}Mark resolved{% endif %}">
+                                                <span class="resolve-box">✓</span>
+                                            </label>
+                                        </form>
+                                        <a class="ai-name fw-semibold text-decoration-none"
+                                           href="{% url 'surveys:theme_detail' slug=survey.slug theme_id=theme.id %}">
+                                            {{ theme.name }}
+                                        </a>
+                                        {% if theme.tag %}
+                                            <span class="badge bg-light text-dark border">{{ theme.tag }}</span>
+                                        {% endif %}
+                                        <span class="small text-muted">
+                                            {{ theme.mention_count }}
+                                            {% if theme.mention_count == 1 %}mention{% else %}mentions{% endif %}
+                                        </span>
+                                        <span class="badge {% if theme.priority == 'high' %}bg-danger{% elif theme.priority == 'medium' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                                            {{ theme.get_priority_display }}
+                                        </span>
+                                        <span class="badge {% if theme.status == 'resolved' %}bg-success{% elif theme.status == 'in_progress' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ theme.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        {{ theme.action_item|linebreaksbr }}
+                                    </div>
+                                    {% if theme.rep_response %}
+                                        <div class="rep-quote">{{ theme.rep_response.value }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light border">
+                    <strong>No action items yet.</strong>
+                    Tag responses into themes via
+                    <a href="{% url 'surveys:triage' slug=survey.slug %}">triage</a>,
+                    open a theme, and write what you'll do about it.
+                </div>
+            {% endif %}
+
+            {% if drafts %}
+                <h2 class="h5 mt-5 mb-2 text-muted">
+                    Drafts — themes that don't have an action item yet
+                </h2>
+                <div class="list-group">
+                    {% for theme in drafts %}
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                           href="{% url 'surveys:theme_detail' slug=survey.slug theme_id=theme.id %}">
+                            <span>
+                                <strong>{{ theme.name }}</strong>
+                                {% if theme.tag %}
+                                    <span class="badge bg-light text-dark border ms-1">{{ theme.tag }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="small text-muted">
+                                {{ theme.mention_count }}
+                                {% if theme.mention_count == 1 %}mention{% else %}mentions{% endif %}
+                                · open →
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}
