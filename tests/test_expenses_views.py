@@ -5,10 +5,18 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.urls import reverse
 
-from expenses.models import Category, Event, Expense, ExpenseShare, Participant
+from expenses.models import (
+    Category,
+    Event,
+    Expense,
+    ExpenseInvitation,
+    ExpenseShare,
+    Participant,
+)
+from expenses.views import _viewer_participant
 
 User = get_user_model()
 
@@ -215,10 +223,6 @@ def test_expenses_user_required_redirects_without_perm(client, expenses_perm, ev
 def test_viewer_participant_returns_none_for_anonymous(db, event):
     """Defensive check — anonymous user shouldn't reach the helper, but if
     they do, it returns None instead of querying."""
-    from django.contrib.auth.models import AnonymousUser
-
-    from expenses.views import _viewer_participant
-
     assert _viewer_participant(AnonymousUser(), event) is None
 
 
@@ -226,8 +230,6 @@ def test_accept_invite_get_renders_confirm_page_for_existing_user(
     client, expenses_perm, event
 ):
     """Existing user logged in as the invited account — GET shows confirm page."""
-    from expenses.models import ExpenseInvitation
-
     owner = User.objects.get(username="ev_owner")
     invitation = ExpenseInvitation.create(
         event=event, email="g2@x", inviter=owner, display_name="G2"

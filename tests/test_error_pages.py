@@ -5,6 +5,7 @@ so each test temporarily disables debug to exercise the real handler.
 """
 
 import pytest
+from django.template.loader import render_to_string
 from django.test import override_settings
 
 
@@ -21,8 +22,6 @@ def test_404_page_uses_branded_template(client):
 @pytest.mark.django_db
 def test_403_template_renders():
     """Render 403.html directly via the template engine."""
-    from django.template.loader import render_to_string
-
     body = render_to_string("403.html")
     assert "Restricted" in body
     assert "403" in body
@@ -31,8 +30,6 @@ def test_403_template_renders():
 @override_settings(DEBUG=False, ALLOWED_HOSTS=["*"])
 @pytest.mark.django_db
 def test_500_template_renders():
-    from django.template.loader import render_to_string
-
     body = render_to_string("500.html")
     assert "Static" in body
     assert "500" in body
@@ -41,8 +38,6 @@ def test_500_template_renders():
 @override_settings(DEBUG=False, ALLOWED_HOSTS=["*"])
 @pytest.mark.django_db
 def test_400_template_renders():
-    from django.template.loader import render_to_string
-
     body = render_to_string("400.html")
     assert "Bad" in body
     assert "400" in body

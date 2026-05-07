@@ -102,15 +102,13 @@ def test_post_to_closed_survey_does_not_record_response(client, owner):
     Question.objects.create(
         survey=survey, text="Q", type=Question.Type.OPEN_TEXT, order=1
     )
-    from surveys.models import Response as SurveyResponse
-
-    response = client.post(
+    http_response = client.post(
         reverse("surveys:respond", kwargs={"slug": "closed"}),
         {"q1": "trying anyway"},
     )
-    assert response.status_code == 200
-    assert b"This survey is closed." in response.content
-    assert SurveyResponse.objects.count() == 0
+    assert http_response.status_code == 200
+    assert b"This survey is closed." in http_response.content
+    assert Response.objects.count() == 0
 
 
 @pytest.mark.django_db
