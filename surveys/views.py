@@ -26,6 +26,8 @@ from .forms import (
     ThemeForm,
 )
 from .models import (
+    QUESTION_HARD_LIMIT,
+    QUESTION_WARN_THRESHOLD,
     Question,
     Response,
     ResponseTheme,
@@ -200,7 +202,13 @@ def create(request):
     return render(
         request,
         "surveys/builder.html",
-        {"survey_form": survey_form, "formset": formset, "is_new": True},
+        {
+            "survey_form": survey_form,
+            "formset": formset,
+            "is_new": True,
+            "question_warn_threshold": QUESTION_WARN_THRESHOLD,
+            "question_hard_limit": QUESTION_HARD_LIMIT,
+        },
     )
 
 
@@ -549,6 +557,8 @@ def edit(request, slug):
             "formset": formset,
             "is_new": False,
             "is_owner": request.user == survey.owner or request.user.is_superuser,
+            "question_warn_threshold": QUESTION_WARN_THRESHOLD,
+            "question_hard_limit": QUESTION_HARD_LIMIT,
         },
     )
 

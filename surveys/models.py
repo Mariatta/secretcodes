@@ -9,6 +9,9 @@ from django.utils.timezone import now
 
 INVITATION_KEY_LENGTH = 64
 
+QUESTION_WARN_THRESHOLD = 10
+QUESTION_HARD_LIMIT = 20
+
 
 class BaseModel(models.Model):
     """Mirror of availability.models.BaseModel — common timestamp fields."""

@@ -6,9 +6,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.forms.models import inlineformset_factory
+from django.forms.models import BaseInlineFormSet, inlineformset_factory
 
 from .models import (  # noqa: F401
+    QUESTION_HARD_LIMIT,
     Question,
     Response,
     Survey,
@@ -212,10 +213,31 @@ class QuestionForm(forms.ModelForm):
         return parsed
 
 
+class BaseQuestionFormSet(BaseInlineFormSet):
+    """Adds the ``QUESTION_HARD_LIMIT`` cap on top of standard inline-formset behavior."""
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        kept = 0
+        for form in self.forms:
+            if self._should_delete_form(form):
+                continue
+            if form.instance.pk or (form.cleaned_data.get("text") or "").strip():
+                kept += 1
+        if kept > QUESTION_HARD_LIMIT:
+            raise forms.ValidationError(
+                f"A survey can have at most {QUESTION_HARD_LIMIT} questions "
+                f"(this one has {kept}). Remove some before saving."
+            )
+
+
 QuestionFormSet = inlineformset_factory(
     Survey,
     Question,
     form=QuestionForm,
+    formset=BaseQuestionFormSet,
     extra=0,
     can_delete=True,
 )

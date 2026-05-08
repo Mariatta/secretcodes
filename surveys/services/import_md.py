@@ -46,7 +46,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils.text import slugify
 
-from ..models import Question, Survey
+from ..models import QUESTION_HARD_LIMIT, Question, Survey
 
 VALID_TYPES = {"rating", "multi_select", "nps", "open_text", "yes_no"}
 VALID_STATUSES = {"draft", "published", "closed"}
@@ -183,6 +183,11 @@ def parse_markdown(text: str) -> ParsedSurvey:
     if not questions:
         raise MarkdownImportError(
             "Survey must include at least one '## Question' heading."
+        )
+    if len(questions) > QUESTION_HARD_LIMIT:
+        raise MarkdownImportError(
+            f"A survey can have at most {QUESTION_HARD_LIMIT} questions "
+            f"(this file has {len(questions)})."
         )
 
     return ParsedSurvey(title=title, slug=raw_slug, status=status, questions=questions)

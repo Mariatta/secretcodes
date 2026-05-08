@@ -34,13 +34,13 @@ def validate_slug_not_reserved(value):
 
 class QRCodePreviewForm(forms.Form):
 
-    url = forms.URLField(label="URL")
+    url = forms.URLField(label="URL", assume_scheme="https")
     description = forms.CharField(label="Description", max_length=30, required=True)
 
 
 class QRCodeWithSlugPreviewForm(forms.Form):
 
-    url = forms.URLField(label="URL")
+    url = forms.URLField(label="URL", assume_scheme="https")
     description = forms.CharField(label="Description", max_length=30, required=True)
     slug = forms.CharField(
         label="Slug",
