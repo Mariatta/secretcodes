@@ -12,6 +12,15 @@
         .bar-head .bar-count { color: #6c757d; flex-shrink: 0; font-variant-numeric: tabular-nums; }
         .bar-track { background: #f1f3f5; border-radius: 0.25rem; height: 0.75rem; overflow: hidden; }
         .bar-fill  { height: 100%; background: #0d6efd; transition: width 0.2s; }
+        .split-track { display: flex; height: 1.5rem; border-radius: 0.25rem; overflow: hidden; background: #f1f3f5; }
+        .split-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.85rem; font-weight: 600; transition: width 0.2s; min-width: 0; }
+        .split-seg.role-yes { background: #1d9e75; }
+        .split-seg.role-no  { background: #b15a4f; }
+        .split-seg.role-detractor { background: #b15a4f; }
+        .split-seg.role-passive   { background: #c89b3c; }
+        .split-seg.role-promoter  { background: #1d9e75; }
+        .split-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; font-size: 0.85rem; color: #495057; }
+        .split-legend .legend-swatch { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: middle; }
         .stat-card { padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; text-align: center; }
         .stat-card .stat-num { font-size: 1.75rem; font-weight: 600; }
         .stat-card .stat-label { font-size: 0.85rem; color: #6c757d; }
@@ -56,14 +65,14 @@
                 <div class="col-4">
                     <div class="stat-card">
                         <div class="stat-num">
-                            {% if agg.completion_rate is None %}
+                            {% if agg.answer_fill_rate is None %}
                                 —
                             {% else %}
-                                {{ agg.completion_rate|floatformat:0 }}%
+                                {% widthratio agg.answer_fill_rate 1 100 %}%
                             {% endif %}
                         </div>
                         <div class="stat-label">
-                            completion rate
+                            answer fill rate
                         </div>
                     </div>
                 </div>
@@ -131,6 +140,38 @@
                                     </span>
                                     <span class="spacer"></span>
                                     <a href="{% url 'surveys:triage' slug=survey.slug %}">Open triage →</a>
+                                </div>
+                            {% else %}
+                                <div class="text-muted small">
+                                    No responses yet.
+                                </div>
+                            {% endif %}
+                        {% elif s.question.type == 'yes_no' or s.question.type == 'nps' %}
+                            {% if s.segments %}
+                                <div class="split-track"
+                                     role="img"
+                                     aria-label="{% for seg in s.segments %}{{ seg.label }} {{ seg.pct }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                    {% for seg in s.segments %}
+                                        {% if seg.count %}
+                                            <div class="split-seg role-{{ seg.role }}"
+                                                 style="width: {{ seg.pct }}%"
+                                                 title="{{ seg.label }}: {{ seg.count }} ({{ seg.pct }}%)">
+                                                {% if seg.pct >= 8 %}
+                                                    {{ seg.pct }}%
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="split-legend">
+                                    {% for seg in s.segments %}
+                                        <span>
+                                            <span class="legend-swatch role-{{ seg.role }} split-seg"></span>
+                                            {{ seg.label }}
+                                            <strong>{{ seg.count }}</strong>
+                                            <span class="text-muted">({{ seg.pct }}%)</span>
+                                        </span>
+                                    {% endfor %}
                                 </div>
                             {% else %}
                                 <div class="text-muted small">

@@ -46,7 +46,7 @@ def test_empty_survey_aggregates_to_zeros(owner):
     _q(survey, Question.Type.RATING, 1)
     agg = aggregate_survey(survey)
     assert agg.submission_count == 0
-    assert agg.completion_rate is None
+    assert agg.answer_fill_rate is None
     assert agg.average_rating is None
     assert agg.summaries[0].response_count == 0
 
@@ -128,7 +128,7 @@ def test_open_text_count_excludes_blank_strings(owner):
 
 
 @pytest.mark.django_db
-def test_completion_rate_includes_unanswered(owner):
+def test_answer_fill_rate_includes_unanswered(owner):
     """3 submissions × 2 questions = 6 cells, 5 responses → 5/6."""
     survey = _make_survey(owner)
     rating = _q(survey, Question.Type.RATING, 1)
@@ -138,7 +138,7 @@ def test_completion_rate_includes_unanswered(owner):
     _submit({rating: 3})
     agg = aggregate_survey(survey)
     assert agg.submission_count == 3
-    assert agg.completion_rate == pytest.approx(5 / 6)
+    assert agg.answer_fill_rate == pytest.approx(5 / 6)
 
 
 @pytest.mark.django_db
