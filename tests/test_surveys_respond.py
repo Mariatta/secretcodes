@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from surveys.models import Question, Response, Survey
+from surveys.models import Question, Response, Survey, SurveyCollaborator
 
 
 @pytest.fixture
@@ -78,6 +78,65 @@ def test_get_returns_404_for_draft_survey(client, owner):
     )
     response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_owner_can_preview_draft_survey(client, owner):
+    Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    client.force_login(owner)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
+    assert response.status_code == 200
+    assert b"Draft preview." in response.content
+
+
+@pytest.mark.django_db
+def test_collaborator_can_preview_draft_survey(client, owner, surveys_user_perm):
+    survey = Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    collab = get_user_model().objects.create_user(username="c", password="pw")
+    collab.user_permissions.add(surveys_user_perm)
+    SurveyCollaborator.objects.create(survey=survey, user=collab)
+    client.force_login(collab)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
+    assert response.status_code == 200
+    assert b"Draft preview." in response.content
+
+
+@pytest.mark.django_db
+def test_logged_in_stranger_still_404_on_draft(client, owner, surveys_user_perm):
+    Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    stranger = get_user_model().objects.create_user(username="s", password="pw")
+    stranger.user_permissions.add(surveys_user_perm)
+    client.force_login(stranger)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_draft_preview_post_does_not_save(client, owner):
+    survey = Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    Question.objects.create(
+        survey=survey,
+        text="Rate it",
+        type=Question.Type.RATING,
+        config={"max": 5},
+        order=1,
+    )
+    client.force_login(owner)
+    response = client.post(
+        reverse("surveys:respond", kwargs={"slug": "draft"}),
+        {f"q{survey.questions.first().id}": "5"},
+    )
+    assert response.status_code == 302
+    assert response.url == reverse("surveys:respond", kwargs={"slug": "draft"})
+    assert Response.objects.count() == 0
 
 
 @pytest.mark.django_db

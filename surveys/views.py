@@ -67,17 +67,32 @@ from .services.triage import (
 def respond(request, slug):
     """Render the public respondent form, or accept a submission.
 
-    Drafts return 404 — they shouldn't exist publicly.
+    Drafts return 404 to the public — but the owner and any
+    collaborator can preview a draft (read-only; submissions are
+    rejected so test answers don't pollute real results).
     Closed surveys render a friendly "this survey is closed" page at
     200 (not 404) so a respondent who follows an old link learns it's
     closed rather than that they have the wrong URL.
     """
     survey = get_object_or_404(Survey, slug=slug)
+    is_preview = False
     if survey.status == Survey.Status.DRAFT:
-        raise Http404("Survey is not published.")
+        if can_access_survey(request.user, survey):
+            is_preview = True
+        else:
+            raise Http404("Survey is not published.")
     if survey.status == Survey.Status.CLOSED:
         return render(request, "surveys/closed.html", {"survey": survey})
     if request.method == "POST":
+        if is_preview:
+            messages.info(
+                request,
+                "This is a preview. Publish the survey to start collecting "
+                "responses.",
+            )
+            return HttpResponseRedirect(
+                reverse("surveys:respond", kwargs={"slug": survey.slug})
+            )
         form = SurveyResponseForm(request.POST, survey=survey)
         if form.is_valid():
             form.save()
@@ -90,7 +105,12 @@ def respond(request, slug):
     return render(
         request,
         "surveys/respond.html",
-        {"survey": survey, "form": form, "pairs": pairs},
+        {
+            "survey": survey,
+            "form": form,
+            "pairs": pairs,
+            "is_preview": is_preview,
+        },
     )
 
 
