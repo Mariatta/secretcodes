@@ -168,6 +168,22 @@
                 </div>
             </form>
 
+            {% if not is_new and is_owner %}
+                <div class="border-top mt-5 pt-4">
+                    <h2 class="h6 text-muted">
+                        Danger zone
+                    </h2>
+                    <p class="small text-muted mb-2">
+                        Deleting this survey is permanent and removes all
+                        responses, action items, and the public link.
+                    </p>
+                    <a class="btn btn-sm btn-outline-danger"
+                       href="{% url 'surveys:delete' slug=survey.slug %}">
+                        Delete this survey
+                    </a>
+                </div>
+            {% endif %}
+
             <template id="question-template">
                 <div class="card mb-3 question-row" data-existing="0">
                     <div class="card-body">

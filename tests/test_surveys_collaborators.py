@@ -7,8 +7,16 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
+from qrcode_manager.models import QRCode
 from surveys.forms import SurveyAcceptInviteSignupForm, SurveyInvitationForm
-from surveys.models import Survey, SurveyCollaborator, SurveyInvitation
+from surveys.models import (
+    Question,
+    Response,
+    Survey,
+    SurveyCollaborator,
+    SurveyInvitation,
+    Theme,
+)
 
 User = get_user_model()
 
@@ -643,3 +651,112 @@ def test_team_view_anonymous_redirects_to_login(client, published_survey):
     )
     assert response.status_code == 302
     assert "/accounts/login/" in response.url
+
+
+# ---------- Delete survey -----------------------------------------------
+
+
+@pytest.mark.django_db
+def test_delete_confirm_page_renders_for_owner(client, owner, published_survey):
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:delete", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"Delete this survey?" in response.content
+    assert b"This is permanent." in response.content
+
+
+@pytest.mark.django_db
+def test_delete_confirm_lists_pending_invitations(
+    client, owner, published_survey
+):
+    SurveyInvitation.create(
+        survey=published_survey, email="x@example.com", inviter=owner
+    )
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:delete", kwargs={"slug": published_survey.slug})
+    )
+    assert b"pending" in response.content
+
+
+@pytest.mark.django_db
+def test_delete_post_removes_survey_and_cascades(client, owner, published_survey):
+    question = Question.objects.create(
+        survey=published_survey,
+        text="rate",
+        type=Question.Type.RATING,
+        config={"max": 5},
+        order=1,
+    )
+    Response.objects.create(question=question, value=5)
+    Theme.objects.create(survey=published_survey, name="t")
+    client.force_login(owner)
+    response = client.post(
+        reverse("surveys:delete", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 302
+    assert response.url == reverse("surveys:dashboard")
+    assert not Survey.objects.filter(slug=published_survey.slug).exists()
+    assert Response.objects.count() == 0
+    assert Theme.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_also_removes_short_url(client, owner, published_survey):
+    """The QR row is deleted alongside the survey so the slug can't be
+    silently retargeted by a future survey reusing it."""
+    qr = QRCode.objects.create(
+        description="qr",
+        slug="qr-" + published_survey.slug,
+        url=f"https://example.com/{published_survey.slug}/",
+    )
+    published_survey.short_url = qr
+    published_survey.save(update_fields=["short_url"])
+    client.force_login(owner)
+    client.post(reverse("surveys:delete", kwargs={"slug": published_survey.slug}))
+    assert not QRCode.objects.filter(pk=qr.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_collaborator_forbidden(
+    client, owner, collaborator, published_survey
+):
+    SurveyCollaborator.objects.create(survey=published_survey, user=collaborator)
+    client.force_login(collaborator)
+    response = client.post(
+        reverse("surveys:delete", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 403
+    assert Survey.objects.filter(slug=published_survey.slug).exists()
+
+
+@pytest.mark.django_db
+def test_delete_anonymous_redirects_to_login(client, published_survey):
+    response = client.get(
+        reverse("surveys:delete", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 302
+    assert "/accounts/login/" in response.url
+
+
+@pytest.mark.django_db
+def test_builder_shows_delete_button_for_owner(client, owner, published_survey):
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:edit", kwargs={"slug": published_survey.slug})
+    )
+    assert b"Delete this survey" in response.content
+
+
+@pytest.mark.django_db
+def test_builder_hides_delete_button_for_collaborator(
+    client, owner, collaborator, published_survey
+):
+    SurveyCollaborator.objects.create(survey=published_survey, user=collaborator)
+    client.force_login(collaborator)
+    response = client.get(
+        reverse("surveys:edit", kwargs={"slug": published_survey.slug})
+    )
+    assert b"Delete this survey" not in response.content
