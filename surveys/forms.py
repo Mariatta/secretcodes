@@ -218,17 +218,14 @@ class BaseQuestionFormSet(BaseInlineFormSet):
 
     def clean(self):
         super().clean()
+        if any(self.errors):
+            return
         kept = 0
         for form in self.forms:
-            if not form.has_changed():
-                if form.instance.pk and not self._should_delete_form(form):
-                    kept += 1
-                continue
             if self._should_delete_form(form):
                 continue
-            if not (form.cleaned_data.get("text") or "").strip():
-                continue
-            kept += 1
+            if form.instance.pk or (form.cleaned_data.get("text") or "").strip():
+                kept += 1
         if kept > QUESTION_HARD_LIMIT:
             raise forms.ValidationError(
                 f"A survey can have at most {QUESTION_HARD_LIMIT} questions "
