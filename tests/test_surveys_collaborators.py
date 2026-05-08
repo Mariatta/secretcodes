@@ -668,9 +668,7 @@ def test_delete_confirm_page_renders_for_owner(client, owner, published_survey):
 
 
 @pytest.mark.django_db
-def test_delete_confirm_lists_pending_invitations(
-    client, owner, published_survey
-):
+def test_delete_confirm_lists_pending_invitations(client, owner, published_survey):
     SurveyInvitation.create(
         survey=published_survey, email="x@example.com", inviter=owner
     )
@@ -720,9 +718,7 @@ def test_delete_also_removes_short_url(client, owner, published_survey):
 
 
 @pytest.mark.django_db
-def test_delete_collaborator_forbidden(
-    client, owner, collaborator, published_survey
-):
+def test_delete_collaborator_forbidden(client, owner, collaborator, published_survey):
     SurveyCollaborator.objects.create(survey=published_survey, user=collaborator)
     client.force_login(collaborator)
     response = client.post(

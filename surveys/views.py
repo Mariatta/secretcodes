@@ -609,9 +609,7 @@ def delete_survey(request, slug):
         "surveys/delete_confirm.html",
         {
             "survey": survey,
-            "response_count": Response.objects.filter(
-                question__survey=survey
-            ).count(),
+            "response_count": Response.objects.filter(question__survey=survey).count(),
             "question_count": survey.questions.count(),
             "theme_count": survey.themes.count(),
             "collaborator_count": survey.collaborators.count(),

@@ -29,25 +29,45 @@
                     <ul class="small mb-0">
                         <li>
                             {{ question_count }}
-                            {% if question_count == 1 %}question{% else %}questions{% endif %}
+                            {% if question_count == 1 %}
+                                question
+                            {% else %}
+                                questions
+                            {% endif %}
                         </li>
                         <li>
                             {{ response_count }}
-                            {% if response_count == 1 %}response{% else %}responses{% endif %}
+                            {% if response_count == 1 %}
+                                response
+                            {% else %}
+                                responses
+                            {% endif %}
                         </li>
                         <li>
                             {{ theme_count }}
-                            {% if theme_count == 1 %}theme{% else %}themes{% endif %}
+                            {% if theme_count == 1 %}
+                                theme
+                            {% else %}
+                                themes
+                            {% endif %}
                             (action items)
                         </li>
                         <li>
                             {{ collaborator_count }}
-                            {% if collaborator_count == 1 %}collaborator{% else %}collaborators{% endif %}
+                            {% if collaborator_count == 1 %}
+                                collaborator
+                            {% else %}
+                                collaborators
+                            {% endif %}
                         </li>
                         {% if pending_invite_count %}
                             <li>
                                 {{ pending_invite_count }} pending
-                                {% if pending_invite_count == 1 %}invitation{% else %}invitations{% endif %}
+                                {% if pending_invite_count == 1 %}
+                                    invitation
+                                {% else %}
+                                    invitations
+                                {% endif %}
                             </li>
                         {% endif %}
                     </ul>
