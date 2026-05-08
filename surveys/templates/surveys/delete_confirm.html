@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Delete · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            {% include "surveys/_subnav.html" with current="edit" %}
+            <h1 class="h3 mb-3">
+                Delete this survey?
+            </h1>
+            <div class="alert alert-danger" role="alert">
+                <strong>This is permanent.</strong> Once deleted, the survey,
+                its questions, responses, action items, and public link cannot
+                be recovered.
+            </div>
+            <div class="card mb-4" style="max-width: 560px;">
+                <div class="card-body">
+                    <h2 class="h5 card-title mb-2">
+                        {{ survey.title }}
+                    </h2>
+                    <div class="small text-muted mb-3">
+                        /{{ survey.slug }} · {{ survey.get_status_display }}
+                    </div>
+                    <ul class="small mb-0">
+                        <li>
+                            {{ question_count }}
+                            {% if question_count == 1 %}
+                                question
+                            {% else %}
+                                questions
+                            {% endif %}
+                        </li>
+                        <li>
+                            {{ response_count }}
+                            {% if response_count == 1 %}
+                                response
+                            {% else %}
+                                responses
+                            {% endif %}
+                        </li>
+                        <li>
+                            {{ theme_count }}
+                            {% if theme_count == 1 %}
+                                theme
+                            {% else %}
+                                themes
+                            {% endif %}
+                            (action items)
+                        </li>
+                        <li>
+                            {{ collaborator_count }}
+                            {% if collaborator_count == 1 %}
+                                collaborator
+                            {% else %}
+                                collaborators
+                            {% endif %}
+                        </li>
+                        {% if pending_invite_count %}
+                            <li>
+                                {{ pending_invite_count }} pending
+                                {% if pending_invite_count == 1 %}
+                                    invitation
+                                {% else %}
+                                    invitations
+                                {% endif %}
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    Yes, permanently delete
+                </button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'surveys:edit' slug=survey.slug %}">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

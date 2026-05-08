@@ -584,6 +584,45 @@ def _is_survey_owner(user, survey) -> bool:
 
 @user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
+def delete_survey(request, slug):
+    """Owner-only permanent delete with a confirm page on GET.
+
+    All FKs cascade (Question, Response, Theme, ResponseTheme,
+    SurveyCollaborator, SurveyInvitation). The associated QR
+    ``short_url`` row is deleted alongside the survey so its slug
+    can't be reused to silently redirect old QR scans somewhere new.
+    """
+    survey = get_object_or_404(Survey, slug=slug)
+    if not _is_survey_owner(request.user, survey):
+        return HttpResponseForbidden("Only the survey owner can delete this survey.")
+    if request.method == "POST":
+        title = survey.title
+        with transaction.atomic():
+            qr = survey.short_url
+            survey.delete()
+            if qr is not None:
+                qr.delete()
+        messages.success(request, f"Deleted '{title}'.")
+        return redirect("surveys:dashboard")
+    return render(
+        request,
+        "surveys/delete_confirm.html",
+        {
+            "survey": survey,
+            "response_count": Response.objects.filter(question__survey=survey).count(),
+            "question_count": survey.questions.count(),
+            "theme_count": survey.themes.count(),
+            "collaborator_count": survey.collaborators.count(),
+            "pending_invite_count": survey.invitations.filter(
+                accepted_at__isnull=True
+            ).count(),
+            "is_owner": True,
+        },
+    )
+
+
+@user_passes_test(is_surveys_user)
+@require_http_methods(["GET", "POST"])
 def invite_create(request, slug):
     """Owner-only form to invite a collaborator to a survey by email."""
     survey = get_object_or_404(Survey, slug=slug)

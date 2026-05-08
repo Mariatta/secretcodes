@@ -11,6 +11,7 @@ urlpatterns = [
     path("<slug:slug>/edit/", views.edit, name="edit"),
     path("<slug:slug>/invite/", views.invite_create, name="invite_create"),
     path("<slug:slug>/team/", views.team, name="team"),
+    path("<slug:slug>/delete/", views.delete_survey, name="delete"),
     path("<slug:slug>/results/", views.results, name="results"),
     path("<slug:slug>/export.csv", views.export_csv, name="export_csv"),
     path(
