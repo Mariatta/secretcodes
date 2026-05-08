@@ -24,6 +24,16 @@ class Bar:
 
 
 @dataclass
+class Segment:
+    """One slice of a stacked bar — used for yes/no and NPS distributions."""
+
+    label: str
+    count: int
+    pct: int
+    role: str
+
+
+@dataclass
 class QuestionSummary:
     """Per-question aggregation. Shape varies by ``question.type``."""
 
@@ -31,6 +41,7 @@ class QuestionSummary:
     response_count: int = 0
     distribution: dict[Any, int] = field(default_factory=dict)
     bars: list[Bar] = field(default_factory=list)
+    segments: list[Segment] = field(default_factory=list)
     average: float | None = None
     nps_score: float | None = None
     open_text_count: int = 0
@@ -67,7 +78,7 @@ class SurveyAggregation:
     survey: Survey
     submission_count: int
     question_count: int
-    completion_rate: float | None
+    answer_fill_rate: float | None
     average_rating: float | None
     summaries: list[QuestionSummary]
 
@@ -97,11 +108,18 @@ def _summarize_nps(question: Question, values: list[int]) -> QuestionSummary:
         if 0 <= v <= 10:
             distribution[v] += 1
     n = len(values)
+    segments: list[Segment] = []
     if n:
         promoters = sum(1 for v in values if v >= NPS_PROMOTER_MIN)
         detractors = sum(1 for v in values if v <= NPS_DETRACTOR_MAX)
+        passives = n - promoters - detractors
         nps_score = (promoters - detractors) * 100 / n
         average = sum(values) / n
+        segments = [
+            Segment("Detractors", detractors, round(detractors * 100 / n), "detractor"),
+            Segment("Passives", passives, round(passives * 100 / n), "passive"),
+            Segment("Promoters", promoters, round(promoters * 100 / n), "promoter"),
+        ]
     else:
         nps_score = None
         average = None
@@ -110,6 +128,7 @@ def _summarize_nps(question: Question, values: list[int]) -> QuestionSummary:
         response_count=n,
         distribution=distribution,
         bars=_bars_relative_to_max(distribution),
+        segments=segments,
         average=average,
         nps_score=nps_score,
         max_value=10,
@@ -140,12 +159,20 @@ def _summarize_multi_select(
 def _summarize_yes_no(question: Question, values: list[bool]) -> QuestionSummary:
     yes = sum(1 for v in values if v is True)
     no = sum(1 for v in values if v is False)
+    total = yes + no
     distribution = {"Yes": yes, "No": no}
+    segments: list[Segment] = []
+    if total:
+        segments = [
+            Segment("Yes", yes, round(yes * 100 / total), "yes"),
+            Segment("No", no, round(no * 100 / total), "no"),
+        ]
     return QuestionSummary(
         question=question,
-        response_count=yes + no,
+        response_count=total,
         distribution=distribution,
-        bars=_bars_relative_to_total(distribution, yes + no),
+        bars=_bars_relative_to_total(distribution, total),
+        segments=segments,
     )
 
 
@@ -190,16 +217,16 @@ def aggregate_survey(survey: Survey) -> SurveyAggregation:
     submission_count = len({r.submission_uuid for r in responses})
     question_count = len(questions)
     if submission_count and question_count:
-        completion_rate = len(responses) / (submission_count * question_count)
+        answer_fill_rate = len(responses) / (submission_count * question_count)
     else:
-        completion_rate = None
+        answer_fill_rate = None
     average_rating = sum(rating_values) / len(rating_values) if rating_values else None
 
     return SurveyAggregation(
         survey=survey,
         submission_count=submission_count,
         question_count=question_count,
-        completion_rate=completion_rate,
+        answer_fill_rate=answer_fill_rate,
         average_rating=average_rating,
         summaries=summaries,
     )

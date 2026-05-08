@@ -4,6 +4,7 @@
 {% endblock head_title %}
 {% block extra_head %}
     {{ block.super }}
+    {% include "surveys/_force_light.html" %}
     <style>
         .ai-card.resolved { opacity: 0.65; }
         .ai-card.resolved .ai-name { text-decoration: line-through; }
