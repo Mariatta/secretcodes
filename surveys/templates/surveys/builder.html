@@ -157,6 +157,12 @@
                             </div>
                         {% endfor %}
                     </div>
+                    <div id="question-count-banner"
+                         class="alert d-none mb-2"
+                         data-warn-threshold="{{ question_warn_threshold }}"
+                         data-hard-limit="{{ question_hard_limit }}"
+                         role="status"
+                         aria-live="polite"></div>
                     <button type="button" id="add-question" class="btn btn-outline-primary mb-3">
                         + Add question
                     </button>
@@ -251,6 +257,64 @@
             const addBtn = document.getElementById('add-question');
             const template = document.getElementById('question-template');
             const totalForms = form.querySelector('input[name="questions-TOTAL_FORMS"]');
+            const banner = document.getElementById('question-count-banner');
+            const WARN_THRESHOLD = parseInt(banner.dataset.warnThreshold, 10);
+            const HARD_LIMIT = parseInt(banner.dataset.hardLimit, 10);
+            let warningDismissed = false;
+
+            function activeCount() {
+                return rowsContainer.querySelectorAll('.question-row:not(.removed)').length;
+            }
+
+            function setBannerHtml(variant, iconClass, message, dismissable) {
+                banner.classList.remove('alert-warning', 'alert-danger', 'alert-dismissible');
+                banner.classList.add('alert-' + variant);
+                let html =
+                    `<i class="${iconClass} me-2" aria-hidden="true"></i>` +
+                    `<span>${message}</span>`;
+                if (dismissable) {
+                    banner.classList.add('alert-dismissible');
+                    html += '<button type="button" class="btn-close" aria-label="Dismiss" data-banner-close></button>';
+                }
+                banner.innerHTML = html;
+            }
+
+            function syncLimitUi() {
+                const n = activeCount();
+                if (n >= HARD_LIMIT) {
+                    banner.classList.remove('d-none');
+                    setBannerHtml(
+                        'danger',
+                        'fa-solid fa-ban',
+                        `You've reached the max questions allowed (${HARD_LIMIT}). ` +
+                        `Remove a question to add another.`,
+                        false,
+                    );
+                    addBtn.disabled = true;
+                } else if (n >= WARN_THRESHOLD && !warningDismissed) {
+                    banner.classList.remove('d-none');
+                    setBannerHtml(
+                        'warning',
+                        'fa-solid fa-triangle-exclamation',
+                        `That's a lot of questions! Long surveys tend to see lower completion rates.`,
+                        true,
+                    );
+                    addBtn.disabled = false;
+                } else {
+                    banner.classList.add('d-none');
+                    addBtn.disabled = false;
+                    if (n < WARN_THRESHOLD) {
+                        warningDismissed = false;
+                    }
+                }
+            }
+
+            banner.addEventListener('click', (e) => {
+                if (e.target.matches('[data-banner-close]')) {
+                    warningDismissed = true;
+                    syncLimitUi();
+                }
+            });
 
             function renumber() {
                 const rows = rowsContainer.querySelectorAll('.question-row:not(.removed)');
@@ -258,6 +322,7 @@
                     const orderInput = row.querySelector('input[name$="-order"]');
                     if (orderInput) orderInput.value = String(i + 1);
                 });
+                syncLimitUi();
             }
 
             if (window.Sortable) {
@@ -340,6 +405,7 @@
             });
 
             addBtn.addEventListener('click', () => {
+                if (activeCount() >= HARD_LIMIT) return;
                 const idx = parseInt(totalForms.value, 10);
                 const html = template.innerHTML.replaceAll('__prefix__', idx);
                 const wrapper = document.createElement('div');

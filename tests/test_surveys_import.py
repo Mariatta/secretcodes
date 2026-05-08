@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from surveys.models import Question, Survey
+from surveys.models import QUESTION_HARD_LIMIT, Question, Survey
 from surveys.services.import_md import (
     MarkdownImportError,
     import_survey,
@@ -122,6 +122,21 @@ def test_parse_invalid_json_raises():
         """).strip()
     with pytest.raises(MarkdownImportError, match="Invalid JSON"):
         parse_markdown(md)
+
+
+def _md_with_n_questions(n):
+    questions = "\n\n".join(f"## Q{i + 1}\n- type: open_text" for i in range(n))
+    return f"# Big survey\nslug: big-{n}\n\n{questions}\n"
+
+
+def test_parse_at_hard_limit_passes():
+    parsed = parse_markdown(_md_with_n_questions(QUESTION_HARD_LIMIT))
+    assert len(parsed.questions) == QUESTION_HARD_LIMIT
+
+
+def test_parse_over_hard_limit_raises():
+    with pytest.raises(MarkdownImportError, match="at most"):
+        parse_markdown(_md_with_n_questions(QUESTION_HARD_LIMIT + 1))
 
 
 def test_parse_invalid_status_raises():

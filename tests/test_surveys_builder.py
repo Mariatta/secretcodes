@@ -4,7 +4,12 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from surveys.models import Question, Survey
+from surveys.models import (
+    QUESTION_HARD_LIMIT,
+    QUESTION_WARN_THRESHOLD,
+    Question,
+    Survey,
+)
 
 
 @pytest.fixture
@@ -506,3 +511,59 @@ def test_config_dict_round_trip(client, owner):
     survey = Survey.objects.get(slug="pick")
     q = survey.questions.first()
     assert q.config == config
+
+
+def _question_payload(prefix, n):
+    """Build a valid n-question payload for the builder formset."""
+    out = {**_management(prefix, total=n)}
+    for i in range(n):
+        out[f"{prefix}-{i}-order"] = str(i + 1)
+        out[f"{prefix}-{i}-text"] = f"Q{i + 1}"
+        out[f"{prefix}-{i}-type"] = "open_text"
+        out[f"{prefix}-{i}-config"] = ""
+    return out
+
+
+@pytest.mark.django_db
+def test_builder_accepts_exactly_hard_limit_questions(client, owner):
+    """Saving with exactly QUESTION_HARD_LIMIT questions succeeds."""
+    client.force_login(owner)
+    payload = {
+        "title": "Max",
+        "slug": "max",
+        "status": "draft",
+        **_question_payload("questions", QUESTION_HARD_LIMIT),
+    }
+    response = client.post(reverse("surveys:new"), payload)
+    assert response.status_code == 302
+    assert Survey.objects.get(slug="max").questions.count() == QUESTION_HARD_LIMIT
+
+
+@pytest.mark.django_db
+def test_builder_rejects_over_hard_limit_questions(client, owner):
+    """Saving with HARD_LIMIT + 1 questions is rejected with a clear error."""
+    client.force_login(owner)
+    payload = {
+        "title": "Too many",
+        "slug": "too-many",
+        "status": "draft",
+        **_question_payload("questions", QUESTION_HARD_LIMIT + 1),
+    }
+    response = client.post(reverse("surveys:new"), payload)
+    assert response.status_code == 200
+    assert Survey.objects.count() == 0
+    assert b"at most" in response.content
+    assert str(QUESTION_HARD_LIMIT).encode() in response.content
+
+
+@pytest.mark.django_db
+def test_builder_renders_question_count_banner(client, owner):
+    """Banner element + thresholds must be rendered so the JS can drive it."""
+    client.force_login(owner)
+    response = client.get(reverse("surveys:new"))
+    assert response.status_code == 200
+    assert b'id="question-count-banner"' in response.content
+    assert (
+        f'data-warn-threshold="{QUESTION_WARN_THRESHOLD}"'.encode() in response.content
+    )
+    assert f'data-hard-limit="{QUESTION_HARD_LIMIT}"'.encode() in response.content
