@@ -1,5 +1,6 @@
 {% extends "surveys/_respondent_base.html" %}
 {% load django_bootstrap5 %}
+{% load survey_extras %}
 {% block head_title %}
     {{ survey.title }}
 {% endblock head_title %}
@@ -111,6 +112,31 @@
             border-radius: 4px;
         }
         .star-rating-field .invalid-feedback { font-size: 0.85rem; }
+
+        .survey-description {
+            position: relative;
+            border-left: 4px solid #534AB7;
+            background: #f4f3fa;
+            padding: 0.875rem 1rem 0.875rem 2.5rem;
+            border-radius: 0 8px 8px 0;
+            color: #2d2a4a;
+            line-height: 1.5;
+        }
+        .survey-description::before {
+            content: "\f05a"; /* fa-circle-info */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0.875rem;
+            top: 0.95rem;
+            color: #534AB7;
+            font-size: 1rem;
+        }
+        .survey-description > :last-child { margin-bottom: 0; }
+        .survey-description a {
+            color: #534AB7;
+            text-decoration: underline;
+        }
     </style>
 {% endblock extra_head %}
 {% block content %}
@@ -138,6 +164,11 @@
         {% endif %}
         .
     </p>
+    {% if survey.description %}
+        <div class="survey-description mb-4">
+            {{ survey.description|safe_markdown }}
+        </div>
+    {% endif %}
     {% if pairs %}
         <form method="post" novalidate>
             {% csrf_token %}

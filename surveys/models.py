@@ -12,6 +12,8 @@ INVITATION_KEY_LENGTH = 64
 QUESTION_WARN_THRESHOLD = 10
 QUESTION_HARD_LIMIT = 20
 
+DESCRIPTION_MAX_LENGTH = 500
+
 
 class BaseModel(models.Model):
     """Mirror of availability.models.BaseModel — common timestamp fields."""
@@ -46,6 +48,9 @@ class Survey(BaseModel):
     )
     title = models.CharField("title", max_length=200)
     slug = models.SlugField("slug", max_length=80, unique=True)
+    description = models.TextField(
+        "description", max_length=DESCRIPTION_MAX_LENGTH, blank=True, default=""
+    )
     status = models.CharField(
         "status", max_length=20, choices=Status.choices, default=Status.DRAFT
     )

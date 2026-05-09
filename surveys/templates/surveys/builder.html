@@ -88,6 +88,11 @@
                     </legend>
                     {% bootstrap_field survey_form.title %}
                     {% bootstrap_field survey_form.slug %}
+                    <div class="mb-3 description-field-wrap">
+                        {% bootstrap_field survey_form.description %}
+                        <div class="form-text small text-end description-counter"
+                             aria-live="polite"></div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">Status</label>
                         <div class="btn-group status-btn-group" role="group" aria-label="Survey status">
@@ -249,6 +254,23 @@
                 }, 1500);
             });
         });
+    </script>
+    <script>
+        (function() {
+            const wrap = document.querySelector('.description-field-wrap');
+            if (!wrap) return;
+            const textarea = wrap.querySelector('textarea');
+            const counter = wrap.querySelector('.description-counter');
+            const max = parseInt(textarea.getAttribute('maxlength'), 10);
+            if (!textarea || !counter || !max) return;
+            function update() {
+                const used = textarea.value.length;
+                counter.textContent = `${used} / ${max}`;
+                counter.classList.toggle('text-warning-emphasis', used > max * 0.9);
+            }
+            textarea.addEventListener('input', update);
+            update();
+        })();
     </script>
     <script>
         (function() {
