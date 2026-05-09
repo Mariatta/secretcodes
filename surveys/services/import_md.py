@@ -7,6 +7,7 @@ writeable by hand, no front-matter / no special parser dependencies::
 
     slug: post-event
     status: draft
+    description: Quick anonymous feedback to help us shape the next event.
 
     ## How would you rate the event?
     - type: rating
@@ -25,8 +26,9 @@ writeable by hand, no front-matter / no special parser dependencies::
 Rules:
 
 - Exactly one ``# H1`` heading at the top — the survey title.
-- Survey-level metadata (slug, status) is ``key: value`` lines between
-  the H1 and the first ``## H2``.
+- Survey-level metadata (slug, status, description) is ``key: value``
+  lines between the H1 and the first ``## H2``. ``description`` supports
+  inline markdown and is shown above the questions on the respond page.
 - Each ``## H2`` is a question; the heading text is the question wording.
 - Question metadata is one ``- key: value`` line per property.
 - ``type`` is required and must be one of ``rating``, ``multi_select``,
@@ -71,6 +73,7 @@ class ParsedSurvey:
     title: str
     slug: str
     status: str
+    description: str = ""
     questions: list[ParsedQuestion] = field(default_factory=list)
 
 
@@ -139,6 +142,7 @@ def parse_markdown(text: str) -> ParsedSurvey:
         raise MarkdownImportError(
             f"status must be one of {sorted(VALID_STATUSES)} (got {status!r})."
         )
+    description = survey_meta.get("description", "")
 
     questions: list[ParsedQuestion] = []
     while i < n:
@@ -190,7 +194,13 @@ def parse_markdown(text: str) -> ParsedSurvey:
             f"(this file has {len(questions)})."
         )
 
-    return ParsedSurvey(title=title, slug=raw_slug, status=status, questions=questions)
+    return ParsedSurvey(
+        title=title,
+        slug=raw_slug,
+        status=status,
+        description=description,
+        questions=questions,
+    )
 
 
 @transaction.atomic
@@ -205,6 +215,7 @@ def import_survey(parsed: ParsedSurvey, *, owner) -> Survey:
         owner=owner,
         title=parsed.title,
         slug=parsed.slug,
+        description=parsed.description,
         status=parsed.status,
     )
     for index, pq in enumerate(parsed.questions, start=1):

@@ -395,3 +395,45 @@ def test_done_page_404_for_draft(client, owner):
     Survey.objects.create(owner=owner, title="D", slug="d", status=Survey.Status.DRAFT)
     response = client.get(reverse("surveys:done", kwargs={"slug": "d"}))
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_respond_renders_description_as_markdown(client, published_survey):
+    """Description supports inline markdown and renders as HTML on the
+    respondent page."""
+    published_survey.description = "Quick feedback to help us shape the **next** event."
+    published_survey.save(update_fields=["description"])
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"<strong>next</strong>" in response.content
+
+
+@pytest.mark.django_db
+def test_respond_strips_unsafe_html_in_description(client, published_survey):
+    """Raw <script> in description must not survive the bleach pass.
+
+    The page has its own ``<script>`` blocks for star-rating UI, so we
+    can't just assert the substring is absent globally — instead we check
+    that the malicious tag with its payload doesn't appear together.
+    """
+    published_survey.description = 'Hi <script>alert("xss")</script> there.'
+    published_survey.save(update_fields=["description"])
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"<script>alert" not in response.content
+    assert b"</script> there" not in response.content
+
+
+@pytest.mark.django_db
+def test_respond_omits_description_section_when_empty(client, published_survey):
+    """No description → the wrapper ``<div>`` is omitted (the class name
+    still appears in the page's CSS, but no element uses it)."""
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b'<div class="survey-description' not in response.content

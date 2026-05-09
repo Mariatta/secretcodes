@@ -567,3 +567,48 @@ def test_builder_renders_question_count_banner(client, owner):
         f'data-warn-threshold="{QUESTION_WARN_THRESHOLD}"'.encode() in response.content
     )
     assert f'data-hard-limit="{QUESTION_HARD_LIMIT}"'.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_builder_saves_description(client, owner):
+    """Description posts through the survey form and persists on the model."""
+    client.force_login(owner)
+    payload = {
+        "title": "With description",
+        "slug": "with-description",
+        "description": "Short paragraph **inviting** people in.",
+        "status": "draft",
+        **_management("questions", total=0),
+    }
+    response = client.post(reverse("surveys:new"), payload)
+    assert response.status_code == 302
+    survey = Survey.objects.get(slug="with-description")
+    assert survey.description == "Short paragraph **inviting** people in."
+
+
+@pytest.mark.django_db
+def test_builder_renders_description_textarea(client, owner):
+    """Builder shows a textarea for description — not just a text input."""
+    client.force_login(owner)
+    response = client.get(reverse("surveys:new"))
+    assert response.status_code == 200
+    assert b'name="description"' in response.content
+    assert b"description-counter" in response.content
+
+
+@pytest.mark.django_db
+def test_builder_rejects_over_long_description(client, owner):
+    """Description longer than DESCRIPTION_MAX_LENGTH is rejected."""
+    from surveys.models import DESCRIPTION_MAX_LENGTH
+
+    client.force_login(owner)
+    payload = {
+        "title": "Long",
+        "slug": "long",
+        "description": "x" * (DESCRIPTION_MAX_LENGTH + 1),
+        "status": "draft",
+        **_management("questions", total=0),
+    }
+    response = client.post(reverse("surveys:new"), payload)
+    assert response.status_code == 200
+    assert Survey.objects.count() == 0

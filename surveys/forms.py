@@ -139,11 +139,24 @@ class SurveyForm(forms.ModelForm):
 
     class Meta:
         model = Survey
-        fields = ("title", "slug", "status")
+        fields = ("title", "slug", "description", "status")
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
             "slug": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": (
+                        "A short paragraph inviting people in. Markdown supported "
+                        "(bold, italic, links, lists)."
+                    ),
+                }
+            ),
             "status": forms.RadioSelect(attrs={"class": "btn-check"}),
+        }
+        help_texts = {
+            "description": "Optional. Shown above the questions on the respondent page.",
         }
 
 

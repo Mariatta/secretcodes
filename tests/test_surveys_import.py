@@ -139,6 +139,46 @@ def test_parse_over_hard_limit_raises():
         parse_markdown(_md_with_n_questions(QUESTION_HARD_LIMIT + 1))
 
 
+def test_parse_extracts_description_when_present():
+    md = textwrap.dedent("""
+        # T
+        slug: t
+        description: Quick anonymous feedback.
+
+        ## Q
+        - type: open_text
+        """).strip()
+    parsed = parse_markdown(md)
+    assert parsed.description == "Quick anonymous feedback."
+
+
+def test_parse_description_defaults_to_empty():
+    md = textwrap.dedent("""
+        # T
+        slug: t
+
+        ## Q
+        - type: open_text
+        """).strip()
+    parsed = parse_markdown(md)
+    assert parsed.description == ""
+
+
+@pytest.mark.django_db
+def test_import_persists_description(owner):
+    md = textwrap.dedent("""
+        # T
+        slug: t-with-desc
+        description: Help us shape the next round.
+
+        ## Q
+        - type: open_text
+        """).strip()
+    parsed = parse_markdown(md)
+    survey = import_survey(parsed, owner=owner)
+    assert survey.description == "Help us shape the next round."
+
+
 def test_parse_invalid_status_raises():
     md = textwrap.dedent("""
         # T
