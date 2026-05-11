@@ -52,6 +52,7 @@ from .services.import_md import (
 )
 from .services.invitations import send_invitation_email
 from .services.publishing import ensure_short_url
+from .services.recipients import join_with_and, recipient_names
 from .services.themes import co_occurring
 from .services.themes import merge as merge_themes
 from .services.triage import (
@@ -118,6 +119,7 @@ def respond(request, slug):
             "pairs": pairs,
             "is_preview": is_preview,
             "can_edit": can_edit,
+            "recipient_phrase": join_with_and(recipient_names(survey)),
         },
     )
 
