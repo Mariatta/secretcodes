@@ -437,3 +437,128 @@ def test_respond_omits_description_section_when_empty(client, published_survey):
     )
     assert response.status_code == 200
     assert b'<div class="survey-description' not in response.content
+
+
+@pytest.mark.django_db
+def test_anonymous_does_not_see_edit_link_on_published(client, published_survey):
+    """A public respondent must not see an Edit affordance."""
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    # The CSS class name appears literally inside the page's <style>
+    # block — assert the absence of the <a> element, not just the class name.
+    assert b'<a class="respondent-edit-link"' not in response.content
+
+
+@pytest.mark.django_db
+def test_owner_sees_edit_link_on_published(client, published_survey, owner):
+    """Owner gets a discreet Edit link back to the builder."""
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b'<a class="respondent-edit-link"' in response.content
+    edit_url = reverse("surveys:edit", kwargs={"slug": published_survey.slug})
+    assert edit_url.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_collaborator_sees_edit_link_on_published(
+    client, published_survey, surveys_user_perm
+):
+    collab = get_user_model().objects.create_user(username="c", password="pw")
+    collab.user_permissions.add(surveys_user_perm)
+    SurveyCollaborator.objects.create(survey=published_survey, user=collab)
+    client.force_login(collab)
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b'<a class="respondent-edit-link"' in response.content
+
+
+@pytest.mark.django_db
+def test_logged_in_stranger_does_not_see_edit_link(
+    client, published_survey, surveys_user_perm
+):
+    """A surveys user who isn't owner/collaborator still has no edit access."""
+    stranger = get_user_model().objects.create_user(username="s", password="pw")
+    stranger.user_permissions.add(surveys_user_perm)
+    client.force_login(stranger)
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    # The CSS class name appears literally inside the page's <style>
+    # block — assert the absence of the <a> element, not just the class name.
+    assert b'<a class="respondent-edit-link"' not in response.content
+
+
+@pytest.mark.django_db
+def test_owner_sees_edit_link_in_draft_preview(client, owner):
+    Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    client.force_login(owner)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
+    assert response.status_code == 200
+    assert b"Draft preview." in response.content
+    assert b'<a class="respondent-edit-link"' in response.content
+
+
+@pytest.mark.django_db
+def test_draft_preview_drops_old_back_to_builder_button(client, owner):
+    """The preview banner used to carry a "Back to builder" button. With
+    the new discreet Edit link, that redundant button is gone."""
+    Survey.objects.create(
+        owner=owner, title="Draft", slug="draft", status=Survey.Status.DRAFT
+    )
+    client.force_login(owner)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "draft"}))
+    assert response.status_code == 200
+    assert b"Back to builder" not in response.content
+
+
+@pytest.mark.django_db
+def test_owner_sees_edit_link_on_closed_survey(client, owner):
+    """The Edit affordance is also offered on the closed page so the
+    owner can reopen or revise without hunting for the dashboard."""
+    Survey.objects.create(
+        owner=owner, title="Closed", slug="closed", status=Survey.Status.CLOSED
+    )
+    client.force_login(owner)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "closed"}))
+    assert response.status_code == 200
+    assert b"This survey is closed." in response.content
+    assert b'<a class="respondent-edit-link"' in response.content
+    edit_url = reverse("surveys:edit", kwargs={"slug": "closed"})
+    assert edit_url.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_closed_survey_links_brand_stylesheet(client, owner):
+    """The closed page must pull in the brand stylesheet — that's where
+    `.respondent-edit-link` lives. A regression here (e.g. closed.html
+    no longer extending _respondent_base.html) would render the link
+    unstyled."""
+    Survey.objects.create(
+        owner=owner, title="Closed", slug="closed", status=Survey.Status.CLOSED
+    )
+    client.force_login(owner)
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "closed"}))
+    assert response.status_code == 200
+    assert b"brand/secret-codes.css" in response.content
+
+
+@pytest.mark.django_db
+def test_anonymous_does_not_see_edit_link_on_closed(client, owner):
+    Survey.objects.create(
+        owner=owner, title="Closed", slug="closed", status=Survey.Status.CLOSED
+    )
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "closed"}))
+    assert response.status_code == 200
+    # The CSS class name appears literally inside the page's <style>
+    # block — assert the absence of the <a> element, not just the class name.
+    assert b'<a class="respondent-edit-link"' not in response.content
