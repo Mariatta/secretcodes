@@ -6,6 +6,16 @@
 {% block hero %}
 {% endblock hero %}
 {% block content %}
+    {% if can_edit %}
+        <div class="d-flex justify-content-end mb-2">
+            <a class="respondent-edit-link"
+               href="{% url 'surveys:edit' slug=survey.slug %}"
+               title="Edit this survey">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                Edit
+            </a>
+        </div>
+    {% endif %}
     <div class="text-center">
         <h2 class="h3 mb-3">
             This survey is closed.

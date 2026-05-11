@@ -77,14 +77,19 @@ def respond(request, slug):
     closed rather than that they have the wrong URL.
     """
     survey = get_object_or_404(Survey, slug=slug)
+    can_edit = can_access_survey(request.user, survey)
     is_preview = False
     if survey.status == Survey.Status.DRAFT:
-        if can_access_survey(request.user, survey):
+        if can_edit:
             is_preview = True
         else:
             raise Http404("Survey is not published.")
     if survey.status == Survey.Status.CLOSED:
-        return render(request, "surveys/closed.html", {"survey": survey})
+        return render(
+            request,
+            "surveys/closed.html",
+            {"survey": survey, "can_edit": can_edit},
+        )
     if request.method == "POST":
         if is_preview:
             messages.info(
@@ -112,6 +117,7 @@ def respond(request, slug):
             "form": form,
             "pairs": pairs,
             "is_preview": is_preview,
+            "can_edit": can_edit,
         },
     )
 
