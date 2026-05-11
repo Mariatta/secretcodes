@@ -562,3 +562,91 @@ def test_anonymous_does_not_see_edit_link_on_closed(client, owner):
     # The CSS class name appears literally inside the page's <style>
     # block — assert the absence of the <a> element, not just the class name.
     assert b'<a class="respondent-edit-link"' not in response.content
+
+
+@pytest.mark.django_db
+def test_respond_shows_owner_name_only_when_no_collaborators(client, published_survey):
+    """With just an owner, the recipient phrase is the owner's name alone
+    (no 'and', no comma)."""
+    published_survey.owner.first_name = "Alice"
+    published_survey.owner.last_name = "Chen"
+    published_survey.owner.save(update_fields=["first_name", "last_name"])
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"Responses go to Alice Chen." in response.content
+
+
+@pytest.mark.django_db
+def test_respond_joins_owner_and_one_collaborator_with_and(
+    client, published_survey, surveys_user_perm
+):
+    published_survey.owner.first_name = "Alice"
+    published_survey.owner.last_name = "Chen"
+    published_survey.owner.save(update_fields=["first_name", "last_name"])
+    bob = get_user_model().objects.create_user(
+        username="b", password="pw", first_name="Bob", last_name="Builder"
+    )
+    bob.user_permissions.add(surveys_user_perm)
+    SurveyCollaborator.objects.create(survey=published_survey, user=bob)
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"Responses go to Alice Chen and Bob Builder." in response.content
+
+
+@pytest.mark.django_db
+def test_respond_uses_oxford_comma_with_multiple_collaborators(
+    client, published_survey, surveys_user_perm
+):
+    published_survey.owner.first_name = "Alice"
+    published_survey.owner.last_name = "Chen"
+    published_survey.owner.save(update_fields=["first_name", "last_name"])
+    bob = get_user_model().objects.create_user(
+        username="b", password="pw", first_name="Bob", last_name="Builder"
+    )
+    bob.user_permissions.add(surveys_user_perm)
+    carol = get_user_model().objects.create_user(
+        username="c", password="pw", first_name="Carol", last_name="Carter"
+    )
+    carol.user_permissions.add(surveys_user_perm)
+    SurveyCollaborator.objects.create(survey=published_survey, user=bob)
+    SurveyCollaborator.objects.create(survey=published_survey, user=carol)
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"Responses go to Alice Chen, Bob Builder, and Carol Carter." in (
+        response.content
+    )
+
+
+@pytest.mark.django_db
+def test_respond_falls_back_to_username_when_no_full_name(client, owner):
+    """If the owner has no first/last name, the username renders in its
+    place — never an empty string."""
+    survey = Survey.objects.create(
+        owner=owner, title="T", slug="t", status=Survey.Status.PUBLISHED
+    )
+    Question.objects.create(
+        survey=survey, text="Q", type=Question.Type.OPEN_TEXT, order=1
+    )
+    response = client.get(reverse("surveys:respond", kwargs={"slug": "t"}))
+    assert response.status_code == 200
+    assert b"Responses go to owner." in response.content
+
+
+@pytest.mark.django_db
+def test_respond_no_longer_carries_old_generic_recipient_subtext(
+    client, published_survey
+):
+    """The hero used to read 'Responses go straight to the survey owner'
+    — that generic line was removed once the per-survey recipient names
+    landed, to avoid duplicating the same idea twice on the page."""
+    response = client.get(
+        reverse("surveys:respond", kwargs={"slug": published_survey.slug})
+    )
+    assert response.status_code == 200
+    assert b"Responses go straight to the survey owner" not in response.content
