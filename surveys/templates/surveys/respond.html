@@ -4,6 +4,16 @@
 {% block head_title %}
     {{ survey.title }}
 {% endblock head_title %}
+{% block og_title %}
+    {{ survey.title }}
+{% endblock og_title %}
+{% block og_description %}
+    {% if survey.description %}
+        {{ survey.description|safe_markdown|striptags|truncatewords:30 }}
+    {% else %}
+        A short survey from {{ recipient_phrase }}.
+    {% endif %}
+{% endblock og_description %}
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_ui.html" %}

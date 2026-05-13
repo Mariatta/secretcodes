@@ -13,7 +13,7 @@
             {% endblock head_title %}
         </title>
         <meta property="og:title"
-              content="{% block og_title %}Secret Codes by Mariatta{% endblock og_title %}" />
+              content="{% block og_title %}Secret Codes{% endblock og_title %}" />
         <meta property="og:description"
               content="{% block og_description %}Mariatta's Secret Codes — small useful tools, open source.{% endblock og_description %}" />
         <meta property="og:type"
@@ -21,9 +21,9 @@
         <meta property="og:url"
               content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock og_url %}" />
         <meta property="og:image"
-              content="{% block og_image %}{% endblock og_image %}" />
+              content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'brand/logo-wordmark.svg' %}{% endblock og_image %}" />
         <meta property="og:image:alt"
-              content="{% block og_image_alt %}{% endblock og_image_alt %}">
+              content="{% block og_image_alt %}Secret Codes wordmark{% endblock og_image_alt %}">
         <meta property="og:site_name" content="Secret Codes by Mariatta" />
         <meta property="og:locale" content="en_US">
         <link rel="icon"

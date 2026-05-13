@@ -12,6 +12,20 @@
             {% endblock head_title %}
         </title>
         <meta name="robots" content="noindex">
+        <meta property="og:title"
+              content="{% block og_title %}Surveys{% endblock og_title %}" />
+        <meta property="og:description"
+              content="{% block og_description %}A short survey on Secret Codes.{% endblock og_description %}" />
+        <meta property="og:type"
+              content="{% block og_type %}website{% endblock og_type %}" />
+        <meta property="og:url"
+              content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock og_url %}" />
+        <meta property="og:image"
+              content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'brand/logo-wordmark.svg' %}{% endblock og_image %}" />
+        <meta property="og:image:alt"
+              content="{% block og_image_alt %}Secret Codes wordmark{% endblock og_image_alt %}">
+        <meta property="og:site_name" content="Secret Codes by Mariatta" />
+        <meta property="og:locale" content="en_US">
         <link rel="icon"
               type="image/svg+xml"
               href="{% static 'brand/favicon.svg' %}">
