@@ -20,7 +20,10 @@ from .availability import (
 )
 from .google import fetch_busy_blocks_for_all, has_active_calendars
 
-PROTOCOL_VERSION = "2024-11-05"
+PROTOCOL_VERSION = "2025-06-18"
+SUPPORTED_PROTOCOL_VERSIONS = frozenset(
+    {"2024-11-05", "2025-03-26", "2025-06-18"}
+)
 SERVER_INFO = {"name": "mariatta-availability", "version": "1.0.0"}
 NO_CALENDARS_REASON = "No calendars connected"
 
@@ -232,8 +235,18 @@ def get_server_descriptor(endpoint_url, documentation_url):
 
 
 def _handle_initialize(params):
+    """Return server identity and the negotiated MCP protocol version.
+
+    Echoes the client's requested ``protocolVersion`` if we support it, else
+    falls back to our preferred version per the MCP spec's version
+    negotiation rules.
+    """
+    requested = params.get("protocolVersion")
+    negotiated = (
+        requested if requested in SUPPORTED_PROTOCOL_VERSIONS else PROTOCOL_VERSION
+    )
     return {
-        "protocolVersion": PROTOCOL_VERSION,
+        "protocolVersion": negotiated,
         "capabilities": {"tools": {}},
         "serverInfo": SERVER_INFO,
     }
@@ -270,7 +283,17 @@ def _error(code, message, request_id):
 
 
 def dispatch(payload):
-    """Return the JSON-RPC 2.0 response dict for a parsed request payload."""
+    """Return the JSON-RPC 2.0 response dict, or ``None`` for notifications.
+
+    A payload without an ``id`` field is a JSON-RPC notification — per the
+    spec the server MUST NOT send a response object, so the caller should
+    translate ``None`` into HTTP 202 with an empty body. This is critical
+    for the MCP handshake: clients send ``notifications/initialized`` after
+    ``initialize`` and treat any response body as a protocol violation.
+    """
+    if "id" not in payload:
+        return None
+
     request_id = payload.get("id")
     method = payload.get("method")
 
