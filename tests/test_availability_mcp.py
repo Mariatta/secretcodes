@@ -8,6 +8,7 @@ from django.urls import reverse
 from availability.services.availability import BusyBlock
 from availability.services.mcp import (
     PROTOCOL_VERSION,
+    SUPPORTED_PROTOCOL_VERSIONS,
     TOOLS,
     InvalidParams,
     ToolNotFound,
@@ -89,6 +90,36 @@ def test_mcp_dispatch_returns_internal_error_when_tool_raises():
     assert "boom" in response["error"]["message"]
 
 
+# ---------- notifications ----------
+
+
+@pytest.mark.django_db
+def test_mcp_endpoint_returns_202_with_no_body_for_notification(client):
+    """Per JSON-RPC 2.0 and MCP, a request without ``id`` is a notification —
+    the server MUST acknowledge with HTTP 202 and an empty body, never a
+    JSON-RPC response. Claude.ai's connector sends ``notifications/initialized``
+    right after ``initialize`` and aborts the session if it gets a body back.
+    """
+    response = client.post(
+        reverse("mcp_endpoint"),
+        data=json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+                "params": {},
+            }
+        ),
+        content_type="application/json",
+    )
+    assert response.status_code == 202
+    assert response.content == b""
+
+
+def test_dispatch_returns_none_for_notifications():
+    payload = {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {}}
+    assert dispatch(payload) is None
+
+
 # ---------- initialize ----------
 
 
@@ -99,6 +130,21 @@ def test_initialize_returns_protocol_and_server_info(client):
     assert data["result"]["protocolVersion"] == PROTOCOL_VERSION
     assert data["result"]["serverInfo"]["name"] == "mariatta-availability"
     assert "tools" in data["result"]["capabilities"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("client_version", sorted(SUPPORTED_PROTOCOL_VERSIONS))
+def test_initialize_echoes_supported_client_protocol_version(client, client_version):
+    response = _post(
+        client, _jsonrpc("initialize", {"protocolVersion": client_version})
+    )
+    assert response.json()["result"]["protocolVersion"] == client_version
+
+
+@pytest.mark.django_db
+def test_initialize_falls_back_to_server_preferred_for_unknown_version(client):
+    response = _post(client, _jsonrpc("initialize", {"protocolVersion": "1999-01-01"}))
+    assert response.json()["result"]["protocolVersion"] == PROTOCOL_VERSION
 
 
 # ---------- tools/list ----------

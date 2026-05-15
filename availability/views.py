@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -298,4 +298,7 @@ def mcp_endpoint(request):
             },
             status=400,
         )
-    return JsonResponse(mcp_dispatch(payload))
+    response_payload = mcp_dispatch(payload)
+    if response_payload is None:
+        return HttpResponse(status=202)
+    return JsonResponse(response_payload)
