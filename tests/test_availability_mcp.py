@@ -143,9 +143,7 @@ def test_initialize_echoes_supported_client_protocol_version(client, client_vers
 
 @pytest.mark.django_db
 def test_initialize_falls_back_to_server_preferred_for_unknown_version(client):
-    response = _post(
-        client, _jsonrpc("initialize", {"protocolVersion": "1999-01-01"})
-    )
+    response = _post(client, _jsonrpc("initialize", {"protocolVersion": "1999-01-01"}))
     assert response.json()["result"]["protocolVersion"] == PROTOCOL_VERSION
 
 

@@ -21,9 +21,7 @@ from .availability import (
 from .google import fetch_busy_blocks_for_all, has_active_calendars
 
 PROTOCOL_VERSION = "2025-06-18"
-SUPPORTED_PROTOCOL_VERSIONS = frozenset(
-    {"2024-11-05", "2025-03-26", "2025-06-18"}
-)
+SUPPORTED_PROTOCOL_VERSIONS = frozenset({"2024-11-05", "2025-03-26", "2025-06-18"})
 SERVER_INFO = {"name": "mariatta-availability", "version": "1.0.0"}
 NO_CALENDARS_REASON = "No calendars connected"
 

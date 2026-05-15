@@ -3,6 +3,7 @@ import importlib
 import pytest
 from django.urls import reverse
 
+from availability.services.mcp import PROTOCOL_VERSION
 from secretcodes.account_adapter import SecretCodesAccountAdapter
 
 
@@ -63,7 +64,7 @@ def test_well_known_mcp_descriptor_returns_json(client):
     assert response.status_code == 200
     assert response["Content-Type"].startswith("application/json")
     data = response.json()
-    assert data["protocolVersion"] == "2024-11-05"
+    assert data["protocolVersion"] == PROTOCOL_VERSION
     assert data["name"] == "mariatta-availability"
     assert data["transport"] == "http"
     assert data["authentication"] == "none"
