@@ -120,6 +120,24 @@ def test_dispatch_returns_none_for_notifications():
     assert dispatch(payload) is None
 
 
+@pytest.mark.django_db
+def test_mcp_endpoint_accepts_post_without_trailing_slash(client):
+    """Claude.ai's connector strips the trailing slash from the URL.
+
+    Django's APPEND_SLASH 301-redirects POST /mcp to /mcp/, and well-behaved
+    HTTP clients downgrade the redirected POST to a GET — which then hits
+    @require_POST and dies with 405. Routing /mcp directly to the same view
+    avoids the redirect and keeps the handshake intact.
+    """
+    response = client.post(
+        "/mcp",
+        data=json.dumps(_jsonrpc("initialize")),
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.json()["result"]["serverInfo"]["name"] == "mariatta-availability"
+
+
 # ---------- initialize ----------
 
 

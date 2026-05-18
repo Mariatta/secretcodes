@@ -32,6 +32,7 @@ urlpatterns = [
     path("expenses/", include("expenses.urls")),
     path("surveys/", include("surveys.urls")),
     path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
+    path("mcp", availability_views.mcp_endpoint),
     path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),
     path("agents/", views.agents, name="agents"),
     path("about/", views.about, name="about"),
