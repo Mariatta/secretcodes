@@ -57,6 +57,35 @@
         }
         .progress-text strong { color: #1F1E1B; font-weight: 500; }
 
+        /* Question prompt — distinct from the meta pills so the organizer
+           never confuses "what the responder was asked" with "metadata
+           about who/when." Uses the accent rail and serif voice. */
+        .triage-question {
+            margin: 4px 0 14px;
+            padding: 10px 14px 12px;
+            background: #fff;
+            border: 1px solid var(--bg-tertiary);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+        }
+        .triage-question-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .triage-question-text {
+            font-family: Fraunces, Georgia, "Iowan Old Style", "Times New Roman", serif;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.35;
+            color: #1F1E1B;
+            margin: 0;
+        }
+
         /* Response meta pills */
         .response-meta {
             display: flex; align-items: center; gap: 8px;
@@ -172,6 +201,16 @@
                     👁 peek action items
                 </a>
             </div>
+            {% if scope_question %}
+                <div class="triage-scope-banner">
+                    <span class="triage-scope-label">Focused on</span>
+                    <span class="triage-scope-q">Q{{ scope_question.order }} · {{ scope_question.text }}</span>
+                    <a class="triage-scope-unscope"
+                       href="{% url 'surveys:triage' slug=survey.slug %}">
+                        Triage all questions →
+                    </a>
+                </div>
+            {% endif %}
             <div class="progress-row"
                  role="progressbar"
                  aria-valuemin="0"
@@ -194,13 +233,14 @@
                     %
                 </span>
             </div>
+            <div class="triage-question">
+                <span class="triage-question-label">In response to</span>
+                <p class="triage-question-text">
+                    {{ response.question.text }}
+                </p>
+            </div>
             <div class="response-meta">
-                <span class="meta-pill">💬 {{ response.question.text|truncatechars:60 }}</span>
-                <span class="meta-pill">🕶 anonymous</span>
                 <span class="meta-pill">🕓 submitted {{ response.submitted_at|naturaltime }}</span>
-                {% if response.is_flagged %}
-                    <span class="meta-pill" style="background: #fff3e0; color: #b06b00;">⚑ flagged</span>
-                {% endif %}
             </div>
             <div class="triage-callout">
                 {{ response.value }}
@@ -246,17 +286,6 @@
                             value="not_actionable">
                         Not actionable <span class="kbd kbd-light ms-1">N</span>
                     </button>
-                    <button class="btn btn-warning text-dark"
-                            type="submit"
-                            name="action"
-                            value="flag">
-                        {% if response.is_flagged %}
-                            ⚑ Unflag
-                        {% else %}
-                            ⚑ Flag for follow-up
-                        {% endif %}
-                        <span class="kbd ms-1">F</span>
-                    </button>
                     <button class="btn btn-outline-secondary"
                             type="submit"
                             name="action"
@@ -279,7 +308,7 @@
                 {% if prev_id %}
                     <a class="btn btn-link btn-sm p-0"
                        id="triage-prev-link"
-                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ prev_id }}">
+                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ prev_id }}{% if scope_question %}&question={{ scope_question.id }}{% endif %}">
                         ← Previous
                     </a>
                 {% else %}
@@ -288,7 +317,7 @@
                 {% if next_id %}
                     <a class="btn btn-link btn-sm p-0"
                        id="triage-next-link"
-                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ next_id }}">
+                       href="{% url 'surveys:triage' slug=survey.slug %}?response={{ next_id }}{% if scope_question %}&question={{ scope_question.id }}{% endif %}">
                         Next without saving →
                     </a>
                 {% else %}
@@ -335,9 +364,6 @@
                 } else if (e.key === 'n' || e.key === 'N') {
                     e.preventDefault();
                     click('button[value="not_actionable"]');
-                } else if (e.key === 'f' || e.key === 'F') {
-                    e.preventDefault();
-                    click('button[value="flag"]');
                 } else if (e.key === 's' || e.key === 'S') {
                     e.preventDefault();
                     click('button[value="skip"]');

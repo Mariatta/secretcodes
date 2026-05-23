@@ -23,17 +23,33 @@
                         {% else %}
                             responses
                         {% endif %}
-                        for <strong>{{ survey.title }}</strong>.
+                        {% if scope_question %}
+                            for <strong>Q{{ scope_question.order }} · {{ scope_question.text }}</strong>.
+                        {% else %}
+                            for <strong>{{ survey.title }}</strong>.
+                        {% endif %}
                     {% else %}
-                        No open-text responses to triage yet.
+                        {% if scope_question %}
+                            No responses yet for
+                            <strong>Q{{ scope_question.order }} · {{ scope_question.text }}</strong>.
+                        {% else %}
+                            No open-text responses to triage yet.
+                        {% endif %}
                     {% endif %}
                 </p>
                 <div class="d-flex justify-content-center gap-2 mt-4">
-                    <a class="btn btn-primary"
-                       href="{% url 'surveys:actions' slug=survey.slug %}">Action items</a>
-                    <a class="btn btn-outline-secondary"
-                       href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
-                    <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">All surveys</a>
+                    {% if scope_question %}
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'surveys:triage' slug=survey.slug %}">Triage all questions</a>
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'surveys:text_responses' slug=survey.slug %}">Back to Browse text</a>
+                    {% else %}
+                        <a class="btn btn-primary"
+                           href="{% url 'surveys:actions' slug=survey.slug %}">Action items</a>
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'surveys:results' slug=survey.slug %}">Results</a>
+                        <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">All surveys</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
