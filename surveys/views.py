@@ -738,6 +738,30 @@ def delete_survey(request, slug):
 
 
 @user_passes_test(is_surveys_user)
+@require_http_methods(["POST"])
+def invite_resend(request, slug, invitation_id):
+    """Owner-only: re-send a pending (or expired) invitation email.
+
+    Bumps ``sent_at`` to now (handled inside ``send_invitation_email``),
+    which also resets the expiry window. Skipped if already accepted —
+    that surfaces as a 404 rather than silently re-emailing someone who
+    already joined.
+    """
+    survey = get_object_or_404(Survey, slug=slug)
+    if not _is_survey_owner(request.user, survey):
+        return HttpResponseForbidden("Only the survey owner can resend invitations.")
+    invitation = get_object_or_404(
+        SurveyInvitation,
+        id=invitation_id,
+        survey=survey,
+        accepted_at__isnull=True,
+    )
+    send_invitation_email(invitation, request)
+    messages.success(request, f"Invitation re-sent to {invitation.email}.")
+    return redirect("surveys:invite_create", slug=survey.slug)
+
+
+@user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def invite_create(request, slug):
     """Owner-only form to invite a collaborator to a survey by email."""
