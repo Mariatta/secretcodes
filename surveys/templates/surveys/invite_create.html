@@ -56,13 +56,25 @@
                 </h2>
                 <ul class="list-group" style="max-width: 480px;">
                     {% for invite in pending %}
-                        <li class="list-group-item d-flex justify-content-between">
-                            <div>
-                                {{ invite.email }}
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                            <div class="flex-grow-1">
+                                <div>
+                                    {{ invite.email }}
+                                    {% if invite.is_expired %}
+                                        <span class="badge bg-warning text-dark ms-1">expired</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    sent {{ invite.sent_at|date:"M j"|default:"—" }}
+                                </small>
                             </div>
-                            <small class="text-muted align-self-center">
-                                sent {{ invite.sent_at|date:"M j"|default:"—" }}
-                            </small>
+                            <form method="post"
+                                  action="{% url 'surveys:invite_resend' slug=survey.slug invitation_id=invite.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    Resend
+                                </button>
+                            </form>
                         </li>
                     {% endfor %}
                 </ul>
