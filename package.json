@@ -1,0 +1,13 @@
+{
+  "name": "secretcodes-vendor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Version manifest for self-hosted browser-side assets (Bootstrap, SortableJS). Watched by Dependabot; .github/workflows/vendor-refresh.yml copies refreshed files into secretcodes/static/vendor/ on each Dependabot PR. Not published.",
+  "scripts": {
+    "vendor:copy": "bash scripts/vendor-refresh.sh"
+  },
+  "devDependencies": {
+    "bootstrap": "5.2.0",
+    "sortablejs": "1.15.2"
+  }
+}

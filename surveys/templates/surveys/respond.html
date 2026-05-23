@@ -1,6 +1,7 @@
 {% extends "surveys/_respondent_base.html" %}
 {% load django_bootstrap5 %}
 {% load survey_extras %}
+{% load icons %}
 {% block head_title %}
     {{ survey.title }}
 {% endblock head_title %}
@@ -133,14 +134,13 @@
             line-height: 1.5;
         }
         .survey-description::before {
-            content: "\f05a"; /* fa-circle-info */
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
+            content: "";
             position: absolute;
             left: 0.875rem;
-            top: 0.95rem;
-            color: #534AB7;
-            font-size: 1rem;
+            top: 1.05rem;
+            width: 1rem;
+            height: 1rem;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23534AB7'%3E%3Cpath d='M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z'/%3E%3C/svg%3E") center/contain no-repeat;
         }
         .survey-description > :last-child { margin-bottom: 0; }
         .survey-description a {
@@ -155,7 +155,7 @@
             <a class="respondent-edit-link"
                href="{% url 'surveys:edit' slug=survey.slug %}"
                title="Edit this survey">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                {% icon "pen-to-square" %}
                 Edit
             </a>
         </div>

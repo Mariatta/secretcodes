@@ -9,6 +9,10 @@ __pycache__/
 venv/
 .venv/
 
+# Node — only used as a version manifest for vendored static assets;
+# the actual files live in secretcodes/static/vendor/ and ARE committed.
+node_modules/
+
 # Django
 db.sqlite3
 staticroot/

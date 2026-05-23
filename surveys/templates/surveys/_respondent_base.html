@@ -1,5 +1,6 @@
 {% load static %}
 {% load django_bootstrap5 %}
+{% load icons %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -37,11 +38,10 @@
               href="{% static 'brand/favicon.svg' %}">
         {% include "surveys/_force_light.html" %}
         {% block extra_head %}
-            <script src="https://kit.fontawesome.com/8774ceef9d.js"
-                    crossorigin="anonymous"></script>
         {% endblock extra_head %}
-        {% bootstrap_css %}
-        {% bootstrap_javascript %}
+        <link rel="stylesheet"
+              href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+        <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
         <link rel="stylesheet" href="{% static 'brand/secret-codes.css' %}">
     </head>
     <body class="d-flex flex-column min-vh-100" style="background: #FAF9F5;">
@@ -49,7 +49,7 @@
             <a class="small text-muted text-decoration-none"
                href="{% url 'about' %}"
                title="What is Secret Codes?">
-                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                {% icon "circle-info" %}
                 What's this?
             </a>
         </header>
@@ -101,8 +101,8 @@
                                 </span>
                             </a>
                             <p class="text-muted small mt-3 mb-0">
-                                <i class="fa-solid fa-lock me-1" aria-hidden="true"></i>
-                                No login. No cookies. No tracking.
+                                {% icon "lock" class="me-1" %}
+                                No login. No third-party cookies. No trackers. No analytics.
                             </p>
                         </section>
                     {% endblock hero %}

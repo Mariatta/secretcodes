@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block head_title %}
     Action items · {{ survey.title }}
 {% endblock head_title %}
@@ -79,7 +80,7 @@
                 <div class="d-flex gap-2">
                     <a class="btn btn-sm btn-outline-secondary"
                        href="{% url 'surveys:export_action_items' slug=survey.slug %}">
-                        <i class="fa-solid fa-download" aria-hidden="true"></i> Markdown
+                        {% icon "download" %} Markdown
                     </a>
                 </div>
             </div>

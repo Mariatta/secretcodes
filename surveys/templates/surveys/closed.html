@@ -1,5 +1,6 @@
 {% extends "surveys/_respondent_base.html" %}
 {% load static %}
+{% load icons %}
 {% block head_title %}
     Closed — {{ survey.title }}
 {% endblock head_title %}
@@ -11,7 +12,7 @@
             <a class="respondent-edit-link"
                href="{% url 'surveys:edit' slug=survey.slug %}"
                title="Edit this survey">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                {% icon "pen-to-square" %}
                 Edit
             </a>
         </div>
