@@ -20,6 +20,7 @@ urlpatterns = [
         name="export_action_items",
     ),
     path("<slug:slug>/triage/", views.triage, name="triage"),
+    path("<slug:slug>/text/", views.text_responses, name="text_responses"),
     path("<slug:slug>/actions/", views.actions, name="actions"),
     path(
         "<slug:slug>/themes/<int:theme_id>/resolve/",

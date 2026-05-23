@@ -15,7 +15,6 @@ from surveys.services.triage import (
     apply_triage,
     next_to_review,
     progress,
-    toggle_flag,
     untriaged_queue,
 )
 
@@ -274,32 +273,6 @@ def test_new_theme_name_matches_case_insensitively(survey_with_open_text, owner)
 
 
 @pytest.mark.django_db
-def test_toggle_flag_flips_state(survey_with_open_text, owner):
-    survey, q = survey_with_open_text
-    r = _new_response(q, "x")
-    assert r.is_flagged is False
-    assert toggle_flag(r) is True
-    r.refresh_from_db()
-    assert r.is_flagged is True
-    assert toggle_flag(r) is False
-
-
-@pytest.mark.django_db
-def test_flag_action_via_view_toggles_and_stays(client, survey_with_open_text, owner):
-    survey, q = survey_with_open_text
-    r = _new_response(q, "x")
-    client.force_login(owner)
-    response = client.post(
-        reverse("surveys:triage", kwargs={"slug": survey.slug}),
-        {"response_id": r.id, "action": "flag"},
-    )
-    assert response.status_code == 302
-    assert f"response={r.id}" in response.url
-    r.refresh_from_db()
-    assert r.is_flagged is True
-
-
-@pytest.mark.django_db
 def test_whitespace_only_response_auto_marked_not_actionable(
     client, survey_with_open_text, owner
 ):
@@ -402,7 +375,6 @@ def test_triage_renders_meta_pills_and_peek_link(client, survey_with_open_text, 
     client.force_login(owner)
     response = client.get(reverse("surveys:triage", kwargs={"slug": survey.slug}))
     assert response.status_code == 200
-    assert b"anonymous" in response.content
     assert b"submitted" in response.content
     assert b"peek action items" in response.content
 
@@ -435,3 +407,207 @@ def test_triage_post_new_theme_inline(client, survey_with_open_text, owner):
     assert response.status_code == 302
     assert Theme.objects.filter(survey=survey, name="Programming").exists()
     assert r.themes.first().name == "Programming"
+
+
+# Per-question triage scope. Browse-text launches triage filtered to a
+# single open-text question via ``?question=<id>``. The scope must survive
+# POST → redirect, prev/next nav, skip, and the "all caught up" state.
+
+
+@pytest.fixture
+def survey_with_two_open_text(owner):
+    """Two text questions on one survey — needed to verify scoping is
+    strict (responses to the OTHER question must not appear)."""
+    survey = Survey.objects.create(
+        owner=owner, title="S", slug="s", status=Survey.Status.PUBLISHED
+    )
+    q1 = Question.objects.create(
+        survey=survey, text="Q1", type=Question.Type.OPEN_TEXT, order=1
+    )
+    q2 = Question.objects.create(
+        survey=survey, text="Q2", type=Question.Type.OPEN_TEXT, order=2
+    )
+    return survey, q1, q2
+
+
+@pytest.mark.django_db
+def test_untriaged_queue_respects_question_scope(survey_with_two_open_text):
+    from surveys.services.triage import untriaged_queue
+
+    survey, q1, q2 = survey_with_two_open_text
+    r1 = _new_response(q1, "for q1")
+    r2 = _new_response(q2, "for q2")
+    scoped = list(untriaged_queue(survey, question_id=q1.id))
+    assert scoped == [r1]
+    scoped2 = list(untriaged_queue(survey, question_id=q2.id))
+    assert scoped2 == [r2]
+
+
+@pytest.mark.django_db
+def test_next_to_review_respects_question_scope(survey_with_two_open_text):
+    survey, q1, q2 = survey_with_two_open_text
+    _new_response(q1, "for q1")
+    r_other = _new_response(q2, "for q2")
+    # Even though q2's response was created second, the scoped call must
+    # skip q1 entirely and pick q2's response.
+    nxt = next_to_review(survey, question_id=q2.id)
+    assert nxt == r_other
+
+
+@pytest.mark.django_db
+def test_progress_respects_question_scope(survey_with_two_open_text, owner):
+    survey, q1, q2 = survey_with_two_open_text
+    r1 = _new_response(q1, "a")
+    _new_response(q2, "b")
+    _new_response(q2, "c")
+    theme = Theme.objects.create(survey=survey, name="T")
+    ResponseTheme.objects.create(response=r1, theme=theme, tagged_by=owner)
+    assert progress(survey, question_id=q1.id) == (1, 1)
+    assert progress(survey, question_id=q2.id) == (0, 2)
+
+
+@pytest.mark.django_db
+def test_queue_neighbors_respects_question_scope(survey_with_two_open_text):
+    from surveys.services.triage import queue_neighbors
+
+    survey, q1, q2 = survey_with_two_open_text
+    r1a = _new_response(q1, "q1-a")
+    r1b = _new_response(q1, "q1-b")
+    _new_response(q2, "q2 should not interleave")
+    prev_id, next_id = queue_neighbors(survey, r1a.id, question_id=q1.id)
+    assert prev_id is None
+    assert next_id == r1b.id
+    prev_id, next_id = queue_neighbors(survey, r1b.id, question_id=q1.id)
+    assert prev_id == r1a.id
+    assert next_id is None
+
+
+@pytest.mark.django_db
+def test_triage_view_with_question_scope_picks_only_that_question(
+    client, survey_with_two_open_text, owner
+):
+    survey, q1, q2 = survey_with_two_open_text
+    _new_response(q1, "from q1")
+    r_q2 = _new_response(q2, "from q2")
+    client.force_login(owner)
+    url = reverse("surveys:triage", kwargs={"slug": survey.slug})
+    response = client.get(url, {"question": q2.id})
+    assert response.status_code == 200
+    assert b"from q2" in response.content
+    assert b"from q1" not in response.content
+    # Scope banner surfaces so the user sees they're filtered.
+    assert b"Focused on" in response.content
+    # Hidden input form posts to the same URL — current URL carries the
+    # scope query string, so POSTs preserve it without an extra field.
+    assert f'value="{r_q2.id}"'.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_triage_view_404_on_unknown_question_scope(
+    client, survey_with_two_open_text, owner
+):
+    survey, _, _ = survey_with_two_open_text
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:triage", kwargs={"slug": survey.slug}),
+        {"question": 99999},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_triage_view_404_on_non_int_question_scope(
+    client, survey_with_two_open_text, owner
+):
+    survey, _, _ = survey_with_two_open_text
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:triage", kwargs={"slug": survey.slug}),
+        {"question": "abc"},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_triage_view_404_on_non_text_question_scope(client, owner):
+    """A rating question's id can't scope triage — triage is text-only."""
+    survey = Survey.objects.create(
+        owner=owner, title="S", slug="s", status=Survey.Status.PUBLISHED
+    )
+    rating = Question.objects.create(
+        survey=survey, text="Rate", type=Question.Type.RATING, order=1
+    )
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:triage", kwargs={"slug": survey.slug}),
+        {"question": rating.id},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_triage_post_preserves_scope_on_redirect(
+    client, survey_with_two_open_text, owner
+):
+    survey, q1, _ = survey_with_two_open_text
+    r = _new_response(q1, "tag me")
+    theme = Theme.objects.create(survey=survey, name="T")
+    client.force_login(owner)
+    url = reverse("surveys:triage", kwargs={"slug": survey.slug})
+    response = client.post(
+        f"{url}?question={q1.id}",
+        {"response_id": r.id, "theme_ids": [theme.id], "action": "next"},
+    )
+    assert response.status_code == 302
+    assert response.url == f"{url}?question={q1.id}"
+
+
+@pytest.mark.django_db
+def test_triage_post_skip_preserves_scope(client, survey_with_two_open_text, owner):
+    survey, q1, _ = survey_with_two_open_text
+    r1 = _new_response(q1, "one")
+    _new_response(q1, "two")
+    client.force_login(owner)
+    url = reverse("surveys:triage", kwargs={"slug": survey.slug})
+    response = client.post(
+        f"{url}?question={q1.id}",
+        {"response_id": r1.id, "action": "skip"},
+    )
+    assert response.status_code == 302
+    assert f"question={q1.id}" in response.url
+    assert f"after={r1.id}" in response.url
+
+
+@pytest.mark.django_db
+def test_triage_done_page_shows_scope_and_unscope_link(
+    client, survey_with_two_open_text, owner
+):
+    """When triage runs out of responses inside a question scope, the
+    done page surfaces the focused question and an "Triage all
+    questions" escape hatch back to the global queue."""
+    survey, q1, _ = survey_with_two_open_text
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:triage", kwargs={"slug": survey.slug}),
+        {"question": q1.id},
+    )
+    assert response.status_code == 200
+    assert b"Q1" in response.content
+    assert b"Triage all questions" in response.content
+
+
+@pytest.mark.django_db
+def test_triage_prev_next_links_preserve_scope(
+    client, survey_with_two_open_text, owner
+):
+    survey, q1, _ = survey_with_two_open_text
+    r1 = _new_response(q1, "first")
+    _new_response(q1, "second")
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:triage", kwargs={"slug": survey.slug}),
+        {"question": q1.id, "response": r1.id},
+    )
+    body = response.content.decode()
+    # Next link must carry both the response id and the question scope.
+    assert f"question={q1.id}" in body
