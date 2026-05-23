@@ -67,7 +67,10 @@ def test_get_renders_published_survey(client, published_survey):
     response = client.get(url)
     assert response.status_code == 200
     assert b"Post-event feedback" in response.content
-    assert b"No login. No cookies. No tracking." in response.content
+    assert (
+        b"No login. No third-party cookies. No trackers. No analytics."
+        in response.content
+    )
     assert b"How would you rate the event?" in response.content
 
 
