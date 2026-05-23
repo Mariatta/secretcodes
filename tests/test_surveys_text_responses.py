@@ -217,20 +217,21 @@ def test_text_responses_section_links_into_scoped_triage(
 
 
 @pytest.mark.django_db
-def test_text_responses_edit_link_into_triage_response_scope(
+def test_text_responses_cards_have_no_per_response_triage_link(
     client, survey_with_two_text_questions, owner
 ):
-    """Each response card has an "Edit in triage" deep link carrying both
-    the question scope and the specific response id."""
+    """Per-card "Edit in triage" was removed — duplicates the section CTA.
+    The card is purely read-only; editing happens via the section header."""
     survey, q1, _ = survey_with_two_text_questions
-    r = _new_response(q1, "Edit me.")
+    r = _new_response(q1, "Read me.")
     client.force_login(owner)
     response = client.get(
         reverse("surveys:text_responses", kwargs={"slug": survey.slug})
     )
     body = response.content.decode()
     triage_url = reverse("surveys:triage", kwargs={"slug": survey.slug})
-    assert f"{triage_url}?question={q1.id}&response={r.id}" in body
+    assert "Edit in triage" not in body
+    assert f"{triage_url}?question={q1.id}&response={r.id}" not in body
 
 
 @pytest.mark.django_db

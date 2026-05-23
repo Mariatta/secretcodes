@@ -85,7 +85,7 @@
                                     <span class="meta-pill">🕓 {{ response.submitted_at|naturaltime }}</span>
                                 </div>
                                 <div class="text-responses-callout">
-                                    {{ response.value }}
+                                    {{ response.value.strip|linebreaksbr }}
                                 </div>
                                 <div class="text-responses-tags">
                                     {% for theme in response.themes.all %}
@@ -95,12 +95,6 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                            <footer class="text-responses-card-foot">
-                                <a class="text-responses-edit-link"
-                                   href="{% url 'surveys:triage' slug=survey.slug %}?question={{ section.question.id }}&response={{ response.id }}">
-                                    Edit in triage →
-                                </a>
-                            </footer>
                         </article>
                     {% endfor %}
                 </section>
