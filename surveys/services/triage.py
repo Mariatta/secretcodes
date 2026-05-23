@@ -2,32 +2,32 @@
 
 Triage operates on **open-text** responses only — other types are
 analyzed in the results dashboard. A response is "triaged" once it
-carries at least one ResponseTheme row, has been auto-marked as not
-actionable (whitespace), or has been explicitly flagged.
+carries at least one ResponseTheme row, including the auto-applied
+"Not actionable" tag for whitespace-only responses.
 """
 
 from django.db import transaction
 
 from ..models import Question, Response, ResponseTheme, Survey, Theme
 
-"""Quick-action keys that map to (case-insensitive) theme names.
-
-These are mutually exclusive with regular themes: applying one clears any
-other ResponseTheme rows on the same response, and applying a regular
-theme on a response already tagged with one of these clears them.
-
-``flag`` is intentionally NOT here — flag is a status on Response
-(``is_flagged``), not a theme.
-"""
+# Quick-action keys that map to (case-insensitive) theme names.
+# These are mutually exclusive with regular themes: applying one clears
+# any other ResponseTheme rows on the same response, and applying a
+# regular theme on a response already tagged with one of these clears them.
 QUICK_ACTION_THEME_NAMES = {
     "appreciation": "Appreciation",
     "not_actionable": "Not actionable",
 }
 
 
-def open_text_queue(survey: Survey):
-    """All open-text responses for this survey, oldest first."""
-    return (
+def open_text_queue(survey: Survey, question_id: int | None = None):
+    """All open-text responses for this survey, oldest first.
+
+    When ``question_id`` is supplied, the queue is restricted to that
+    single open-text question — used by the per-question triage scope
+    from the Browse-text page.
+    """
+    qs = (
         Response.objects.filter(
             question__survey=survey,
             question__type=Question.Type.OPEN_TEXT,
@@ -35,39 +35,57 @@ def open_text_queue(survey: Survey):
         .select_related("question")
         .order_by("submitted_at", "id")
     )
+    if question_id is not None:
+        qs = qs.filter(question_id=question_id)
+    return qs
 
 
-def untriaged_queue(survey: Survey):
+def untriaged_queue(survey: Survey, question_id: int | None = None):
     """Open-text responses with no theme tags yet, oldest first."""
-    return open_text_queue(survey).filter(themes__isnull=True).distinct()
+    return (
+        open_text_queue(survey, question_id=question_id)
+        .filter(themes__isnull=True)
+        .distinct()
+    )
 
 
-def next_to_review(survey: Survey, after_id: int | None = None) -> Response | None:
+def next_to_review(
+    survey: Survey,
+    after_id: int | None = None,
+    question_id: int | None = None,
+) -> Response | None:
     """Return the next response to triage.
 
     If ``after_id`` is given, skip responses up to and including it —
     used by the Skip action so the same row doesn't reappear immediately.
     """
-    queue = untriaged_queue(survey)
+    queue = untriaged_queue(survey, question_id=question_id)
     if after_id is not None:
         queue = queue.filter(id__gt=after_id)
     return queue.first()
 
 
-def progress(survey: Survey) -> tuple[int, int]:
+def progress(survey: Survey, question_id: int | None = None) -> tuple[int, int]:
     """Return (reviewed, total) for the open-text queue."""
-    total = open_text_queue(survey).count()
-    untriaged = untriaged_queue(survey).count()
+    total = open_text_queue(survey, question_id=question_id).count()
+    untriaged = untriaged_queue(survey, question_id=question_id).count()
     return total - untriaged, total
 
 
-def queue_neighbors(survey: Survey, response_id: int) -> tuple[int | None, int | None]:
-    """Return ``(prev_id, next_id)`` in the full open-text queue.
+def queue_neighbors(
+    survey: Survey,
+    response_id: int,
+    question_id: int | None = None,
+) -> tuple[int | None, int | None]:
+    """Return ``(prev_id, next_id)`` in the open-text queue.
 
     Used by triage prev/next nav. Walks the entire ordered queue regardless
     of triage state, so the organizer can revisit and edit prior tags.
+    Honors ``question_id`` so prev/next stay within the focused scope.
     """
-    ids = list(open_text_queue(survey).values_list("id", flat=True))
+    ids = list(
+        open_text_queue(survey, question_id=question_id).values_list("id", flat=True)
+    )
     try:
         idx = ids.index(response_id)
     except ValueError:
@@ -154,13 +172,6 @@ def apply_triage(
         )
 
     return list({t.id: t for t in themes_to_attach}.values())
-
-
-def toggle_flag(response: Response) -> bool:
-    """Flip ``is_flagged`` on a response. Returns the new state."""
-    response.is_flagged = not response.is_flagged
-    response.save(update_fields=["is_flagged"])
-    return response.is_flagged
 
 
 def auto_mark_whitespace_not_actionable(response: Response, user) -> bool:

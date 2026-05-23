@@ -62,7 +62,6 @@ from .services.triage import (
     next_to_review,
     progress,
     queue_neighbors,
-    toggle_flag,
 )
 
 
@@ -220,6 +219,38 @@ def create(request):
     )
 
 
+def _triage_scope_question(survey: Survey, request) -> Question | None:
+    """Resolve the ``?question=<id>`` scope param to a Question on this survey.
+
+    Returns ``None`` when no scope is requested. An unknown or non-text
+    id raises ``Http404`` so a stale link surfaces as an error rather
+    than silently falling back to the global queue.
+    """
+    raw = request.GET.get("question") or request.POST.get("question")
+    if not raw:
+        return None
+    try:
+        question_id = int(raw)
+    except ValueError as exc:
+        raise Http404("Invalid question scope.") from exc
+    return get_object_or_404(
+        Question, id=question_id, survey=survey, type=Question.Type.OPEN_TEXT
+    )
+
+
+def _triage_redirect(slug: str, *, scope_q: Question | None, extra: str = "") -> str:
+    """Build a triage URL preserving the question scope (and optional extra query)."""
+    url = reverse("surveys:triage", kwargs={"slug": slug})
+    params: list[str] = []
+    if scope_q is not None:
+        params.append(f"question={scope_q.id}")
+    if extra:
+        params.append(extra)
+    if params:
+        url = f"{url}?{'&'.join(params)}"
+    return url
+
+
 @user_passes_test(is_surveys_user)
 @require_http_methods(["GET", "POST"])
 def triage(request, slug):
@@ -227,26 +258,22 @@ def triage(request, slug):
 
     GET picks the next untriaged response (or the one after ``?after=<id>``
     when called from a Skip action). POST applies the chosen tags and
-    redirects back to GET so the next response is shown.
+    redirects back to GET so the next response is shown. When ``?question``
+    is set, the queue is restricted to that single open-text question —
+    the per-question entry point from the Browse-text page.
     """
     survey = get_object_or_404(Survey, slug=slug)
     if not can_access_survey(request.user, survey):
         raise Http404("Survey not found.")
+    scope_q = _triage_scope_question(survey, request)
+    scope_id = scope_q.id if scope_q else None
     if request.method == "POST":
         action = request.POST.get("action", "next")
         response_id = int(request.POST.get("response_id", "0"))
         response = get_object_or_404(Response, id=response_id, question__survey=survey)
         if action == "skip":
             return HttpResponseRedirect(
-                reverse("surveys:triage", kwargs={"slug": slug})
-                + f"?after={response.id}"
-            )
-        if action == "flag":
-            """Flag is a status, not a theme — toggle and stay on the same response."""
-            toggle_flag(response)
-            return HttpResponseRedirect(
-                reverse("surveys:triage", kwargs={"slug": slug})
-                + f"?response={response.id}"
+                _triage_redirect(slug, scope_q=scope_q, extra=f"after={response.id}")
             )
         theme_ids = [int(x) for x in request.POST.getlist("theme_ids") if x.isdigit()]
         new_theme_name = request.POST.get("new_theme_name", "").strip()
@@ -258,22 +285,28 @@ def triage(request, slug):
             quick_action=quick_action,
             user=request.user,
         )
-        return HttpResponseRedirect(reverse("surveys:triage", kwargs={"slug": slug}))
+        return HttpResponseRedirect(_triage_redirect(slug, scope_q=scope_q))
 
     response = None
     requested_id = request.GET.get("response")
     if requested_id:
+        # A specific response was requested — honor it even if outside the scope,
+        # so deep-links from notifications/emails keep working.
         response = Response.objects.filter(
             id=requested_id, question__survey=survey
         ).first()
     if response is None:
         after_id = request.GET.get("after")
-        response = next_to_review(survey, int(after_id) if after_id else None)
+        response = next_to_review(
+            survey,
+            int(after_id) if after_id else None,
+            question_id=scope_id,
+        )
     if response is not None:
         """Whitespace-only responses get auto-marked Not actionable on
         first view — saves the organizer from clicking through obvious junk."""
         auto_mark_whitespace_not_actionable(response, request.user)
-    reviewed, total = progress(survey)
+    reviewed, total = progress(survey, question_id=scope_id)
     if response is None:
         return render(
             request,
@@ -283,6 +316,7 @@ def triage(request, slug):
                 "reviewed": reviewed,
                 "total": total,
                 "is_owner": _is_survey_owner(request.user, survey),
+                "scope_question": scope_q,
             },
         )
     themes = list(survey.themes.all().order_by("name"))
@@ -291,7 +325,7 @@ def triage(request, slug):
             "theme_id", flat=True
         )
     )
-    prev_id, next_id = queue_neighbors(survey, response.id)
+    prev_id, next_id = queue_neighbors(survey, response.id, question_id=scope_id)
     return render(
         request,
         "surveys/triage.html",
@@ -304,6 +338,70 @@ def triage(request, slug):
             "tagged_theme_ids": tagged_theme_ids,
             "prev_id": prev_id,
             "next_id": next_id,
+            "is_owner": _is_survey_owner(request.user, survey),
+            "scope_question": scope_q,
+        },
+    )
+
+
+@user_passes_test(is_surveys_user)
+def text_responses(request, slug):
+    """Read-only overview of open-text responses, grouped by question.
+
+    Triage walks one global queue and rotates between questions; this view
+    is the opposite — every text response laid out under its question on
+    one page so the organizer can skim. All editing (tagging, flagging,
+    quick-actions) lives in triage to keep this page calm; each section
+    links into triage scoped to its question, and each card links into
+    triage scoped to that single response.
+
+    Honors ``?question=<id>`` to narrow the page to a single open-text
+    question — the entry point from the Results page's per-question
+    "Browse responses" link. An unknown or non-text id 404s so a stale
+    link surfaces clearly rather than silently falling back to the full
+    list.
+    """
+    survey = get_object_or_404(Survey, slug=slug)
+    if not can_access_survey(request.user, survey):
+        raise Http404("Survey not found.")
+    scope_q = _triage_scope_question(survey, request)
+    text_questions_qs = survey.questions.filter(type=Question.Type.OPEN_TEXT).order_by(
+        "order"
+    )
+    if scope_q is not None:
+        text_questions_qs = text_questions_qs.filter(id=scope_q.id)
+    text_questions = list(text_questions_qs)
+    responses_by_question_id: dict[int, list[Response]] = {
+        q.id: [] for q in text_questions
+    }
+    if text_questions:
+        rows = (
+            Response.objects.filter(question__in=text_questions)
+            .prefetch_related("themes")
+            .order_by("submitted_at", "id")
+        )
+        for r in rows:
+            responses_by_question_id[r.question_id].append(r)
+    sections = []
+    for q in text_questions:
+        responses = responses_by_question_id[q.id]
+        untriaged = sum(1 for r in responses if not r.themes.exists())
+        sections.append(
+            {
+                "question": q,
+                "responses": responses,
+                "untriaged_count": untriaged,
+            }
+        )
+    total_responses = sum(len(s["responses"]) for s in sections)
+    return render(
+        request,
+        "surveys/text_responses.html",
+        {
+            "survey": survey,
+            "sections": sections,
+            "total_responses": total_responses,
+            "scope_question": scope_q,
             "is_owner": _is_survey_owner(request.user, survey),
         },
     )
@@ -637,6 +735,30 @@ def delete_survey(request, slug):
             "is_owner": True,
         },
     )
+
+
+@user_passes_test(is_surveys_user)
+@require_http_methods(["POST"])
+def invite_resend(request, slug, invitation_id):
+    """Owner-only: re-send a pending (or expired) invitation email.
+
+    Bumps ``sent_at`` to now (handled inside ``send_invitation_email``),
+    which also resets the expiry window. Skipped if already accepted —
+    that surfaces as a 404 rather than silently re-emailing someone who
+    already joined.
+    """
+    survey = get_object_or_404(Survey, slug=slug)
+    if not _is_survey_owner(request.user, survey):
+        return HttpResponseForbidden("Only the survey owner can resend invitations.")
+    invitation = get_object_or_404(
+        SurveyInvitation,
+        id=invitation_id,
+        survey=survey,
+        accepted_at__isnull=True,
+    )
+    send_invitation_email(invitation, request)
+    messages.success(request, f"Invitation re-sent to {invitation.email}.")
+    return redirect("surveys:invite_create", slug=survey.slug)
 
 
 @user_passes_test(is_surveys_user)

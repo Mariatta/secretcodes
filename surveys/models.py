@@ -119,7 +119,6 @@ class Response(models.Model):
     submission_uuid = models.UUIDField("submission_uuid", default=uuid.uuid4)
     value = models.JSONField("value", default=dict)
     submitted_at = models.DateTimeField("submitted_at", auto_now_add=True)
-    is_flagged = models.BooleanField("is_flagged", default=False)
 
     class Meta:
         ordering = ["submitted_at"]

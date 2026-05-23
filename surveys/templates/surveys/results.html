@@ -140,7 +140,8 @@
                                         — group into themes to extract action items.
                                     </span>
                                     <span class="spacer"></span>
-                                    <a href="{% url 'surveys:triage' slug=survey.slug %}">Open triage →</a>
+                                    <a href="{% url 'surveys:text_responses' slug=survey.slug %}?question={{ s.question.id }}">Browse responses →</a>
+                                    <a href="{% url 'surveys:triage' slug=survey.slug %}?question={{ s.question.id }}">Open triage →</a>
                                 </div>
                             {% else %}
                                 <div class="text-muted small">
