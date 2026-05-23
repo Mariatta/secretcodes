@@ -359,8 +359,9 @@ def test_invite_create_lists_expired_invitations_with_resend_button(
     assert "fresh@example.com" in body
     assert "stale@example.com" in body
     # Expired badge appears for the stale one, not the fresh one.
-    expired_section = body[body.index("stale@example.com") :]
-    assert "expired" in expired_section[: expired_section.index("</li>")]
+    stale_start = body.index("stale@example.com")
+    stale_end = body.index("</li>", stale_start)
+    assert "expired" in body[stale_start:stale_end]
     # Both rows should carry a Resend button targeting the right URL.
     for inv in (fresh, stale):
         url = reverse(
