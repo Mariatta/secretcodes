@@ -225,6 +225,153 @@ def test_invite_create_post_sends_email(client, owner, published_survey, mailout
     assert invitation.survey == published_survey
 
 
+# ---------- Resend invitation --------------------------------------------
+
+
+@pytest.mark.django_db
+def test_invite_resend_requires_owner(client, collaborator, owner, published_survey):
+    invitation = SurveyInvitation.create(
+        survey=published_survey, email="x@example.com", inviter=owner
+    )
+    SurveyCollaborator.objects.create(survey=published_survey, user=collaborator)
+    client.force_login(collaborator)
+    response = client.post(
+        reverse(
+            "surveys:invite_resend",
+            kwargs={"slug": published_survey.slug, "invitation_id": invitation.id},
+        )
+    )
+    # Collaborator is not the owner — resend is owner-only.
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_invite_resend_rejects_get(client, owner, published_survey):
+    invitation = SurveyInvitation.create(
+        survey=published_survey, email="x@example.com", inviter=owner
+    )
+    client.force_login(owner)
+    response = client.get(
+        reverse(
+            "surveys:invite_resend",
+            kwargs={"slug": published_survey.slug, "invitation_id": invitation.id},
+        )
+    )
+    assert response.status_code == 405
+
+
+@pytest.mark.django_db
+def test_invite_resend_re_emails_and_bumps_sent_at(client, owner, published_survey):
+    invitation = SurveyInvitation.create(
+        survey=published_survey, email="x@example.com", inviter=owner
+    )
+    # Backdate so we can verify sent_at moves forward after resend.
+    old_sent = timezone.now() - timezone.timedelta(days=30)
+    invitation.sent_at = old_sent
+    invitation.save(update_fields=["sent_at"])
+    assert invitation.is_expired()
+    client.force_login(owner)
+    with patch("surveys.views.send_invitation_email") as mock_send:
+        # Make the mock actually update sent_at like the real function does.
+        def fake_send(inv, _request):
+            inv.sent_at = timezone.now()
+            inv.save(update_fields=["sent_at"])
+
+        mock_send.side_effect = fake_send
+        response = client.post(
+            reverse(
+                "surveys:invite_resend",
+                kwargs={
+                    "slug": published_survey.slug,
+                    "invitation_id": invitation.id,
+                },
+            )
+        )
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "surveys:invite_create", kwargs={"slug": published_survey.slug}
+    )
+    assert mock_send.call_count == 1
+    invitation.refresh_from_db()
+    assert invitation.sent_at > old_sent
+    assert not invitation.is_expired()
+
+
+@pytest.mark.django_db
+def test_invite_resend_404_if_already_accepted(client, owner, published_survey):
+    invitation = SurveyInvitation.create(
+        survey=published_survey, email="x@example.com", inviter=owner
+    )
+    invitation.accepted_at = timezone.now()
+    invitation.save(update_fields=["accepted_at"])
+    client.force_login(owner)
+    response = client.post(
+        reverse(
+            "surveys:invite_resend",
+            kwargs={"slug": published_survey.slug, "invitation_id": invitation.id},
+        )
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_invite_resend_404_if_invitation_on_other_survey(client, owner):
+    """An invitation id from a different survey must not be re-sendable
+    through the wrong survey's URL — prevents cross-survey leaks."""
+    survey_a = Survey.objects.create(
+        owner=owner, title="A", slug="a", status=Survey.Status.PUBLISHED
+    )
+    survey_b = Survey.objects.create(
+        owner=owner, title="B", slug="b", status=Survey.Status.PUBLISHED
+    )
+    invitation = SurveyInvitation.create(
+        survey=survey_b, email="x@example.com", inviter=owner
+    )
+    client.force_login(owner)
+    response = client.post(
+        reverse(
+            "surveys:invite_resend",
+            kwargs={"slug": survey_a.slug, "invitation_id": invitation.id},
+        )
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_invite_create_lists_expired_invitations_with_resend_button(
+    client, owner, published_survey
+):
+    fresh = SurveyInvitation.create(
+        survey=published_survey, email="fresh@example.com", inviter=owner
+    )
+    fresh.sent_at = timezone.now()
+    fresh.save(update_fields=["sent_at"])
+    stale = SurveyInvitation.create(
+        survey=published_survey, email="stale@example.com", inviter=owner
+    )
+    stale.sent_at = timezone.now() - timezone.timedelta(days=60)
+    stale.save(update_fields=["sent_at"])
+    client.force_login(owner)
+    response = client.get(
+        reverse("surveys:invite_create", kwargs={"slug": published_survey.slug})
+    )
+    body = response.content.decode()
+    assert "fresh@example.com" in body
+    assert "stale@example.com" in body
+    # Expired badge appears for the stale one, not the fresh one.
+    stale_start = body.index("stale@example.com")
+    stale_end = body.index("</li>", stale_start)
+    assert "expired" in body[stale_start:stale_end]
+    # Both rows should carry a Resend button targeting the right URL.
+    for inv in (fresh, stale):
+        url = reverse(
+            "surveys:invite_resend",
+            kwargs={"slug": published_survey.slug, "invitation_id": inv.id},
+        )
+        assert f'action="{url}"' in body
+    assert body.count("Resend") == 2
+
+
 @pytest.fixture
 def mailoutbox(monkeypatch):
     return []
