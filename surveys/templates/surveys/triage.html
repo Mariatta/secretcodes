@@ -108,7 +108,6 @@
             background: var(--bg-secondary);
             border-radius: 6px;
             border-left: 3px solid var(--accent);
-            white-space: pre-wrap;
             margin-bottom: 16px;
         }
 
@@ -243,7 +242,7 @@
                 <span class="meta-pill">🕓 submitted {{ response.submitted_at|naturaltime }}</span>
             </div>
             <div class="triage-callout">
-                {{ response.value }}
+                {{ response.value.strip|linebreaksbr }}
             </div>
             <form method="post" id="triage-form">
                 {% csrf_token %}
