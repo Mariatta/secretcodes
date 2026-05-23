@@ -177,10 +177,22 @@ def test_results_view_open_text_callout(client, owner):
     client.force_login(owner)
     response = client.get(reverse("surveys:results", kwargs={"slug": survey.slug}))
     assert response.status_code == 200
-    assert b"open-text" in response.content
-    assert b"response" in response.content
-    assert b"group into themes" in response.content
-    assert b'class="nudge"' in response.content
+    body = response.content.decode()
+    assert "open-text" in body
+    assert "response" in body
+    assert "group into themes" in body
+    assert 'class="nudge"' in body
+    # Both Browse and Triage entry points are linked per question — and
+    # both use ``?question=<id>`` so the destination page actually filters
+    # (not just scrolls).
+    text_url = reverse("surveys:text_responses", kwargs={"slug": survey.slug})
+    triage_url = reverse("surveys:triage", kwargs={"slug": survey.slug})
+    assert f"{text_url}?question={ot.id}" in body
+    assert f"{triage_url}?question={ot.id}" in body
+    # Anchor-only form would be Browse-but-not-filtered — must not regress.
+    assert f"{text_url}#question-{ot.id}" not in body
+    assert "Browse responses" in body
+    assert "Open triage" in body
 
 
 @pytest.mark.django_db

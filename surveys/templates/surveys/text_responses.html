@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block head_title %}
+    Browse text · {{ survey.title }}
+{% endblock head_title %}
+{% block extra_head %}
+    {{ block.super }}
+    {% include "surveys/_force_light.html" %}
+{% endblock extra_head %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            {% include "surveys/_subnav.html" with current="text_responses" %}
+            <div class="text-responses-strip">
+                <a class="crumb text-decoration-none"
+                   href="{% url 'surveys:results' slug=survey.slug %}">
+                    {{ survey.title }}
+                </a>
+                <span class="text-responses-strip-sep">›</span>
+                <span class="crumb-current">Browse text responses</span>
+                <span class="text-responses-summary">
+                    {% if scope_question %}
+                        {{ total_responses }} response{{ total_responses|pluralize }} for this question
+                    {% else %}
+                        {{ total_responses }} response{{ total_responses|pluralize }} across
+                        {{ sections|length }} text question{{ sections|length|pluralize }}
+                    {% endif %}
+                </span>
+            </div>
+            {% if scope_question %}
+                <div class="triage-scope-banner">
+                    <span class="triage-scope-label">Showing only</span>
+                    <span class="triage-scope-q">Q{{ scope_question.order }} · {{ scope_question.text }}</span>
+                    <a class="triage-scope-unscope"
+                       href="{% url 'surveys:text_responses' slug=survey.slug %}">
+                        Show all text questions →
+                    </a>
+                </div>
+            {% endif %}
+            {% if not sections %}
+                <div class="text-responses-empty">
+                    <p class="mb-1">
+                        No open-text questions on this survey.
+                    </p>
+                    <p class="text-muted small mb-0">
+                        Add a question with type <strong>Open text</strong> to start
+                        collecting written feedback.
+                    </p>
+                </div>
+            {% endif %}
+            {% for section in sections %}
+                <section id="question-{{ section.question.id }}"
+                         class="text-responses-section">
+                    <header class="text-responses-question">
+                        <div class="text-responses-question-main">
+                            <span class="text-responses-q-num">Q{{ section.question.order }}</span>
+                            <h2 class="text-responses-q-text">
+                                {{ section.question.text }}
+                            </h2>
+                        </div>
+                        <div class="text-responses-question-meta">
+                            <span class="text-responses-q-count">
+                                {{ section.responses|length }} response{{ section.responses|length|pluralize }}
+                                {% if section.untriaged_count %}
+                                    · <span class="text-responses-untriaged">{{ section.untriaged_count }} untriaged</span>
+                                {% endif %}
+                            </span>
+                            {% if section.responses %}
+                                <a class="btn btn-sm btn-primary text-responses-triage-cta"
+                                   href="{% url 'surveys:triage' slug=survey.slug %}?question={{ section.question.id }}">
+                                    Triage these →
+                                </a>
+                            {% endif %}
+                        </div>
+                    </header>
+                    {% if not section.responses %}
+                        <p class="text-responses-q-empty">
+                            No responses yet.
+                        </p>
+                    {% endif %}
+                    {% for response in section.responses %}
+                        <article id="response-{{ response.id }}" class="text-responses-card">
+                            <div class="text-responses-card-body">
+                                <div class="response-meta">
+                                    <span class="meta-pill">🕓 {{ response.submitted_at|naturaltime }}</span>
+                                </div>
+                                <div class="text-responses-callout">
+                                    {{ response.value.strip|linebreaksbr }}
+                                </div>
+                                <div class="text-responses-tags">
+                                    {% for theme in response.themes.all %}
+                                        <span class="text-responses-tag">{{ theme.name }}</span>
+                                    {% empty %}
+                                        <span class="text-responses-tag text-responses-tag-empty">untagged</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </section>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock content %}
