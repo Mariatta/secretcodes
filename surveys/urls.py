@@ -10,6 +10,11 @@ urlpatterns = [
     path("import/", views.import_view, name="import"),
     path("<slug:slug>/edit/", views.edit, name="edit"),
     path("<slug:slug>/invite/", views.invite_create, name="invite_create"),
+    path(
+        "<slug:slug>/invitations/<int:invitation_id>/resend/",
+        views.invite_resend,
+        name="invite_resend",
+    ),
     path("<slug:slug>/team/", views.team, name="team"),
     path("<slug:slug>/delete/", views.delete_survey, name="delete"),
     path("<slug:slug>/results/", views.results, name="results"),
@@ -20,6 +25,7 @@ urlpatterns = [
         name="export_action_items",
     ),
     path("<slug:slug>/triage/", views.triage, name="triage"),
+    path("<slug:slug>/text/", views.text_responses, name="text_responses"),
     path("<slug:slug>/actions/", views.actions, name="actions"),
     path(
         "<slug:slug>/themes/<int:theme_id>/resolve/",
