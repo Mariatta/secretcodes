@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load static %}
 {% load django_bootstrap5 %}
+{% load icons %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -36,11 +37,9 @@
               type="image/svg+xml"
               href="{% static 'brand/favicon.svg' %}">
         {% block extra_head %}
-            <script src="https://kit.fontawesome.com/8774ceef9d.js"
-                    crossorigin="anonymous"></script>
         {% endblock extra_head %}
-        {% bootstrap_css %}
-        {% bootstrap_javascript %}
+        <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+        <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
         <link rel="stylesheet" href="{% static 'brand/secret-codes.css' %}">
         {# Display django.contrib.messages as Bootstrap alerts #}
         {% bootstrap_messages %}
@@ -245,7 +244,7 @@
                        rel="noopener"
                        aria-label="Website"
                        title="mariatta.ca">
-                        <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                        {% icon "globe" %}
                     </a>
                 </li>
                 <li>
@@ -253,7 +252,7 @@
                        target="_blank"
                        rel="me noopener"
                        aria-label="Mastodon">
-                        <i class="fa-brands fa-mastodon" aria-hidden="true"></i>
+                        {% icon "mastodon" %}
                     </a>
                 </li>
                 <li>
@@ -261,7 +260,7 @@
                        target="_blank"
                        rel="noopener"
                        aria-label="Bluesky">
-                        <i class="fa-brands fa-bluesky" aria-hidden="true"></i>
+                        {% icon "bluesky" %}
                     </a>
                 </li>
                 <li>
@@ -269,7 +268,7 @@
                        target="_blank"
                        rel="noopener"
                        aria-label="LinkedIn">
-                        <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+                        {% icon "linkedin-in" %}
                     </a>
                 </li>
                 <li>
@@ -277,7 +276,7 @@
                        target="_blank"
                        rel="noopener"
                        aria-label="Instagram">
-                        <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                        {% icon "instagram" %}
                     </a>
                 </li>
                 <li>
@@ -285,7 +284,7 @@
                        target="_blank"
                        rel="noopener"
                        aria-label="GitHub source">
-                        <i class="fa-brands fa-github" aria-hidden="true"></i>
+                        {% icon "github" %}
                     </a>
                 </li>
             </ul>

@@ -16,12 +16,13 @@
         From visitors
     </h3>
     <p>
-        This site does not track you. It does not set cookies for analytics or
-        advertising, does not fingerprint your browser, does not embed
-        third-party trackers, and does not share data with third parties.
-        Standard web-server access logs (IP address, timestamp, path) are
-        retained only as long as the hosting provider's default retention
-        permits.
+        This site does not track you. It does not set third-party cookies,
+        does not fingerprint your browser, does not embed third-party
+        trackers, runs no analytics, and does not share data with third
+        parties. All CSS, JavaScript, fonts, and icons are served from this
+        site's own domain. Standard web-server access logs (IP address,
+        timestamp, path) are retained only as long as the hosting provider's
+        default retention permits.
     </p>
     <h3>
         From people who generate QR codes
@@ -152,8 +153,11 @@
             <strong>Does not require a login.</strong> No account is created.
         </li>
         <li>
-            <strong>Does not set cookies.</strong> The respondent page is
-            genuinely cookieless.
+            <strong>No third-party cookies. No trackers. No analytics.</strong>
+            The respondent page sets one strictly-necessary first-party
+            cookie (Django's <code>csrftoken</code>) so the survey form
+            can be submitted safely — it's scoped to your session and is
+            not used to identify or follow you across pages.
         </li>
         <li>
             <strong>Does not capture your IP address, browser fingerprint,
@@ -273,5 +277,15 @@
             Questions, concerns, or data-access / deletion requests:
             open an issue at
             <a href="https://github.com/Mariatta/secretcodes/issues">github.com/Mariatta/secretcodes/issues</a>.
+        </p>
+        <h2>
+            Credits
+        </h2>
+        <p class="small text-muted">
+            Icons are from
+            <a href="https://fontawesome.com/">Font Awesome Free 6</a>,
+            self-hosted as inline SVG and licensed
+            <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+            No request is made to <code>fontawesome.com</code> when this site loads.
         </p>
     {% endblock content %}

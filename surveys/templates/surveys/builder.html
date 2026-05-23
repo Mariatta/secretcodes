@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load django_bootstrap5 %}
+{% load icons %}
+{% load static %}
 {% block head_title %}
     {% if is_new %}New survey{% else %}Edit · {{ survey.title }}{% endif %}
 {% endblock head_title %}
@@ -20,7 +22,7 @@
         .question-row.sortable-ghost { opacity: 0.45; }
         .question-row.sortable-chosen .drag-handle { cursor: grabbing; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
 {% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">
@@ -53,7 +55,7 @@
                                             {{ request.scheme }}://{{ request.get_host }}/qr/{{ survey.short_url.slug }}
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
-                                            <i class="fa-regular fa-copy" aria-hidden="true"></i> Copy
+                                            {% icon "copy" %} Copy
                                         </button>
                                     </div>
                                 </div>
@@ -73,7 +75,7 @@
                                     {{ request.scheme }}://{{ request.get_host }}{% url 'surveys:respond' slug=survey.slug %}
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
-                                    <i class="fa-regular fa-copy" aria-hidden="true"></i> Copy
+                                    {% icon "copy" %} Copy
                                 </button>
                             </div>
                         </div>
@@ -153,7 +155,7 @@
                                                 </label>
                                             </div>
                                             <button type="button" class="btn btn-link text-danger remove-question">
-                                                <i class="fa-solid fa-trash-can me-1" aria-hidden="true"></i>
+                                                {% icon "trash-can" class="me-1" %}
                                                 Remove
                                             </button>
                                         </div>
@@ -244,7 +246,7 @@
                     return;
                 }
                 const original = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Copied';
+                btn.innerHTML = `{% icon "check" %} Copied`;
                 btn.classList.remove('btn-outline-secondary');
                 btn.classList.add('btn-success');
                 setTimeout(() => {
@@ -288,11 +290,14 @@
                 return rowsContainer.querySelectorAll('.question-row:not(.removed)').length;
             }
 
-            function setBannerHtml(variant, iconClass, message, dismissable) {
+            const ICON_BAN = `{% icon "ban" class="me-2" %}`;
+            const ICON_TRIANGLE = `{% icon "triangle-exclamation" class="me-2" %}`;
+
+            function setBannerHtml(variant, iconHtml, message, dismissable) {
                 banner.classList.remove('alert-warning', 'alert-danger', 'alert-dismissible');
                 banner.classList.add('alert-' + variant);
                 let html =
-                    `<i class="${iconClass} me-2" aria-hidden="true"></i>` +
+                    iconHtml +
                     `<span>${message}</span>`;
                 if (dismissable) {
                     banner.classList.add('alert-dismissible');
@@ -307,7 +312,7 @@
                     banner.classList.remove('d-none');
                     setBannerHtml(
                         'danger',
-                        'fa-solid fa-ban',
+                        ICON_BAN,
                         `You've reached the max questions allowed (${HARD_LIMIT}). ` +
                         `Remove a question to add another.`,
                         false,
@@ -317,7 +322,7 @@
                     banner.classList.remove('d-none');
                     setBannerHtml(
                         'warning',
-                        'fa-solid fa-triangle-exclamation',
+                        ICON_TRIANGLE,
                         `That's a lot of questions! Long surveys tend to see lower completion rates.`,
                         true,
                     );

@@ -1,0 +1,55 @@
+name: Vendor refresh
+
+# When Dependabot opens a PR bumping a version in package.json, run
+# `npm ci` + `npm run vendor:copy` and commit the refreshed files in
+# secretcodes/static/vendor/ back to the same PR branch. Net result:
+# Dependabot's PR shows the version bump AND the new static files in
+# one diff, ready to review and merge.
+#
+# Uses `pull_request_target` so the workflow runs in the BASE branch's
+# context with write permissions on the repo (Dependabot PRs do NOT
+# grant write tokens on the safer `pull_request` event). The `if:` and
+# `--ignore-scripts` guards limit blast radius: only Dependabot can
+# trigger the writes, and arbitrary postinstall scripts can't run.
+
+on:
+  pull_request_target:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/vendor-refresh.sh"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install (ignore postinstall scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Refresh vendored files
+        run: npm run vendor:copy
+
+      - name: Commit refreshed vendor files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- secretcodes/static/vendor/; then
+            git add secretcodes/static/vendor/
+            git commit -m "Refresh vendored static assets"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          else
+            echo "No vendored file changes — nothing to commit."
+          fi

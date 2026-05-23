@@ -1,0 +1,35 @@
+# Auto-version-bump PRs. Security advisories already fire on their own
+# (regardless of this file); this config adds routine version updates.
+#
+# The npm entry here is the version manifest for vendored browser-side
+# assets (Bootstrap, SortableJS). When a new version is published,
+# Dependabot opens a PR bumping package.json; the vendor-refresh
+# workflow then copies refreshed files into secretcodes/static/vendor/
+# on the same PR.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"
