@@ -1,4 +1,3 @@
-import datetime
 import uuid
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import PurePosixPath
@@ -6,16 +5,14 @@ from pathlib import PurePosixPath
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils import timezone
-from django.utils.crypto import get_random_string
-from django.utils.timezone import now
+
+from core.models import AbstractInvitation, BaseModel, mint_invitation_key
 
 from .storage import EncryptedFileSystemStorage
 
 CURRENCY_CODE_LENGTH = 3
 MONEY_DECIMAL_PLACES = 2
 MONEY_MAX_DIGITS = 12
-INVITATION_KEY_LENGTH = 64
 RECEIPT_MAX_BYTES = 10 * 1024 * 1024
 RECEIPT_ALLOWED_EXTENSIONS = ("jpg", "jpeg", "png", "heic", "pdf")
 RECEIPT_ALLOWED_CONTENT_TYPES = (
@@ -35,24 +32,6 @@ def _receipt_upload_to(instance, filename):
     """
     extension = PurePosixPath(filename).suffix.lower().lstrip(".") or "bin"
     return f"receipts/{instance.event_id}/{uuid.uuid4().hex}.{extension}"
-
-
-class BaseModel(models.Model):
-    """Mirror of availability.models.BaseModel — common timestamp fields."""
-
-    creation_date = models.DateTimeField(
-        "creation_date", editable=False, auto_now_add=True
-    )
-    modified_date = models.DateTimeField("modified_date", editable=False, auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def save(self, *args, **kwargs):
-        self.modified_date = now()
-        if "update_fields" in kwargs and "modified_date" not in kwargs["update_fields"]:
-            kwargs["update_fields"].append("modified_date")
-        super().save(*args, **kwargs)
 
 
 class Category(BaseModel):
@@ -239,7 +218,7 @@ class Expense(BaseModel):
         super().save(*args, **kwargs)
 
 
-class ExpenseInvitation(BaseModel):
+class ExpenseInvitation(AbstractInvitation):
     """An email invitation to join a specific event.
 
     Inviter is always the event owner (enforced at view level). On accept
@@ -248,24 +227,16 @@ class ExpenseInvitation(BaseModel):
     bound to their User account.
     """
 
+    EXPIRY_SETTING = "EXPENSES_INVITATION_EXPIRY_DAYS"
+
     event = models.ForeignKey(
         "Event", on_delete=models.CASCADE, related_name="invitations"
     )
-    email = models.EmailField("email")
     display_name = models.CharField("display_name", max_length=80, blank=True)
-    inviter = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="expense_invitations_sent",
-    )
-    key = models.CharField("key", max_length=INVITATION_KEY_LENGTH, unique=True)
-    sent_at = models.DateTimeField("sent_at", null=True, blank=True)
-    accepted_at = models.DateTimeField("accepted_at", null=True, blank=True)
 
-    class Meta:
+    class Meta(AbstractInvitation.Meta):
         verbose_name = "expense invitation"
         verbose_name_plural = "expense invitations"
-        ordering = ["-creation_date"]
 
     def __str__(self):
         return f"Invite {self.email} to {self.event.name}"
@@ -278,20 +249,8 @@ class ExpenseInvitation(BaseModel):
             email=email,
             inviter=inviter,
             display_name=display_name,
-            key=get_random_string(INVITATION_KEY_LENGTH).lower(),
+            key=mint_invitation_key(),
         )
-
-    @property
-    def is_accepted(self) -> bool:
-        return self.accepted_at is not None
-
-    def is_expired(self) -> bool:
-        """True once `EXPENSES_INVITATION_EXPIRY_DAYS` have passed since send."""
-        anchor = self.sent_at or self.creation_date
-        cutoff = anchor + datetime.timedelta(
-            days=settings.EXPENSES_INVITATION_EXPIRY_DAYS
-        )
-        return cutoff <= timezone.now()
 
 
 class ExpenseShare(BaseModel):

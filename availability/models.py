@@ -1,25 +1,10 @@
 from django.db import models
-from django.utils.timezone import now
 from solo.models import SingletonModel
 from timezone_field import TimeZoneField
 
+from core.models import BaseModel
+
 from .encryption import EncryptedTextField
-
-
-class BaseModel(models.Model):
-    creation_date = models.DateTimeField(
-        "creation_date", editable=False, auto_now_add=True
-    )
-    modified_date = models.DateTimeField("modified_date", editable=False, auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def save(self, *args, **kwargs):
-        self.modified_date = now()
-        if "update_fields" in kwargs and "modified_date" not in kwargs["update_fields"]:
-            kwargs["update_fields"].append("modified_date")
-        super().save(*args, **kwargs)
 
 
 def _default_business_hours():
