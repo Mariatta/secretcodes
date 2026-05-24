@@ -1,13 +1,13 @@
 asgiref==3.11.1
-bleach==6.2.0
+bleach==6.3.0
 Django==5.2.14
 django-allauth==65.17.0
-markdown==3.10
+markdown==3.10.2
 django-filter==25.2
 django-ratelimit==4.1.0
 django-tables2==3.0.0
 gunicorn==25.3.0
-packaging==26.1
+packaging==26.2
 psycopg2-binary==2.9.12
 sqlparse==0.5.5
 django-bootstrap5==26.2
