@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Question, Response, ResponseTheme, Survey, Theme
+from .models import (
+    Question,
+    Response,
+    ResponseTheme,
+    Survey,
+    SurveyCollaborator,
+    SurveyInvitation,
+    Theme,
+)
 
 
 class QuestionInline(admin.TabularInline):
@@ -84,3 +92,27 @@ class ResponseThemeAdmin(admin.ModelAdmin):
     search_fields = ("theme__name",)
     autocomplete_fields = ("response", "theme", "tagged_by")
     readonly_fields = ("tagged_at",)
+
+
+@admin.register(SurveyCollaborator)
+class SurveyCollaboratorAdmin(admin.ModelAdmin):
+    list_display = ("user", "survey", "role", "joined_at")
+    list_filter = ("survey", "role")
+    search_fields = ("user__username", "user__email", "survey__title")
+    autocomplete_fields = ("survey", "user")
+    readonly_fields = ("joined_at",)
+
+
+@admin.register(SurveyInvitation)
+class SurveyInvitationAdmin(admin.ModelAdmin):
+    list_display = (
+        "email",
+        "survey",
+        "inviter",
+        "sent_at",
+        "accepted_at",
+        "creation_date",
+    )
+    list_filter = ("survey", "accepted_at")
+    search_fields = ("email", "survey__title")
+    readonly_fields = ("key", "sent_at", "accepted_at")

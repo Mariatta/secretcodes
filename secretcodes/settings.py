@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "allauth",
     "allauth.account",
+    "core",
     "availability",
     "expenses",
     "qrcode_manager",

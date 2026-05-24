@@ -1,36 +1,19 @@
-import datetime
 import uuid
 
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
-from django.utils.crypto import get_random_string
-from django.utils.timezone import now
 
-INVITATION_KEY_LENGTH = 64
+from core.models import (
+    AbstractInvitation,
+    AbstractMembership,
+    BaseModel,
+    mint_invitation_key,
+)
 
 QUESTION_WARN_THRESHOLD = 10
 QUESTION_HARD_LIMIT = 20
 
 DESCRIPTION_MAX_LENGTH = 500
-
-
-class BaseModel(models.Model):
-    """Mirror of availability.models.BaseModel — common timestamp fields."""
-
-    creation_date = models.DateTimeField(
-        "creation_date", editable=False, auto_now_add=True
-    )
-    modified_date = models.DateTimeField("modified_date", editable=False, auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def save(self, *args, **kwargs):
-        self.modified_date = now()
-        if "update_fields" in kwargs and "modified_date" not in kwargs["update_fields"]:
-            kwargs["update_fields"].append("modified_date")
-        super().save(*args, **kwargs)
 
 
 class Survey(BaseModel):
@@ -212,7 +195,7 @@ class ResponseTheme(models.Model):
         return f"{self.response} ↔ {self.theme}"
 
 
-class SurveyCollaborator(BaseModel):
+class SurveyCollaborator(AbstractMembership):
     """A non-owner user who can edit + triage a specific survey.
 
     The survey's ``owner`` field is the implicit owner role — collaborators
@@ -225,15 +208,9 @@ class SurveyCollaborator(BaseModel):
     survey = models.ForeignKey(
         Survey, on_delete=models.CASCADE, related_name="collaborators"
     )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="survey_collaborations",
-    )
     role = models.CharField(
         "role", max_length=20, choices=Role.choices, default=Role.COLLABORATOR
     )
-    joined_at = models.DateTimeField("joined_at", auto_now_add=True)
 
     class Meta:
         constraints = [
@@ -248,7 +225,7 @@ class SurveyCollaborator(BaseModel):
         return f"{self.user} on {self.survey}"
 
 
-class SurveyInvitation(BaseModel):
+class SurveyInvitation(AbstractInvitation):
     """An email invitation to collaborate on a specific survey.
 
     Inviter is always the survey owner (enforced at view level). On accept,
@@ -256,23 +233,15 @@ class SurveyInvitation(BaseModel):
     ``SurveyCollaborator`` row is created bound to their User account.
     """
 
+    EXPIRY_SETTING = "SURVEYS_INVITATION_EXPIRY_DAYS"
+
     survey = models.ForeignKey(
         Survey, on_delete=models.CASCADE, related_name="invitations"
     )
-    email = models.EmailField("email")
-    inviter = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="survey_invitations_sent",
-    )
-    key = models.CharField("key", max_length=INVITATION_KEY_LENGTH, unique=True)
-    sent_at = models.DateTimeField("sent_at", null=True, blank=True)
-    accepted_at = models.DateTimeField("accepted_at", null=True, blank=True)
 
-    class Meta:
+    class Meta(AbstractInvitation.Meta):
         verbose_name = "survey invitation"
         verbose_name_plural = "survey invitations"
-        ordering = ["-creation_date"]
 
     def __str__(self):
         return f"Invite {self.email} to {self.survey.title}"
@@ -284,17 +253,5 @@ class SurveyInvitation(BaseModel):
             survey=survey,
             email=email,
             inviter=inviter,
-            key=get_random_string(INVITATION_KEY_LENGTH).lower(),
+            key=mint_invitation_key(),
         )
-
-    @property
-    def is_accepted(self) -> bool:
-        return self.accepted_at is not None
-
-    def is_expired(self) -> bool:
-        """True once ``SURVEYS_INVITATION_EXPIRY_DAYS`` have passed since send."""
-        anchor = self.sent_at or self.creation_date
-        cutoff = anchor + datetime.timedelta(
-            days=settings.SURVEYS_INVITATION_EXPIRY_DAYS
-        )
-        return cutoff <= timezone.now()
