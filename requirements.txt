@@ -1,6 +1,6 @@
 asgiref==3.11.1
 bleach==6.3.0
-Django==5.2.14
+Django==6.0.6
 django-allauth==65.17.0
 markdown==3.10.2
 django-filter==25.2
