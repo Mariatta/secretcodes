@@ -56,6 +56,17 @@ else:
     if ALLOWED_HOSTS:
         ALLOWED_HOSTS = ALLOWED_HOSTS.split(",")
 
+    # Behind a TLS-terminating proxy (e.g. Azure App Service), trust the
+    # forwarded scheme so Django sees the request as HTTPS. Without this the
+    # https:// Origin header fails CSRF's origin check.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # Scheme+host origins trusted for unsafe requests, comma-separated, e.g.
+    # "https://secretcodes-web.azurewebsites.net". Required since Django 4.0.
+    CSRF_TRUSTED_ORIGINS = [
+        o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o
+    ]
+
 
 # Logging. Django's default only logs to console when DEBUG=True. In
 # production we want tracebacks in stderr so Heroku captures them.

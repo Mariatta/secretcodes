@@ -26,6 +26,19 @@ media/
 # Build state
 .state/
 
+# Terraform — never commit state or filled-in vars (the *.example IS committed)
+infra/terraform/terraform.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# MkDocs build output
+site/
+
+# Database dumps (migration artifacts)
+*.dump
+
 # Claude workspace instructions (personal)
 CLAUDE.md
 
