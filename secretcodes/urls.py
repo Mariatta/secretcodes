@@ -45,6 +45,11 @@ urlpatterns = [
         qr_views.qrcode_slug_generator,
         name="qrcode_slug_generator",
     ),
+    path(
+        "qrcode_preview/",
+        qr_views.qrcode_style_preview,
+        name="qrcode_preview",
+    ),
     path("qr/<str:slug>/", qr_views.url_reverse, name="url_reverse"),
     path(
         "<str:slug>/",
