@@ -4,6 +4,13 @@ from django.db import models
 from django.utils.timezone import now
 
 from .forms import validate_slug_not_reserved
+from .qr_image import (
+    DEFAULT_BACK_COLOR,
+    DEFAULT_COLOR_MASK_STYLE,
+    DEFAULT_FILL_COLOR,
+    DEFAULT_GRADIENT_COLOR,
+    DEFAULT_MODULE_STYLE,
+)
 from .s3_wrapper import S3Wrapper
 
 
@@ -30,6 +37,24 @@ class QRCode(BaseModel):
     slug = models.CharField("slug", max_length=40, blank=True, null=True, unique=True)
     visit_count = models.IntegerField("visit_count", default=0)
     last_visited = models.DateTimeField("last_visited", blank=True, null=True)
+    fill_color = models.CharField(
+        "fill_color", max_length=7, default=DEFAULT_FILL_COLOR
+    )
+    back_color = models.CharField(
+        "back_color", max_length=7, default=DEFAULT_BACK_COLOR
+    )
+    gradient_color = models.CharField(
+        "gradient_color", max_length=7, default=DEFAULT_GRADIENT_COLOR
+    )
+    module_style = models.CharField(
+        "module_style", max_length=20, default=DEFAULT_MODULE_STYLE
+    )
+    color_mask_style = models.CharField(
+        "color_mask_style", max_length=20, default=DEFAULT_COLOR_MASK_STYLE
+    )
+    logo_filename = models.CharField(
+        "logo_filename", max_length=120, blank=True, default=""
+    )
 
     class Meta:
         permissions = [
@@ -55,18 +80,40 @@ class QRCode(BaseModel):
             except ValidationError as exc:
                 raise ValidationError({"slug": exc})
 
+    @property
+    def logo_key(self):
+        """S3 key of the stored logo, or "" when no logo is attached."""
+        if not self.logo_filename:
+            return ""
+        return settings.MEDIA_ROOT + "/qrcode/logos/" + self.logo_filename
+
+    def attach_logo(self, fileobj):
+        """Store the uploaded logo in S3 so later regenerations keep it.
+
+        Must be called before `save()` — `generate_qr` fetches the logo
+        back from S3 by `logo_filename`.
+        """
+        self.logo_filename = self.qr_filename + ".logo.png"
+        S3Wrapper().upload_logo(fileobj, self.logo_key)
+
     def generate_qr(self):
         save_path = settings.MEDIA_ROOT + "/qrcode/"
         s3_wrapper = S3Wrapper()
         if self.slug:
-            img = s3_wrapper.generate_qr(
-                settings.DOMAIN_NAME + "/qr/" + self.slug,
-                self.qr_filename,
-                save_path,
-            )
+            data = settings.DOMAIN_NAME + "/qr/" + self.slug
         else:
-            img = s3_wrapper.generate_qr(self.url, self.qr_filename, save_path)
-        return img
+            data = self.url
+        return s3_wrapper.generate_qr(
+            data,
+            self.qr_filename,
+            save_path,
+            fill_color=self.fill_color,
+            back_color=self.back_color,
+            gradient_color=self.gradient_color,
+            module_style=self.module_style,
+            color_mask_style=self.color_mask_style,
+            logo_key=self.logo_key,
+        )
 
     def save(self, *args, **kwargs):
         if self.slug:

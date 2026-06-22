@@ -1,8 +1,10 @@
 import io
 
 import boto3
-import qrcode
 from django.conf import settings
+from PIL import Image
+
+from .qr_image import build_qr_png
 
 
 class S3Wrapper:
@@ -27,6 +29,14 @@ class S3Wrapper:
             ExtraArgs=extra_args,
         )
 
+    def download_fileobj(self, filename):
+        buffer = io.BytesIO()
+        self.client.download_fileobj(
+            settings.AWS_STORAGE_BUCKET_NAME, filename, buffer
+        )
+        buffer.seek(0)
+        return buffer
+
     def generate_presigned_url(self, filename, expires_in=3600):
         pre_signed_url = self.client.generate_presigned_url(
             "get_object",
@@ -41,17 +51,48 @@ class S3Wrapper:
     def generate_url(self, filename):
         return f"{settings.AWS_S3_ENDPOINT_URL}/{settings.AWS_STORAGE_BUCKET_NAME}/{filename}"
 
-    def generate_qr(self, url, filename, path=None):
+    def upload_logo(self, fileobj, filename):
+        """Normalize an uploaded logo to RGBA PNG and store it.
+
+        Kept as PNG regardless of the upload format so regeneration never
+        has to guess the content type, and RGBA so palette/CMYK uploads
+        survive the PNG save.
+        """
+        img = Image.open(fileobj).convert("RGBA")
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        self.upload_fileobj(buffer, filename, "image/png")
+
+    def generate_qr(
+        self,
+        url,
+        filename,
+        path=None,
+        fill_color=None,
+        back_color=None,
+        gradient_color=None,
+        module_style=None,
+        color_mask_style=None,
+        logo_key=None,
+    ):
         if not path:
             path = "short_lived/qrcode/"
         save_path = path + filename
 
-        buffer = io.BytesIO()
+        logo = None
+        if logo_key:
+            logo = Image.open(self.download_fileobj(logo_key))
 
-        img = qrcode.make(url)
-
-        img.save(buffer)
-        buffer.seek(0)
+        buffer = build_qr_png(
+            url,
+            fill_color=fill_color,
+            back_color=back_color,
+            gradient_color=gradient_color,
+            module_style=module_style,
+            color_mask_style=color_mask_style,
+            logo=logo,
+        )
         self.upload_fileobj(buffer, save_path, "image/png")
 
         return self.generate_url(save_path)
