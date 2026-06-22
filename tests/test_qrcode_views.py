@@ -288,9 +288,7 @@ def test_style_preview_with_module_and_mask(client, django_user_model, qr_slug_p
     assert response.content.startswith(b"\x89PNG")
 
 
-def test_style_preview_rejects_unknown_style(
-    client, django_user_model, qr_slug_perm
-):
+def test_style_preview_rejects_unknown_style(client, django_user_model, qr_slug_perm):
     _login_with_slug_access(client, django_user_model, qr_slug_perm)
     response = client.post(
         reverse("qrcode_preview"),

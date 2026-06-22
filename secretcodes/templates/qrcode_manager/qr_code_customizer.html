@@ -23,7 +23,9 @@
         </div>
         <div class="col-md-6">
             <div class="sc-qr-preview">
-                <p class="sc-mono small sc-qr-preview__label">Live preview</p>
+                <p class="sc-mono small sc-qr-preview__label">
+                    Live preview
+                </p>
                 <img id="qr-preview-image" alt="QR code preview" hidden />
                 <p id="qr-preview-placeholder" class="text-muted small">
                     Fill in the URL and slug to see a preview. Tweak the colors
@@ -37,7 +39,9 @@
             </div>
             {% if result_url %}
                 <div class="sc-qr-preview mt-4">
-                    <p class="sc-mono small sc-qr-preview__label">Saved</p>
+                    <p class="sc-mono small sc-qr-preview__label">
+                        Saved
+                    </p>
                     <a href="{{ result_url }}">{{ result_url }}</a>
                     {% if qr_image_presigned %}
                         <img src="{{ qr_image_presigned }}" alt="Saved QR Code" />

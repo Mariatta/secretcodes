@@ -42,9 +42,7 @@ def test_logo_is_embedded_in_center():
 
 def test_logo_bumps_error_correction():
     logo = Image.new("RGBA", (10, 10), (0, 255, 0, 255))
-    with patch(
-        "qrcode_manager.qr_image.qrcode.QRCode", wraps=qrcode_lib.QRCode
-    ) as spy:
+    with patch("qrcode_manager.qr_image.qrcode.QRCode", wraps=qrcode_lib.QRCode) as spy:
         build_qr_image("https://example.com")
         build_qr_image("https://example.com", logo=logo)
     plain_call, logo_call = spy.call_args_list

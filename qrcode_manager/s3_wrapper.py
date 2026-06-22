@@ -31,9 +31,7 @@ class S3Wrapper:
 
     def download_fileobj(self, filename):
         buffer = io.BytesIO()
-        self.client.download_fileobj(
-            settings.AWS_STORAGE_BUCKET_NAME, filename, buffer
-        )
+        self.client.download_fileobj(settings.AWS_STORAGE_BUCKET_NAME, filename, buffer)
         buffer.seek(0)
         return buffer
 
