@@ -1,0 +1,28 @@
+{% comment %}Channel selector as toggle buttons. Expects `cf` (bound field) and `label`.
+Works for both single-select (RadioSelect) and multi-select (CheckboxSelectMultiple);
+the field's widget carries the `btn-check` class so each option renders as a button.{% endcomment %}
+<div class="mb-3">
+    <label class="form-label d-block">
+        {{ label }}
+    </label>
+    <div class="d-flex flex-wrap gap-2">
+        {% for choice in cf %}
+            <div>
+                {{ choice.tag }}
+                <label class="btn btn-sm sc-chip" for="{{ choice.id_for_label }}">
+                    {{ choice.choice_label }}
+                </label>
+            </div>
+        {% endfor %}
+    </div>
+    {% if cf.help_text %}
+        <div class="form-text">
+            {{ cf.help_text }}
+        </div>
+    {% endif %}
+    {% if cf.errors %}
+        <div class="text-danger small mt-1">
+            {{ cf.errors|striptags }}
+        </div>
+    {% endif %}
+</div>

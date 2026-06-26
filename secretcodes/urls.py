@@ -31,6 +31,7 @@ urlpatterns = [
     path("availability/", include("availability.urls")),
     path("expenses/", include("expenses.urls")),
     path("surveys/", include("surveys.urls")),
+    path("content/", include("content_planner.urls")),
     path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
     path("mcp", availability_views.mcp_endpoint),
     path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),

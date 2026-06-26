@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    New board · Content · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <h1 class="h3 mb-4">
+        New board
+    </h1>
+    {% if form.errors %}
+        <div class="alert alert-danger" style="max-width: 640px">
+            Please fix the errors highlighted below.
+        </div>
+    {% endif %}
+    <form method="post" style="max-width: 640px">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+                Create board
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'content_planner:index' %}">Cancel</a>
+        </div>
+    </form>
+{% endblock content %}

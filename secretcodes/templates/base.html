@@ -5,6 +5,38 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        {# Theme: apply the saved light/dark choice before paint to avoid a flash. #}
+        <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('sc-theme');
+          if (t === 'dark') document.documentElement.classList.add('sc-dark');
+          else if (t === 'light') document.documentElement.classList.add('sc-light');
+        } catch (e) {}
+      })();
+      function scThemeIsDark() {
+        var el = document.documentElement;
+        if (el.classList.contains('sc-dark')) return true;
+        if (el.classList.contains('sc-light')) return false;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      function scToggleTheme() {
+        var el = document.documentElement, toDark = !scThemeIsDark();
+        el.classList.remove('sc-dark', 'sc-light');
+        el.classList.add(toDark ? 'sc-dark' : 'sc-light');
+        try { localStorage.setItem('sc-theme', toDark ? 'dark' : 'light'); } catch (e) {}
+        scSyncThemeButton();
+      }
+      function scSyncThemeButton() {
+        var icon = document.getElementById('sc-theme-icon');
+        var label = document.getElementById('sc-theme-label');
+        if (!icon) return;
+        var dark = scThemeIsDark();
+        icon.textContent = dark ? '☀' : '☾';
+        if (label) label.textContent = dark ? 'Light mode' : 'Dark mode';
+      }
+      document.addEventListener('DOMContentLoaded', scSyncThemeButton);
+        </script>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8" />
@@ -143,8 +175,21 @@
                                    {% if ns == 'surveys' %}aria-current="page"{% endif %}
                                    href="{% url 'surveys:dashboard' %}">Surveys</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link{% if ns == 'content_planner' %} active{% endif %}"
+                                   {% if ns == 'content_planner' %}aria-current="page"{% endif %}
+                                   href="{% url 'content_planner:index' %}">Content</a>
+                            </li>
                         </ul>
                     {% endwith %}
+                    <button type="button"
+                            id="sc-theme-toggle"
+                            class="btn btn-sm btn-outline-light me-2"
+                            onclick="scToggleTheme()"
+                            aria-label="Toggle dark mode">
+                        <span id="sc-theme-icon" aria-hidden="true">☾</span>
+                        <span id="sc-theme-label" class="d-none d-lg-inline">Dark mode</span>
+                    </button>
                     {% if user.is_authenticated %}
                         <div class="dropdown text-end navbar-nav">
                             <a href="#"
