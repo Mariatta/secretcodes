@@ -123,8 +123,10 @@ channel needs a narrower set.
 - **PR 2.4 — Campaign detail + Post detail + post create/edit.** ✅ Asset picker scoped to board
   (form-layer validation). Test: cross-board asset attach raises ValidationError. (Per-channel
   status-subset validation not needed in v1 — see note above.)
-- **PR 2.5 — Asset library page.** `/content/<board>/assets/` list/upload/edit/archive. Test:
-  lists only current-board assets. Wire `check_quota` at upload site.
+- **PR 2.5 — Asset library page.** ✅ BUILT. `/content/<board>/assets/` — list (active + archived
+  sections), upload, edit, archive; "Assets" board tab; `AssetForm` with status as the shared
+  dot+pill toggle; `check_quota` wired at the upload site. Post asset-picker now excludes archived
+  assets. Tests in `tests/test_content_planner_assets.py` (incl. file upload via tmp MEDIA_ROOT).
 - **PR 2.6 — Bulk-shift.** Shift-by-delta + re-anchor, diff preview → confirm, locked posts
   skipped. Reusable diff component (also used by 4b). Tests: skips `date_locked`, re-anchor
   recompute.

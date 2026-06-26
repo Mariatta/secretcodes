@@ -114,10 +114,12 @@ def _configure_shared_post_fields(form, campaign):
             "from the event date, so it still moves if the event date changes."
         )
     # Scope the asset picker to the campaign's board (form-layer board isolation
-    # — a cross-board asset id is rejected as an invalid choice). Until the board
-    # has any assets there's nothing to pick, so hide the field rather than show
-    # a confusing empty box. (Asset library: PR 2.5.)
-    board_assets = Asset.objects.filter(board=campaign.board)
+    # — a cross-board asset id is rejected as an invalid choice). Archived assets
+    # are excluded. Until the board has any pickable assets there's nothing to
+    # pick, so hide the field rather than show a confusing empty box.
+    board_assets = Asset.objects.filter(board=campaign.board).exclude(
+        status=Asset.Status.ARCHIVED
+    )
     if board_assets.exists():
         form.fields["assets"].queryset = board_assets
         form.fields["assets"].help_text = (
@@ -219,3 +221,16 @@ class PostCreateForm(forms.ModelForm):
                 post.assets.set(assets)
             posts.append(post)
         return posts
+
+
+class AssetForm(forms.ModelForm):
+    """Create / edit a board asset. Status renders as a dot+pill toggle group."""
+
+    class Meta:
+        model = Asset
+        fields = ["name", "kind", "file", "source_url", "caption", "status", "notes"]
+        widgets = {
+            "status": forms.RadioSelect(attrs={"class": "btn-check"}),
+            "caption": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 2}),
+        }

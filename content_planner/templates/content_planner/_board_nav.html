@@ -19,4 +19,8 @@
         <a class="nav-link{% if active == 'schedule' %} active{% endif %}"
            href="{% url 'content_planner:schedule' board.slug %}">Schedule</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link{% if active == 'assets' %} active{% endif %}"
+           href="{% url 'content_planner:asset_list' board.slug %}">Assets</a>
+    </li>
 </ul>
