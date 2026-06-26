@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if is_create %}
+        New post
+    {% else %}
+        Edit post
+    {% endif %}
+    · {{ campaign.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_detail' board.slug campaign.slug %}">{{ campaign.name }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if is_create %}
+                    New post
+                {% else %}
+                    Edit
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+    <h2 class="h4 mb-3">
+        {% if is_create %}
+            New post
+        {% else %}
+            Edit “{{ post.title }}”
+        {% endif %}
+    </h2>
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            Please fix the errors highlighted below.
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_field form.title %}
+        {% include "content_planner/_status_picker.html" with field=form.status %}
+        {% if form.fields.schedule_mode %}
+            <div class="mb-1">
+                <label class="form-label d-block">
+                    Schedule by
+                </label>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for choice in form.schedule_mode %}
+                        <div>
+                            {{ choice.tag }}
+                            <label class="btn btn-sm sc-chip" for="{{ choice.id_for_label }}">
+                                {{ choice.choice_label }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text">
+                    Offset (e.g. −90 = 90 days before the event) or a specific date/time. Either way it moves with the event date.
+                </div>
+            </div>
+        {% endif %}
+        <div class="row align-items-end">
+            <div class="col-md-6">
+                {% if form.fields.anchor_offset_days %}
+                    <div id="sched-offset">
+                        {% bootstrap_field form.anchor_offset_days show_help=False %}
+                    </div>
+                {% endif %}
+                {% if form.fields.scheduled_at %}
+                    <div id="sched-date">
+                        {% bootstrap_field form.scheduled_at show_help=False %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                {% bootstrap_field form.is_all_day show_help=False %}
+            </div>
+            <div class="col-md-3">
+                {% bootstrap_field form.date_locked show_help=False %}
+            </div>
+        </div>
+        {% if not form.fields.schedule_mode %}
+            <div class="form-text mb-2">
+                Date and time in the board's timezone — a date alone is fine for all-day posts; leave blank if unscheduled.
+            </div>
+        {% endif %}
+        {% if is_create %}
+            {% include "content_planner/_channel_picker.html" with cf=form.channels label="Channels" %}
+        {% else %}
+            {% include "content_planner/_channel_picker.html" with cf=form.channel label="Channel" %}
+        {% endif %}
+        {% bootstrap_field form.body_snippet %}
+        {# Live, non-blocking character count with per-platform limit cues. #}
+        <div id="sc-charcount" class="mb-3 small">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                {% bootstrap_field form.draft_url %}
+            </div>
+            <div class="col-md-6">
+                {% bootstrap_field form.published_url %}
+            </div>
+        </div>
+        {% if form.fields.assets %}
+            {% bootstrap_field form.assets %}
+        {% endif %}
+        {% bootstrap_field form.notes %}
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+                Save
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% if is_create %}{% url 'content_planner:campaign_detail' board.slug campaign.slug %}{% else %}{% url 'content_planner:post_detail' board.slug campaign.slug post.slug %}{% endif %}">Cancel</a>
+        </div>
+    </form>
+    {% comment %}
+      When "Is all day" is on, the schedule field only needs a date — swap the
+      native datetime-local control for a date control so the browser stops
+      demanding a time.
+    {% endcomment %}
+    <script>
+      (function () {
+        var allDay = document.getElementById('id_is_all_day');
+        var when = document.getElementById('id_scheduled_at');
+        if (!allDay || !when) return;
+        function apply() {
+          if (allDay.checked) {
+            if (when.value && when.value.indexOf('T') !== -1) {
+              when.value = when.value.slice(0, 10);
+            }
+            when.type = 'date';
+          } else {
+            when.type = 'datetime-local';
+          }
+        }
+        allDay.addEventListener('change', apply);
+        apply();
+      })();
+
+      // Event-anchored campaigns: the "Schedule by" chooser reveals either the
+      // offset field or the specific-date field.
+      (function () {
+        var radios = document.querySelectorAll('input[name="schedule_mode"]');
+        var dateBox = document.getElementById('sched-date');
+        var offsetBox = document.getElementById('sched-offset');
+        if (!radios.length || !dateBox || !offsetBox) return;
+        function apply() {
+          var mode = 'offset';
+          radios.forEach(function (r) { if (r.checked) mode = r.value; });
+          dateBox.style.display = (mode === 'date') ? '' : 'none';
+          offsetBox.style.display = (mode === 'offset') ? '' : 'none';
+        }
+        radios.forEach(function (r) { r.addEventListener('change', apply); });
+        apply();
+      })();
+
+      // Live character count for the body, with non-blocking per-platform limit
+      // cues. All platforms are shown regardless of which channels are selected,
+      // as a visual reference. The body already contains any hashtags you typed,
+      // so the count includes them.
+      (function () {
+        var body = document.getElementById('id_body_snippet');
+        var box = document.getElementById('sc-charcount');
+        if (!body || !box) return;
+        var limits = [
+          {name: 'Bluesky', max: 300},
+          {name: 'X/Twitter', max: 280},
+          {name: 'Mastodon', max: 500},
+          {name: 'Threads', max: 500},
+          {name: 'Instagram', max: 2200},
+          {name: 'LinkedIn', max: 3000}
+        ];
+        function render() {
+          var n = body.value.length;
+          var parts = ['<div class="mb-1 text-muted">Body length: <strong>' + n +
+            '</strong> character' + (n === 1 ? '' : 's') +
+            ' (includes any hashtags in the body)</div>',
+            '<div class="d-flex flex-wrap gap-2">'];
+          limits.forEach(function (l) {
+            var over = n > l.max;
+            parts.push('<span class="badge ' + (over ? 'bg-danger' : 'bg-secondary') + '">' + l.name + ' ' + l.max +
+              (over ? ' · exceeds by ' + (n - l.max) : '') + '</span>');
+          });
+          parts.push('</div>');
+          box.innerHTML = parts.join('');
+        }
+        body.addEventListener('input', render);
+        render();
+      })();
+    </script>
+{% endblock content %}
