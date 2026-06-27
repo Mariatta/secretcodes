@@ -429,6 +429,53 @@ def test_post_detail(auth_client, board, campaign):
     assert b"Show Me" in resp.content
 
 
+def test_post_detail_prev_next(auth_client, board, campaign):
+    import datetime
+    from zoneinfo import ZoneInfo
+
+    def _detail_url(post):
+        return reverse(
+            "content_planner:post_detail",
+            kwargs={
+                "board_slug": board.slug,
+                "slug": campaign.slug,
+                "post_slug": post.slug,
+            },
+        )
+
+    utc = ZoneInfo("UTC")
+    p1 = Post.objects.create(
+        campaign=campaign,
+        title="One",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 1, tzinfo=utc),
+    )
+    p2 = Post.objects.create(
+        campaign=campaign,
+        title="Two",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 2, tzinfo=utc),
+    )
+    p3 = Post.objects.create(
+        campaign=campaign,
+        title="Three",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 3, tzinfo=utc),
+    )
+
+    middle = auth_client.get(_detail_url(p2))
+    assert middle.context["prev_post"] == p1
+    assert middle.context["next_post"] == p3
+
+    first = auth_client.get(_detail_url(p1))
+    assert first.context["prev_post"] is None
+    assert first.context["next_post"] == p2
+
+    last = auth_client.get(_detail_url(p3))
+    assert last.context["prev_post"] == p2
+    assert last.context["next_post"] is None
+
+
 # ------------------------------------------------------------ PostForm scoping
 
 

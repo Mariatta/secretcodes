@@ -247,10 +247,21 @@ def post_edit(request, board, slug, post_slug):
 def post_detail(request, board, slug, post_slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
+    # Previous / next within the campaign, in the campaign's post order.
+    siblings = list(campaign.posts.all())
+    index = [sibling.pk for sibling in siblings].index(post.pk)
+    prev_post = siblings[index - 1] if index > 0 else None
+    next_post = siblings[index + 1] if index + 1 < len(siblings) else None
     return render(
         request,
         "content_planner/post_detail.html",
-        {"board": board, "campaign": campaign, "post": post},
+        {
+            "board": board,
+            "campaign": campaign,
+            "post": post,
+            "prev_post": prev_post,
+            "next_post": next_post,
+        },
     )
 
 

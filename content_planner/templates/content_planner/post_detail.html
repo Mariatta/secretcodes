@@ -24,6 +24,22 @@
         <a class="btn btn-sm btn-outline-secondary"
            href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
     </div>
+    <div class="d-flex justify-content-between gap-2 mb-3">
+        <span>
+            {% if prev_post %}
+                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                   style="max-width: 20rem"
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">← {{ prev_post.title }}</a>
+            {% endif %}
+        </span>
+        <span class="text-end">
+            {% if next_post %}
+                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                   style="max-width: 20rem"
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">{{ next_post.title }} →</a>
+            {% endif %}
+        </span>
+    </div>
     <dl class="row">
         <dt class="col-sm-3">
             Channel
