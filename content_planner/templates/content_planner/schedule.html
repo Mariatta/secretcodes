@@ -14,7 +14,7 @@
            href="?year={{ grid.next.year }}&month={{ grid.next.month }}">Next →</a>
     </div>
     <div class="table-responsive">
-        <table class="table table-bordered mb-0">
+        <table class="table table-bordered mb-0" style="table-layout: fixed">
             <thead>
                 <tr>
                     {% for header in grid.headers %}
@@ -28,10 +28,10 @@
                 {% for week in grid.weeks %}
                     <tr>
                         {% for cell in week %}
-                            <td class="align-top{% if not cell.in_month %} bg-body-tertiary text-muted{% endif %}"
+                            <td class="align-top{% if not cell.in_month %} sc-cal-outside{% endif %}"
                                 style="width: 14.28%;
                                        height: 7rem">
-                                <div class="small mb-1{% if cell.date == today %} sc-today{% endif %}">
+                                <div class="small mb-1 sc-cal-daynum{% if cell.date == today %} sc-today{% endif %}">
                                     {{ cell.date.day }}
                                     {% if cell.date == today %}
                                         · today
@@ -42,7 +42,7 @@
                                         <span class="sc-status-dot sc-st-{{ post.status }}"
                                               title="{{ post.get_status_display }}"></span>
                                         <a class="small{% if post.is_overdue %} text-danger fw-semibold{% endif %}"
-                                           {% if post.is_overdue %}title="Overdue"{% endif %}
+                                           title="{{ post.title }}{% if post.is_overdue %} (overdue){% endif %}"
                                            href="{% url 'content_planner:post_detail' board.slug post.campaign.slug post.slug %}">
                                             {% if not post.is_all_day %}
                                                 {{ post.scheduled_at|date:"H:i" }}

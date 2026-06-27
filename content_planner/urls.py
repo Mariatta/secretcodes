@@ -32,6 +32,16 @@ urlpatterns = [
         name="campaign_create",
     ),
     path(
+        "<slug:board_slug>/campaigns/new-from-chat/",
+        views.campaign_create_from_chat,
+        name="campaign_create_from_chat",
+    ),
+    path(
+        "<slug:board_slug>/c/<slug:slug>/export/",
+        views.campaign_export,
+        name="campaign_export",
+    ),
+    path(
         "<slug:board_slug>/c/<slug:slug>/",
         views.campaign_detail,
         name="campaign_detail",
