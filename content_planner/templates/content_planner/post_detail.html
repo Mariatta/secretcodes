@@ -21,8 +21,18 @@
         <h2 class="h4 mb-0">
             {{ post.title }}
         </h2>
-        <a class="btn btn-sm btn-outline-secondary"
-           href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-secondary"
+               href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
+            <form method="post"
+                  action="{% url 'content_planner:post_delete' board.slug campaign.slug post.slug %}"
+                  onsubmit="return confirm('Delete this post? This cannot be undone.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Delete
+                </button>
+            </form>
+        </div>
     </div>
     <div class="d-flex justify-content-between gap-2 mb-3">
         <span>
@@ -61,6 +71,17 @@
                         <span class="badge bg-warning text-dark">Missing asset</span>
                     {% endif %}
                 </dd>
+                {% if post.hashtag_list %}
+                    <dt class="col-sm-4">
+                        Hashtags
+                    </dt>
+                    <dd class="col-sm-8">
+                        {{ post.hashtag_list|join:" " }}
+                        {% if post.channel not in post.SOCIAL_CHANNELS %}
+                            <span class="text-muted small">(not added on copy — non-social channel)</span>
+                        {% endif %}
+                    </dd>
+                {% endif %}
                 {% if post.expected_asset_list %}
                     <dt class="col-sm-4">
                         Expected assets
@@ -139,8 +160,8 @@
                 Copy
             </button>
         </div>
-        {# Hidden raw copy preserves newlines for pasting into social media. #}
-        <textarea id="sc-post-body" class="visually-hidden" readonly>{{ post.body_snippet }}</textarea>
+        {# Hidden raw copy preserves newlines (and hashtags on social) for pasting. #}
+        <textarea id="sc-post-body" class="visually-hidden" readonly>{{ post.copy_text }}</textarea>
         <p>
             {{ post.body_snippet|linebreaksbr }}
         </p>

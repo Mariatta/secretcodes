@@ -29,7 +29,7 @@ class CampaignForm(forms.ModelForm):
 
     class Meta:
         model = Campaign
-        fields = ["name", "event_date", "narrative_notes", "source_url"]
+        fields = ["name", "event_date", "narrative_notes", "source_url", "hashtags"]
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "narrative_notes": forms.Textarea(attrs={"rows": 3}),
@@ -67,6 +67,7 @@ _POST_SHARED_FIELDS = [
     "published_url",
     "assets",
     "expected_asset",
+    "hashtags",
     "notes",
 ]
 _POST_SHARED_WIDGETS = {
