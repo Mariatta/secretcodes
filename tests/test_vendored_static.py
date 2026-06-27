@@ -15,13 +15,15 @@ def test_vendored_assets_reference_no_missing_sourcemaps():
     a file references a `.map` that isn't present, so catch it in CI instead.
     """
     vendor = Path(settings.BASE_DIR) / "secretcodes" / "static" / "vendor"
-    missing = []
+    checked = 0
     for path in sorted(vendor.rglob("*.js")) + sorted(vendor.rglob("*.css")):
         text = path.read_text(encoding="utf-8", errors="ignore")
         for ref in _SOURCEMAP.findall(text):
             ref = ref.strip("\"'*/ ")
-            if ref.startswith("data:"):
+            if ref.startswith("data:"):  # pragma: no cover - none vendored
                 continue  # inline sourcemap, nothing to resolve
-            if not (path.parent / ref).exists():
-                missing.append(f"{path.name} -> {ref}")
-    assert not missing, f"vendored assets reference missing sourcemaps: {missing}"
+            assert (
+                path.parent / ref
+            ).exists(), f"{path.name} references missing sourcemap {ref}"
+            checked += 1
+    assert checked, "expected at least one vendored sourcemap reference to check"
