@@ -5,17 +5,24 @@
 {% block content %}
     {% include "content_planner/_board_nav.html" with active="overview" %}
     {% if board.campaigns.exists %}
-        <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex justify-content-end gap-2 mb-3">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import JSON</a>
             <a class="btn btn-primary"
                href="{% url 'content_planner:campaign_create' board.slug %}">+ New campaign</a>
         </div>
     {% else %}
         <div class="border rounded p-4 text-center mb-4">
             <p class="mb-3">
-                This board has no campaigns yet. Create one, then add posts to it.
+                This board has no campaigns yet. Create one (or import a JSON campaign),
+                then add posts to it.
             </p>
-            <a class="btn btn-primary"
-               href="{% url 'content_planner:campaign_create' board.slug %}">Create your first campaign</a>
+            <div class="d-flex justify-content-center gap-2">
+                <a class="btn btn-primary"
+                   href="{% url 'content_planner:campaign_create' board.slug %}">Create your first campaign</a>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import JSON</a>
+            </div>
         </div>
     {% endif %}
     {% with overdue=sections.overdue today=sections.today week=sections.this_week awaiting=sections.awaiting recent=sections.recently_published %}
