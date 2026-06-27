@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Import format guide · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import JSON</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Format guide
+            </li>
+        </ol>
+    </nav>
+    <h2 class="h4 mb-3">
+        Import format guide
+    </h2>
+    <p class="text-muted">
+        The same contract an AI assistant follows when generating a campaign JSON.
+        Hand it (or paste it) to your assistant so it produces valid JSON the first time.
+    </p>
+    <div class="sc-prose">
+        {{ conventions_html|safe }}
+    </div>
+    <h3 class="h5 mt-4">
+        Worked examples
+    </h3>
+    {% for example in examples %}
+        <div class="d-flex justify-content-between align-items-center mb-1 mt-3">
+            <div class="fw-bold">
+                {{ example.name }}
+            </div>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="scCopy('sc-example-{{ forloop.counter }}', this)">
+                {% load icons %}
+                {% icon "copy" class="me-1" %}<span data-copy-label>Copy</span>
+            </button>
+        </div>
+        <pre class="border rounded p-3"><code id="sc-example-{{ forloop.counter }}">{{ example.content }}</code></pre>
+    {% endfor %}
+{% endblock content %}

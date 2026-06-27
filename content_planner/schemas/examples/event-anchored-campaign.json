@@ -1,0 +1,35 @@
+{
+  "campaign": {
+    "name": "PyCon attendee comms",
+    "event_date": "2026-05-14",
+    "narrative_notes": "Build excitement before the conference, then keep attendees informed during it.",
+    "source_url": "https://example.com/planning-chat",
+    "hashtags": "#PyCon #Python",
+    "tags": ["conference", "attendee-comms"]
+  },
+  "posts": [
+    {
+      "title": "Save the date announcement",
+      "channel": "blog",
+      "anchor_offset_days": -30,
+      "is_all_day": true,
+      "body_snippet": "PyCon is one month away. Here is what to expect and how to prepare.",
+      "expected_asset": "hero banner\nsocial share card"
+    },
+    {
+      "title": "Schedule is live",
+      "channel": "mastodon",
+      "anchor_offset_days": -7,
+      "time_of_day": "09:00",
+      "body_snippet": "The full talk schedule is up. Plan your week!",
+      "hashtags": "#PyConSchedule"
+    },
+    {
+      "title": "Day 1 welcome",
+      "channel": "x",
+      "anchor_offset_days": 0,
+      "time_of_day": "08:30",
+      "body_snippet": "Welcome to PyCon, day one! Stop by the registration desk."
+    }
+  ]
+}

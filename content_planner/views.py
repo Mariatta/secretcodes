@@ -1,6 +1,7 @@
 import json
 from functools import wraps
 
+import markdown
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, JsonResponse
@@ -18,6 +19,7 @@ from .chat_import import (
 from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
 from .models import Asset, Campaign, ContentBoard, Post
 from .permissions import can_access_board, is_content_user
+from .schemas import SCHEMA_DIR
 from .selectors import (
     campaign_stats,
     daily_sections,
@@ -188,6 +190,29 @@ def campaign_create_from_chat(request, board):
             "board": board,
             "payload": raw,
             "channels": ", ".join(value for value, _ in Post.CHANNEL_CHOICES),
+        },
+    )
+
+
+@board_required
+def import_help(request, board):
+    """Human-readable view of the create-from-chat format: the conventions doc
+    plus the worked examples that agents consume as schema resources."""
+    examples = [
+        {"name": path.stem, "content": path.read_text()}
+        for path in sorted((SCHEMA_DIR / "examples").glob("*.json"))
+    ]
+    conventions_html = markdown.markdown(
+        (SCHEMA_DIR / "conventions.md").read_text(),
+        extensions=["fenced_code", "tables"],
+    )
+    return render(
+        request,
+        "content_planner/import_help.html",
+        {
+            "board": board,
+            "conventions_html": conventions_html,
+            "examples": examples,
         },
     )
 

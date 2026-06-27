@@ -11,12 +11,14 @@ import json
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import best_match
 
 from .models import Campaign, Post
 from .scheduling import compute_scheduled_at
+from .schemas import build_create_from_chat_schema
 from .tagging import resolve_tags
 
-VALID_CHANNELS = {value for value, _ in Post.CHANNEL_CHOICES}
 ALL_DAY_DEFAULT_CHANNELS = {"blog", "newsletter"}
 
 
@@ -25,18 +27,22 @@ class ChatImportError(ValueError):
 
 
 def parse_chat_payload(raw):
-    """Parse and shape-check the pasted JSON. Raises ChatImportError."""
+    """Parse the pasted JSON and check it against the create-from-chat schema.
+
+    Structure (required fields, types, the channel enum) is validated here;
+    date/time values are parsed later with their own precise errors. Raises
+    ChatImportError on the first problem.
+    """
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ChatImportError(f"Invalid JSON: {exc}") from exc
-    if not isinstance(data, dict):
-        raise ChatImportError("Top-level JSON must be an object.")
-    campaign = data.get("campaign")
-    if not isinstance(campaign, dict) or not campaign.get("name"):
-        raise ChatImportError("Missing campaign.name.")
-    if not isinstance(data.get("posts"), list):
-        raise ChatImportError("Missing posts list.")
+    validator = Draft202012Validator(build_create_from_chat_schema())
+    error = best_match(validator.iter_errors(data))
+    if error is not None:
+        location = ".".join(str(part) for part in error.absolute_path)
+        where = f"{location}: " if location else ""
+        raise ChatImportError(f"{where}{error.message}")
     return data
 
 
@@ -71,11 +77,6 @@ def _parse_datetime(value, tz_name):
 def _build_post(campaign, board, data):
     title = data.get("title")
     channel = data.get("channel")
-    if not title:
-        raise ChatImportError("Each post needs a title.")
-    if channel not in VALID_CHANNELS:
-        raise ChatImportError(f"Unknown channel '{channel}' on post '{title}'.")
-
     is_all_day = data.get("is_all_day")
     if is_all_day is None:
         is_all_day = channel in ALL_DAY_DEFAULT_CHANNELS

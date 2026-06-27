@@ -62,6 +62,7 @@ lint: .state/docker-build-web
 	docker compose run --rm web djlint . --lint
 	docker compose run --rm web flake8
 	docker compose run --rm web python manage.py makemigrations --check --settings=secretcodes.settings
+	docker compose run --rm web python manage.py rebuild_content_schemas --check
 
 reformat: .state/docker-build-web
 	docker compose run --rm web isort .

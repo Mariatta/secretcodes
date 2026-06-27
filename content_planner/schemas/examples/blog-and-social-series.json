@@ -1,0 +1,31 @@
+{
+  "campaign": {
+    "name": "Confessions blog series",
+    "narrative_notes": "A weekly long-form blog post, each amplified with a social teaser.",
+    "hashtags": "#PyLadiesCon"
+  },
+  "posts": [
+    {
+      "title": "Confession #1: I never read the docs",
+      "channel": "blog",
+      "scheduled_at": "2026-07-06T08:00:00",
+      "is_all_day": true,
+      "body_snippet": "The first in a weekly series of honest developer confessions.",
+      "expected_asset": "cover image",
+      "notes": "Pillar post; the social posts below point back to this."
+    },
+    {
+      "title": "Teaser for confession #1",
+      "channel": "mastodon",
+      "scheduled_at": "2026-07-06T15:30:00",
+      "body_snippet": "New post: the docs and I have a complicated relationship.",
+      "hashtags": "#DeveloperLife"
+    },
+    {
+      "title": "Teaser for confession #1 (LinkedIn)",
+      "channel": "linkedin",
+      "scheduled_at": "2026-07-07T16:00:00",
+      "body_snippet": "This week's confession is about the docs nobody reads."
+    }
+  ]
+}
