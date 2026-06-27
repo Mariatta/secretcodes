@@ -182,6 +182,43 @@ def test_post_picker_queryset_excludes_archived(board):
 # ----------------------------------------------- post-page picker + upload
 
 
+def test_render_asset_tag_modes(board):
+    from content_planner.templatetags.content_planner_tags import render_asset
+
+    asset = Asset.objects.create(board=board, name="Hero", caption="Alt text")
+    assert render_asset(asset) == {"asset": asset, "show_caption": False}
+    assert render_asset(asset, show_caption=True)["show_caption"] is True
+
+
+def test_post_detail_shows_asset_caption_and_edit_link(auth_client, board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    asset = Asset.objects.create(
+        board=board, name="Hero", caption="A photo of the venue"
+    )
+    post = Post.objects.create(campaign=campaign, title="P", channel="blog")
+    post.assets.add(asset)
+    resp = auth_client.get(
+        reverse(
+            "content_planner:post_detail",
+            kwargs={
+                "board_slug": board.slug,
+                "slug": campaign.slug,
+                "post_slug": post.slug,
+            },
+        )
+    )
+    content = resp.content.decode()
+    assert "A photo of the venue" in content  # caption shown
+    assert "Copy caption" in content
+    assert (
+        reverse(
+            "content_planner:asset_edit",
+            kwargs={"board_slug": board.slug, "pk": asset.pk},
+        )
+        in content
+    )  # title links to edit
+
+
 def test_post_create_renders_thumbnail_picker(auth_client, board, tmp_path, settings):
     settings.MEDIA_ROOT = str(tmp_path)
     campaign = Campaign.objects.create(board=board, name="C")

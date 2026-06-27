@@ -14,6 +14,17 @@
           else if (t === 'light') document.documentElement.classList.add('sc-light');
         } catch (e) {}
       })();
+      // Generic "copy to clipboard" from an element's value/text, with feedback.
+      function scCopy(elId, btn) {
+        var el = document.getElementById(elId);
+        if (!el || !navigator.clipboard) return;
+        var text = el.value !== undefined ? el.value : el.textContent;
+        navigator.clipboard.writeText(text).then(function () {
+          var old = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = old; }, 1500);
+        });
+      }
       function scThemeIsDark() {
         var el = document.documentElement;
         if (el.classList.contains('sc-dark')) return true;
