@@ -43,17 +43,23 @@
                 <span class="badge bg-warning text-dark">Missing asset</span>
             {% endif %}
         </dd>
-        {% if post.expected_asset %}
+        {% if post.expected_asset_list %}
             <dt class="col-sm-3">
-                Expected asset
+                Expected assets
             </dt>
             <dd class="col-sm-9">
-                {{ post.expected_asset }}
-                {% if post.is_missing_asset %}
-                    <span class="text-warning">— not attached yet</span>
-                {% else %}
-                    <span class="text-success">— attached</span>
-                {% endif %}
+                <ul class="list-unstyled mb-1">
+                    {% for item in post.expected_asset_list %}
+                        <li>
+                            {% if forloop.counter0 < post.attached_asset_count %}
+                                <span class="text-success">✓ {{ item }} — attached</span>
+                            {% else %}
+                                <span class="text-warning">○ {{ item }} — not attached yet</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <small class="text-muted">{{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached</small>
             </dd>
         {% endif %}
         <dt class="col-sm-3">
