@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if is_create %}
+        Upload asset
+    {% else %}
+        Edit asset
+    {% endif %}
+    · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="assets" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:asset_list' board.slug %}">Assets</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if is_create %}
+                    Upload
+                {% else %}
+                    {{ asset.name }}
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+    <h2 class="h4 mb-3">
+        {% if is_create %}
+            Upload asset
+        {% else %}
+            Edit “{{ asset.name }}”
+        {% endif %}
+    </h2>
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            Please fix the errors highlighted below.
+        </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" style="max-width: 720px">
+        {% csrf_token %}
+        {% bootstrap_field form.name %}
+        {% bootstrap_field form.kind %}
+        {% include "content_planner/_status_picker.html" with field=form.status %}
+        {% bootstrap_field form.file %}
+        {% bootstrap_field form.source_url %}
+        {% bootstrap_field form.caption %}
+        {% bootstrap_field form.notes %}
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+                Save
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'content_planner:asset_list' board.slug %}">Cancel</a>
+        </div>
+    </form>
+{% endblock content %}

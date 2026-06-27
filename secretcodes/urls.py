@@ -31,6 +31,7 @@ urlpatterns = [
     path("availability/", include("availability.urls")),
     path("expenses/", include("expenses.urls")),
     path("surveys/", include("surveys.urls")),
+    path("content/", include("content_planner.urls")),
     path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
     path("mcp", availability_views.mcp_endpoint),
     path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),
@@ -44,6 +45,11 @@ urlpatterns = [
         "qrcode_slug_generator/",
         qr_views.qrcode_slug_generator,
         name="qrcode_slug_generator",
+    ),
+    path(
+        "qrcode_preview/",
+        qr_views.qrcode_style_preview,
+        name="qrcode_preview",
     ),
     path("qr/<str:slug>/", qr_views.url_reverse, name="url_reverse"),
     path(
