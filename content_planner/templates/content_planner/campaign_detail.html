@@ -30,6 +30,8 @@
         </div>
         <div class="text-nowrap">
             <a class="btn btn-sm btn-outline-secondary"
+               href="{% url 'content_planner:campaign_export' board.slug campaign.slug %}?view=html">View as JSON</a>
+            <a class="btn btn-sm btn-outline-secondary"
                href="{% url 'content_planner:campaign_edit' board.slug campaign.slug %}">Edit</a>
             <a class="btn btn-sm btn-primary"
                href="{% url 'content_planner:post_create' board.slug campaign.slug %}">+ Post</a>

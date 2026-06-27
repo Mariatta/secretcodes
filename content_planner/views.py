@@ -1,14 +1,20 @@
+import json
 from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import pluralize
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .billing import check_quota
+from .chat_import import (
+    ChatImportError,
+    create_campaign_from_payload,
+    parse_chat_payload,
+)
 from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
 from .models import Asset, Campaign, ContentBoard, Post
 from .permissions import can_access_board, is_content_user
@@ -18,6 +24,7 @@ from .selectors import (
     month_schedule,
     pending_summary,
 )
+from .serialization import campaign_to_export_dict
 
 
 def _accessible_boards(user):
@@ -149,6 +156,54 @@ def campaign_create(request, board):
         "content_planner/campaign_form.html",
         {"board": board, "form": form, "is_create": True},
     )
+
+
+@board_required
+@require_http_methods(["GET", "POST"])
+def campaign_create_from_chat(request, board):
+    """Paste a Claude-planned campaign as JSON and import it."""
+    raw = ""
+    if request.method == "POST":
+        raw = request.POST.get("payload", "")
+        try:
+            data = parse_chat_payload(raw)
+            campaign = create_campaign_from_payload(board, data, request.user)
+        except ChatImportError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                f"Imported '{campaign.name}' with "
+                f"{campaign.posts.count()} post{pluralize(campaign.posts.count())}.",
+            )
+            return redirect(
+                "content_planner:campaign_detail",
+                board_slug=board.slug,
+                slug=campaign.slug,
+            )
+    return render(
+        request,
+        "content_planner/campaign_from_chat.html",
+        {"board": board, "payload": raw},
+    )
+
+
+@board_required
+def campaign_export(request, board, slug):
+    """Campaign as JSON (machine), or an HTML wrapper with ?view=html."""
+    campaign = get_object_or_404(Campaign, board=board, slug=slug)
+    data = campaign_to_export_dict(campaign)
+    if request.GET.get("view") == "html":
+        return render(
+            request,
+            "content_planner/campaign_export.html",
+            {
+                "board": board,
+                "campaign": campaign,
+                "json_text": json.dumps(data, indent=2),
+            },
+        )
+    return JsonResponse(data, json_dumps_params={"indent": 2})
 
 
 @board_required
