@@ -347,6 +347,15 @@ class Post(BaseModel):
         max_length=20, choices=Status.choices, default=Status.DRAFTING
     )
     assets = models.ManyToManyField(Asset, related_name="posts", blank=True)
+    expected_asset = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text=(
+            "What asset this post needs, e.g. “hero image” or “square graphic”. "
+            "Leave blank if none. Flagged as missing until an asset is attached."
+        ),
+    )
     notes = models.TextField(blank=True, default="")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -387,6 +396,11 @@ class Post(BaseModel):
         return local_date(self.scheduled_at, tz_name) < local_date(
             timezone.now(), tz_name
         )
+
+    @property
+    def is_missing_asset(self):
+        """True if the post declares an expected asset but none is attached."""
+        return bool(self.expected_asset) and not self.assets.exists()
 
     def save(self, *args, **kwargs):
         self._sync_slug()

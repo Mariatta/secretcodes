@@ -163,7 +163,7 @@ def campaign_edit(request, board, slug):
 @board_required
 def campaign_detail(request, board, slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
-    posts = campaign.posts.select_related("campaign__board")
+    posts = campaign.posts.select_related("campaign__board").prefetch_related("assets")
     return render(
         request,
         "content_planner/campaign_detail.html",

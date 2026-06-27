@@ -127,6 +127,12 @@ channel needs a narrower set.
   sections), upload, edit, archive; "Assets" board tab; `AssetForm` with status as the shared
   dot+pill toggle; `check_quota` wired at the upload site. Post asset-picker now excludes archived
   assets. Tests in `tests/test_content_planner_assets.py` (incl. file upload via tmp MEDIA_ROOT).
+  - **Thumbnails (2026-06-26):** `Asset.is_image`/`is_video`/`media_url` (by file/URL extension);
+    image/video previews shown in the library list and the post detail Assets section.
+  - **Expected-asset tracking (2026-06-26):** `Post.expected_asset` CharField +
+    `Post.is_missing_asset` property (expected but none attached). Surfaced as a "Missing asset"
+    badge on post rows + detail, an "Expected asset … attached/not attached yet" line on detail,
+    and the field on the post form. Migration `0004_post_expected_asset`.
 - **PR 2.6 — Bulk-shift.** Shift-by-delta + re-anchor, diff preview → confirm, locked posts
   skipped. Reusable diff component (also used by 4b). Tests: skips `date_locked`, re-anchor
   recompute.

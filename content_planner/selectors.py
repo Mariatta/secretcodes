@@ -30,8 +30,12 @@ WEEK_DAYS = 7
 
 
 def board_posts(board):
-    """All posts in a board, with campaign + board preloaded for display."""
-    return Post.objects.filter(campaign__board=board).select_related("campaign__board")
+    """All posts in a board, with campaign + board + assets preloaded."""
+    return (
+        Post.objects.filter(campaign__board=board)
+        .select_related("campaign__board")
+        .prefetch_related("assets")
+    )
 
 
 def daily_sections(board, *, now=None):

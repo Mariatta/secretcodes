@@ -336,6 +336,29 @@ def test_post_create_fans_out_to_multiple_channels(auth_client, user, board, cam
     assert all(p.body_snippet == "shared body" for p in posts)
 
 
+def test_post_create_records_expected_asset(auth_client, board, campaign):
+    resp = auth_client.post(
+        reverse(
+            "content_planner:post_create",
+            kwargs={"board_slug": board.slug, "slug": campaign.slug},
+        ),
+        {
+            "title": "Hero post",
+            "channels": ["blog"],
+            "status": "drafting",
+            "expected_asset": "hero image",
+            "body_snippet": "",
+            "draft_url": "",
+            "published_url": "",
+            "notes": "",
+        },
+    )
+    assert resp.status_code == 302
+    post = Post.objects.get(title="Hero post")
+    assert post.expected_asset == "hero image"
+    assert post.is_missing_asset is True
+
+
 def test_post_create_requires_a_channel(auth_client, board, campaign):
     resp = auth_client.post(
         reverse(

@@ -66,6 +66,7 @@ _POST_SHARED_FIELDS = [
     "draft_url",
     "published_url",
     "assets",
+    "expected_asset",
     "notes",
 ]
 _POST_SHARED_WIDGETS = {

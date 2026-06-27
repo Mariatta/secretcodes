@@ -39,7 +39,23 @@
             {% if post.is_overdue %}
                 <span class="badge bg-danger">Overdue</span>
             {% endif %}
+            {% if post.is_missing_asset %}
+                <span class="badge bg-warning text-dark">Missing asset</span>
+            {% endif %}
         </dd>
+        {% if post.expected_asset %}
+            <dt class="col-sm-3">
+                Expected asset
+            </dt>
+            <dd class="col-sm-9">
+                {{ post.expected_asset }}
+                {% if post.is_missing_asset %}
+                    <span class="text-warning">— not attached yet</span>
+                {% else %}
+                    <span class="text-success">— attached</span>
+                {% endif %}
+            </dd>
+        {% endif %}
         <dt class="col-sm-3">
             When
         </dt>
@@ -118,9 +134,15 @@
             {% for asset in post.assets.all %}
                 <div class="text-center">
                     {% if asset.is_image %}
-                        <img class="sc-asset-thumb" src="{{ asset.media_url }}" alt="{{ asset.name }}">
+                        <img class="sc-asset-thumb"
+                             src="{{ asset.media_url }}"
+                             alt="{{ asset.name }}">
                     {% elif asset.is_video %}
-                        <video class="sc-asset-thumb" src="{{ asset.media_url }}#t=0.1" muted preload="metadata"></video>
+                        <video class="sc-asset-thumb"
+                               src="{{ asset.media_url }}#t=0.1"
+                               muted
+                               preload="metadata">
+                        </video>
                     {% endif %}
                     <div class="small">
                         {{ asset.name }}
