@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block head_title %}
+    {{ post.title }} · {{ campaign.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_detail' board.slug campaign.slug %}">{{ campaign.name }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ post.title }}
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h2 class="h4 mb-0">
+            {{ post.title }}
+        </h2>
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
+    </div>
+    <div class="d-flex justify-content-between gap-2 mb-3">
+        <span>
+            {% if prev_post %}
+                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                   style="max-width: 20rem"
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">← {{ prev_post.title }}</a>
+            {% endif %}
+        </span>
+        <span class="text-end">
+            {% if next_post %}
+                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                   style="max-width: 20rem"
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">{{ next_post.title }} →</a>
+            {% endif %}
+        </span>
+    </div>
+    <div class="row mb-3">
+        <div class="col-lg-7">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">
+                    Channel
+                </dt>
+                <dd class="col-sm-8">
+                    {{ post.get_channel_display }}
+                </dd>
+                <dt class="col-sm-4">
+                    Status
+                </dt>
+                <dd class="col-sm-8">
+                    {% include "content_planner/_status_badge.html" with value=post.status label=post.get_status_display %}
+                    {% if post.is_overdue %}
+                        <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                    {% if post.is_missing_asset %}
+                        <span class="badge bg-warning text-dark">Missing asset</span>
+                    {% endif %}
+                </dd>
+                {% if post.expected_asset_list %}
+                    <dt class="col-sm-4">
+                        Expected assets
+                    </dt>
+                    <dd class="col-sm-8">
+                        <ul class="mb-1">
+                            {% for item in post.expected_asset_list %}
+                                <li>
+                                    {{ item }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}">
+                            {{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached
+                            {% if post.is_missing_asset %}
+                                — some still needed
+                            {% endif %}
+                        </small>
+                    </dd>
+                {% endif %}
+                <dt class="col-sm-4">
+                    When
+                </dt>
+                <dd class="col-sm-8">
+                    {% if post.scheduled_at %}
+                        {% if post.is_all_day %}
+                            {{ post.scheduled_at|date:"M j, Y" }} <span class="text-muted">(all day)</span>
+                        {% else %}
+                            {{ post.scheduled_at|date:"M j, Y, P" }}
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">Unscheduled</span>
+                    {% endif %}
+                    {% if post.date_locked %}
+                        <span class="badge bg-warning text-dark">locked</span>
+                    {% endif %}
+                </dd>
+                {% if post.anchor_offset_days is not None %}
+                    <dt class="col-sm-4">
+                        Anchor offset
+                    </dt>
+                    <dd class="col-sm-8">
+                        {{ post.anchor_offset_days }} day{{ post.anchor_offset_days|pluralize }} from event
+                    </dd>
+                {% endif %}
+                {% if post.draft_url %}
+                    <dt class="col-sm-4">
+                        Draft
+                    </dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ post.draft_url }}" rel="noopener" target="_blank">{{ post.draft_url }} ↗</a>
+                    </dd>
+                {% endif %}
+                {% if post.published_url %}
+                    <dt class="col-sm-4">
+                        Published
+                    </dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ post.published_url }}" rel="noopener" target="_blank">{{ post.published_url }} ↗</a>
+                    </dd>
+                {% endif %}
+            </dl>
+        </div>
+        <div class="col-lg-5">
+            {% include "content_planner/_asset_thumbs.html" %}
+        </div>
+    </div>
+    {% if post.body_snippet %}
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="fw-bold">
+                Body
+            </div>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="scCopyBody(this)">
+                Copy
+            </button>
+        </div>
+        {# Hidden raw copy preserves newlines for pasting into social media. #}
+        <textarea id="sc-post-body" class="visually-hidden" readonly>{{ post.body_snippet }}</textarea>
+        <p>
+            {{ post.body_snippet|linebreaksbr }}
+        </p>
+        <script>
+          function scCopyBody(btn) {
+            var ta = document.getElementById('sc-post-body');
+            if (!ta || !navigator.clipboard) return;
+            navigator.clipboard.writeText(ta.value).then(function () {
+              var old = btn.textContent;
+              btn.textContent = 'Copied!';
+              setTimeout(function () { btn.textContent = old; }, 1500);
+            });
+          }
+        </script>
+    {% endif %}
+    {% if post.notes %}
+        <div class="fw-bold mb-2">
+            Notes
+        </div>
+        <p>
+            {{ post.notes|linebreaksbr }}
+        </p>
+    {% endif %}
+{% endblock content %}

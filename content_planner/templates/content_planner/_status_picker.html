@@ -1,0 +1,21 @@
+{% comment %}Status as a dot+pill toggle group, mirroring the surveys status UI.
+Expects `field` (the bound status field, rendered with a RadioSelect btn-check widget).{% endcomment %}
+<div class="mb-3">
+    <label class="form-label d-block">
+        Status
+    </label>
+    <div class="sc-status-group">
+        {% for radio in field %}
+            {{ radio.tag }}
+            <label class="sc-status-btn sc-st-{{ radio.data.value }}"
+                   for="{{ radio.id_for_label }}">
+                <span class="dot"></span>{{ radio.choice_label }}
+            </label>
+        {% endfor %}
+    </div>
+    {% if field.errors %}
+        <div class="text-danger small mt-1">
+            {{ field.errors|striptags }}
+        </div>
+    {% endif %}
+</div>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Your boards · Content · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            Your boards
+        </h1>
+        <a class="btn btn-primary"
+           href="{% url 'content_planner:board_create' %}">+ New board</a>
+    </div>
+    {% if rows %}
+        <div class="list-group">
+            {% for row in rows %}
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
+                   href="{% url 'content_planner:board_home' row.board.slug %}">
+                    <span>
+                        <span class="fw-semibold">{{ row.board.name }}</span>
+                        <br>
+                        <small class="text-muted">
+                            {% if row.is_owner %}
+                                owner
+                            {% else %}
+                                collaborator
+                            {% endif %}
+                            · {{ row.board.campaigns.count }} campaign{{ row.board.campaigns.count|pluralize }}
+                        </small>
+                    </span>
+                    <span class="text-end">
+                        {% if row.summary.pending %}
+                            <span class="badge bg-secondary">{{ row.summary.pending }} pending</span>
+                        {% else %}
+                            <span class="text-muted small">no pending</span>
+                        {% endif %}
+                        {% if row.summary.overdue %}
+                            <span class="badge bg-danger">{{ row.summary.overdue }} overdue</span>
+                        {% endif %}
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            You don't have any boards yet. Create one to get started.
+        </p>
+    {% endif %}
+{% endblock content %}
