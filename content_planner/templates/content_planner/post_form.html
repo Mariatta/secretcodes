@@ -116,7 +116,7 @@
                         <input type="checkbox"
                                name="assets"
                                value="{{ asset.pk }}"
-                               class="visually-hidden"
+                               class="sc-asset-check"
                                {% if asset.pk|stringformat:"s" in selected_asset_ids %}checked{% endif %}>
                         {% if asset.is_image %}
                             <img class="sc-asset-thumb"
