@@ -1,7 +1,16 @@
-{% comment %}One post line. Expects `board` and `post`.{% endcomment %}
+{% comment %}One post line. Expects `board` and `post`. Pass `selectable` to add a
+bulk-select checkbox (associated with the campaign's #bulk-form).{% endcomment %}
 {% load icons %}
-<li class="list-group-item d-flex justify-content-between align-items-center">
-    <span>
+<li class="list-group-item d-flex align-items-center gap-2">
+    {% if selectable %}
+        <input type="checkbox"
+               class="form-check-input flex-shrink-0"
+               name="posts"
+               value="{{ post.pk }}"
+               form="bulk-form"
+               aria-label="Select {{ post.title }}">
+    {% endif %}
+    <span class="flex-grow-1">
         <a href="{% url 'content_planner:post_detail' board.slug post.campaign.slug post.slug %}">{{ post.title }}</a>
         <small class="text-muted">· {{ post.get_channel_display }} · {{ post.campaign.name }}</small>
     </span>
