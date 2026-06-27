@@ -1,7 +1,11 @@
+import io
+
 import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
 
 from qrcode_manager.models import QRCode
 
@@ -174,3 +178,143 @@ def test_legacy_url_301_redirects_to_qr_namespace(client):
 def test_legacy_url_unknown_slug_404s(client):
     response = client.get(reverse("legacy_url_reverse", args=["nope"]))
     assert response.status_code == 404
+
+
+def _png_upload(name="logo.png", size=(16, 16), color=(255, 0, 0, 255)):
+    """A small in-memory PNG suitable for ImageField uploads."""
+    buffer = io.BytesIO()
+    Image.new("RGBA", size, color).save(buffer, format="PNG")
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
+
+
+@pytest.mark.django_db
+def test_style_preview_requires_login(client):
+    response = client.post(reverse("qrcode_preview"), {"url": "https://example.com"})
+    assert response.status_code == 302
+    assert "accounts/login" in response.url
+
+
+def test_style_preview_rejects_get(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.get(reverse("qrcode_preview"))
+    assert response.status_code == 405
+
+
+def test_style_preview_returns_png(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {
+            "url": "https://example.com",
+            "slug": "abc",
+            "fill_color": "#112233",
+            "back_color": "#ffeedd",
+        },
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG")
+    assert not QRCode.objects.exists()
+
+
+def test_style_preview_with_logo(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {"url": "https://example.com", "logo": _png_upload()},
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/png"
+
+
+def test_style_preview_invalid_returns_400(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(reverse("qrcode_preview"), {"url": "not-a-url"})
+    assert response.status_code == 400
+    assert "url" in response.json()["errors"]
+
+
+def test_slug_generator_saves_styling(
+    client, django_user_model, qr_slug_perm, mock_s3_wrapper
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_slug_generator"),
+        {
+            "url": "https://example.com",
+            "description": "styled",
+            "slug": "abc",
+            "fill_color": "#112233",
+            "back_color": "#ffeedd",
+            "logo": _png_upload(),
+        },
+    )
+    assert response.status_code == 200
+    qr = QRCode.objects.get(url="https://example.com")
+    assert qr.fill_color == "#112233"
+    assert qr.back_color == "#ffeedd"
+    assert qr.logo_filename == "styled.png.logo.png"
+    mock_s3_wrapper.upload_logo.assert_called_once()
+
+
+def test_slug_generator_defaults_styling_when_omitted(
+    client, django_user_model, qr_slug_perm
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    client.post(
+        reverse("qrcode_slug_generator"),
+        {"url": "https://example.com", "description": "plain", "slug": "abc"},
+    )
+    qr = QRCode.objects.get(url="https://example.com")
+    assert qr.fill_color == "#000000"
+    assert qr.back_color == "#ffffff"
+    assert qr.logo_filename == ""
+
+
+def test_style_preview_with_module_and_mask(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {
+            "url": "https://example.com",
+            "module_style": "rounded",
+            "color_mask_style": "radial_gradient",
+            "fill_color": "#112233",
+            "gradient_color": "#445566",
+        },
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG")
+
+
+def test_style_preview_rejects_unknown_style(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {"url": "https://example.com", "module_style": "triangle"},
+    )
+    assert response.status_code == 400
+    assert "module_style" in response.json()["errors"]
+
+
+def test_slug_generator_saves_module_and_mask(
+    client, django_user_model, qr_slug_perm, mock_s3_wrapper
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    client.post(
+        reverse("qrcode_slug_generator"),
+        {
+            "url": "https://example.com",
+            "description": "styled",
+            "slug": "abc",
+            "module_style": "circle",
+            "color_mask_style": "square_gradient",
+            "fill_color": "#112233",
+            "gradient_color": "#445566",
+        },
+    )
+    qr = QRCode.objects.get(url="https://example.com")
+    assert qr.module_style == "circle"
+    assert qr.color_mask_style == "square_gradient"
+    assert qr.gradient_color == "#445566"

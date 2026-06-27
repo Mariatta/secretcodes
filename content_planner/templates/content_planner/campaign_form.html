@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if is_create %}
+        New campaign
+    {% else %}
+        Edit campaign
+    {% endif %}
+    · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <h2 class="h4 mb-4">
+        {% if is_create %}
+            New campaign
+        {% else %}
+            Edit “{{ campaign.name }}”
+        {% endif %}
+    </h2>
+    {% if form.errors %}
+        <div class="alert alert-danger" style="max-width: 720px">
+            Please fix the errors highlighted below.
+        </div>
+    {% endif %}
+    <form method="post" style="max-width: 720px">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+                Save
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% if is_create %}{% url 'content_planner:campaign_list' board.slug %}{% else %}{% url 'content_planner:campaign_detail' board.slug campaign.slug %}{% endif %}">Cancel</a>
+        </div>
+    </form>
+{% endblock content %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Export · {{ campaign.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_detail' board.slug campaign.slug %}">{{ campaign.name }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Export
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h4 mb-0">
+            {{ campaign.name }} — JSON
+        </h2>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                onclick="scCopyExport(this)">
+            Copy
+        </button>
+    </div>
+    <p class="text-muted">
+        Paste this back into a Claude chat as context, or save it as a backup.
+    </p>
+    <textarea id="sc-export" class="visually-hidden" readonly>{{ json_text }}</textarea>
+    <pre class="border rounded p-3" style="max-height: 70vh; overflow: auto">{{ json_text }}</pre>
+    <script>
+      function scCopyExport(btn) {
+        var ta = document.getElementById('sc-export');
+        if (!ta || !navigator.clipboard) return;
+        navigator.clipboard.writeText(ta.value).then(function () {
+          var old = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = old; }, 1500);
+        });
+      }
+    </script>
+{% endblock content %}

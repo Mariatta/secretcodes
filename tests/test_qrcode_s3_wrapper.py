@@ -1,7 +1,9 @@
-from unittest.mock import MagicMock, patch
+import io
+from unittest.mock import patch
 
 import pytest
 from django.test import override_settings
+from PIL import Image
 
 from qrcode_manager.s3_wrapper import S3Wrapper
 
@@ -62,16 +64,76 @@ def test_generate_url_composes_path(boto_session):
 @override_settings(**AWS_OVERRIDES)
 def test_generate_qr_default_path(boto_session):
     wrapper = S3Wrapper()
-    with patch("qrcode_manager.s3_wrapper.qrcode") as mock_qrcode:
-        mock_qrcode.make.return_value = MagicMock()
-        result = wrapper.generate_qr("https://example.com", "f.png")
+    result = wrapper.generate_qr("https://example.com", "f.png")
     assert "short_lived/qrcode/f.png" in result
 
 
 @override_settings(**AWS_OVERRIDES)
 def test_generate_qr_custom_path(boto_session):
     wrapper = S3Wrapper()
-    with patch("qrcode_manager.s3_wrapper.qrcode") as mock_qrcode:
-        mock_qrcode.make.return_value = MagicMock()
-        result = wrapper.generate_qr("https://example.com", "f.png", path="custom/")
+    result = wrapper.generate_qr("https://example.com", "f.png", path="custom/")
     assert "custom/f.png" in result
+
+
+@override_settings(**AWS_OVERRIDES)
+def test_generate_qr_passes_styling_to_builder(boto_session):
+    wrapper = S3Wrapper()
+    with patch("qrcode_manager.s3_wrapper.build_qr_png") as mock_build:
+        mock_build.return_value = io.BytesIO(b"png")
+        wrapper.generate_qr(
+            "https://example.com",
+            "f.png",
+            fill_color="#112233",
+            back_color="#ffeedd",
+        )
+    _, kwargs = mock_build.call_args
+    assert kwargs["fill_color"] == "#112233"
+    assert kwargs["back_color"] == "#ffeedd"
+    assert kwargs["logo"] is None
+
+
+@override_settings(**AWS_OVERRIDES)
+def test_generate_qr_downloads_logo_by_key(boto_session):
+    wrapper = S3Wrapper()
+    logo = Image.new("RGBA", (8, 8), (255, 0, 0, 255))
+    logo_buffer = io.BytesIO()
+    logo.save(logo_buffer, format="PNG")
+
+    def fake_download(bucket, key, buffer):
+        buffer.write(logo_buffer.getvalue())
+
+    wrapper.client.download_fileobj.side_effect = fake_download
+    with patch("qrcode_manager.s3_wrapper.build_qr_png") as mock_build:
+        mock_build.return_value = io.BytesIO(b"png")
+        wrapper.generate_qr("https://example.com", "f.png", logo_key="logos/f.logo.png")
+    wrapper.client.download_fileobj.assert_called_once()
+    _, kwargs = mock_build.call_args
+    assert kwargs["logo"] is not None
+
+
+@override_settings(**AWS_OVERRIDES)
+def test_upload_logo_normalizes_to_png(boto_session):
+    wrapper = S3Wrapper()
+    logo = Image.new("RGB", (8, 8), (0, 128, 255))
+    logo_buffer = io.BytesIO()
+    logo.save(logo_buffer, format="JPEG")
+    logo_buffer.seek(0)
+
+    wrapper.upload_logo(logo_buffer, "logos/f.logo.png")
+
+    args, kwargs = wrapper.client.upload_fileobj.call_args
+    uploaded = args[0]
+    assert Image.open(uploaded).format == "PNG"
+    assert kwargs["ExtraArgs"]["ContentType"] == "image/png"
+
+
+@override_settings(**AWS_OVERRIDES)
+def test_download_fileobj_returns_rewound_buffer(boto_session):
+    wrapper = S3Wrapper()
+
+    def fake_download(bucket, key, buffer):
+        buffer.write(b"bytes")
+
+    wrapper.client.download_fileobj.side_effect = fake_download
+    result = wrapper.download_fileobj("some/key")
+    assert result.read() == b"bytes"
