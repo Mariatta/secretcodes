@@ -102,6 +102,7 @@ def _build_post(campaign, board, data):
         status=Post.Status.DRAFTING,
         body_snippet=data.get("body_snippet", "") or "",
         expected_asset=data.get("expected_asset", "") or "",
+        hashtags=data.get("hashtags", "") or "",
         notes=data.get("notes", "") or "",
     )
 
@@ -115,6 +116,7 @@ def create_campaign_from_payload(board, data, user):
         name=campaign_data["name"],
         narrative_notes=campaign_data.get("narrative_notes", "") or "",
         source_url=campaign_data.get("source_url", "") or "",
+        hashtags=campaign_data.get("hashtags", "") or "",
         event_date=_parse_date(campaign_data.get("event_date")),
     )
     tag_names = [str(name) for name in campaign_data.get("tags") or []]

@@ -52,6 +52,11 @@ urlpatterns = [
         name="campaign_edit",
     ),
     path(
+        "<slug:board_slug>/c/<slug:slug>/bulk/",
+        views.campaign_bulk_update,
+        name="campaign_bulk_update",
+    ),
+    path(
         "<slug:board_slug>/c/<slug:slug>/p/new/",
         views.post_create,
         name="post_create",
@@ -65,5 +70,10 @@ urlpatterns = [
         "<slug:board_slug>/c/<slug:slug>/p/<slug:post_slug>/edit/",
         views.post_edit,
         name="post_edit",
+    ),
+    path(
+        "<slug:board_slug>/c/<slug:slug>/p/<slug:post_slug>/delete/",
+        views.post_delete,
+        name="post_delete",
     ),
 ]

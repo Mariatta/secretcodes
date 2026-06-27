@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block head_title %}
     {{ post.title }} · {{ campaign.name }} · {{ block.super }}
 {% endblock head_title %}
@@ -21,27 +22,43 @@
         <h2 class="h4 mb-0">
             {{ post.title }}
         </h2>
-        <a class="btn btn-sm btn-outline-secondary"
-           href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-secondary"
+               href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">{% icon "pen-to-square" class="me-1" %}Edit</a>
+            <form method="post"
+                  action="{% url 'content_planner:post_delete' board.slug campaign.slug post.slug %}"
+                  onsubmit="return confirm('Delete this post? This cannot be undone.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    {% icon "trash-can" class="me-1" %}Delete
+                </button>
+            </form>
+        </div>
     </div>
     <div class="d-flex justify-content-between gap-2 mb-3">
         <span>
             {% if prev_post %}
-                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
                    style="max-width: 20rem"
-                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">← {{ prev_post.title }}</a>
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">
+                    <span class="flex-shrink-0">←&nbsp;</span>
+                    <span class="text-truncate">{{ prev_post.title }}</span>
+                </a>
             {% endif %}
         </span>
         <span class="text-end">
             {% if next_post %}
-                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
                    style="max-width: 20rem"
-                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">{{ next_post.title }} →</a>
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">
+                    <span class="text-truncate">{{ next_post.title }}</span>
+                    <span class="flex-shrink-0">&nbsp;→</span>
+                </a>
             {% endif %}
         </span>
     </div>
     <div class="row mb-3">
-        <div class="col-lg-7">
+        <div class="col-md-6">
             <dl class="row mb-0">
                 <dt class="col-sm-4">
                     Channel
@@ -61,26 +78,10 @@
                         <span class="badge bg-warning text-dark">Missing asset</span>
                     {% endif %}
                 </dd>
-                {% if post.expected_asset_list %}
-                    <dt class="col-sm-4">
-                        Expected assets
-                    </dt>
-                    <dd class="col-sm-8">
-                        <ul class="mb-1">
-                            {% for item in post.expected_asset_list %}
-                                <li>
-                                    {{ item }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                        <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}">
-                            {{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached
-                            {% if post.is_missing_asset %}
-                                — some still needed
-                            {% endif %}
-                        </small>
-                    </dd>
-                {% endif %}
+            </dl>
+        </div>
+        <div class="col-md-6">
+            <dl class="row mb-0">
                 <dt class="col-sm-4">
                     When
                 </dt>
@@ -124,9 +125,6 @@
                 {% endif %}
             </dl>
         </div>
-        <div class="col-lg-5">
-            {% include "content_planner/_asset_thumbs.html" %}
-        </div>
     </div>
     {% if post.body_snippet %}
         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -135,27 +133,47 @@
             </div>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
-                    onclick="scCopyBody(this)">
-                Copy
+                    onclick="scCopy('sc-post-body', this)">
+                {% icon "copy" class="me-1" %}<span data-copy-label>Copy</span>
             </button>
         </div>
-        {# Hidden raw copy preserves newlines for pasting into social media. #}
-        <textarea id="sc-post-body" class="visually-hidden" readonly>{{ post.body_snippet }}</textarea>
+        {# Hidden raw copy preserves newlines (and hashtags on social) for pasting. #}
+        <textarea id="sc-post-body" class="visually-hidden" readonly>{{ post.copy_text }}</textarea>
         <p>
             {{ post.body_snippet|linebreaksbr }}
         </p>
-        <script>
-          function scCopyBody(btn) {
-            var ta = document.getElementById('sc-post-body');
-            if (!ta || !navigator.clipboard) return;
-            navigator.clipboard.writeText(ta.value).then(function () {
-              var old = btn.textContent;
-              btn.textContent = 'Copied!';
-              setTimeout(function () { btn.textContent = old; }, 1500);
-            });
-          }
-        </script>
     {% endif %}
+    {% if post.hashtag_list %}
+        <div class="mb-3">
+            {% for tag in post.hashtag_list %}
+                <span class="badge rounded-pill text-bg-secondary">{{ tag }}</span>
+            {% endfor %}
+            {% if post.channel not in post.SOCIAL_CHANNELS %}
+                <span class="text-muted small">(not appended on copy — non-social channel)</span>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if post.expected_asset_list %}
+        <div class="mb-3">
+            <div class="fw-bold mb-1">
+                Expected assets
+            </div>
+            <ul class="mb-1">
+                {% for item in post.expected_asset_list %}
+                    <li>
+                        {{ item }}
+                    </li>
+                {% endfor %}
+            </ul>
+            <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}">
+                {{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached
+                {% if post.is_missing_asset %}
+                    — some still needed
+                {% endif %}
+            </small>
+        </div>
+    {% endif %}
+    {% include "content_planner/_asset_thumbs.html" %}
     {% if post.notes %}
         <div class="fw-bold mb-2">
             Notes

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from core.models import AbstractInvitation, AbstractMembership, BaseModel
 
+from .hashtags import merge_hashtags
 from .scheduling import compute_scheduled_at, local_date, local_time_of_day
 from .slugs import generate_unique_slug
 
@@ -156,6 +157,15 @@ class Campaign(BaseModel):
         help_text="Link to the Claude chat or doc where this was planned.",
     )
     tags = models.ManyToManyField("Tag", related_name="campaigns", blank=True)
+    hashtags = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=(
+            "Default hashtags for this campaign's social posts, e.g. "
+            "“#PyLadiesCon #Python”. Appended when you copy a social post."
+        ),
+    )
     event_date = models.DateField(
         null=True,
         blank=True,
@@ -296,6 +306,9 @@ class Post(BaseModel):
         ("other", "Other"),
     ]
 
+    # Channels where appending hashtags to the copy text makes sense.
+    SOCIAL_CHANNELS = {"mastodon", "linkedin", "x", "instagram"}
+
     class Status(models.TextChoices):
         DRAFTING = "drafting", "Drafting"
         READY = "ready", "Ready"
@@ -356,6 +369,15 @@ class Post(BaseModel):
             "attached. Leave blank if none."
         ),
     )
+    hashtags = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=(
+            "Extra hashtags for this post, added to the campaign's defaults. "
+            "Appended when you copy a social post."
+        ),
+    )
     notes = models.TextField(blank=True, default="")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -413,6 +435,19 @@ class Post(BaseModel):
     def is_missing_asset(self):
         """True if fewer assets are attached than the post expects."""
         return len(self.expected_asset_list) > self.attached_asset_count
+
+    @property
+    def hashtag_list(self):
+        """Effective hashtags: campaign defaults plus this post's, de-duped."""
+        return merge_hashtags(self.campaign.hashtags, self.hashtags)
+
+    @property
+    def copy_text(self):
+        """Body for pasting — hashtags appended on social channels."""
+        if self.channel in self.SOCIAL_CHANNELS and self.hashtag_list:
+            tags = " ".join(self.hashtag_list)
+            return f"{self.body_snippet}\n\n{tags}" if self.body_snippet else tags
+        return self.body_snippet
 
     def save(self, *args, **kwargs):
         self._sync_slug()

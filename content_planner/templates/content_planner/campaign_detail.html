@@ -107,11 +107,53 @@
         Posts
     </h3>
     {% if posts %}
+        {# Bulk actions: a standalone form; row checkboxes associate via form="bulk-form". #}
+        <form id="bulk-form"
+              method="post"
+              action="{% url 'content_planner:campaign_bulk_update' board.slug campaign.slug %}"
+              class="d-flex flex-wrap gap-2 align-items-center mb-2">
+            {% csrf_token %}
+            <div class="form-check mb-0">
+                <input type="checkbox"
+                       class="form-check-input"
+                       id="bulk-all"
+                       onclick="scBulkAll(this)">
+                <label class="form-check-label small" for="bulk-all">
+                    Select all
+                </label>
+            </div>
+            <select name="action"
+                    class="form-select form-select-sm w-auto"
+                    aria-label="Bulk action">
+                <option value="set_status">
+                    Set status
+                </option>
+            </select>
+            <select name="status"
+                    class="form-select form-select-sm w-auto"
+                    aria-label="Status">
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}">
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">
+                Apply to selected
+            </button>
+        </form>
         <ul class="list-group">
             {% for post in posts %}
-                {% include "content_planner/_post_row.html" %}
+                {% include "content_planner/_post_row.html" with selectable=True %}
             {% endfor %}
         </ul>
+        <script>
+          function scBulkAll(master) {
+            document.querySelectorAll('input[name="posts"]').forEach(function (c) {
+              c.checked = master.checked;
+            });
+          }
+        </script>
     {% else %}
         <p class="text-muted">
             No posts yet.

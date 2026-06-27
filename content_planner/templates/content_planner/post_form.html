@@ -94,6 +94,7 @@
             {% include "content_planner/_channel_picker.html" with cf=form.channel label="Channel" %}
         {% endif %}
         {% bootstrap_field form.body_snippet %}
+        {% bootstrap_field form.hashtags %}
         {# Live, non-blocking character count with per-platform limit cues. #}
         <div id="sc-charcount" class="mb-3 small">
         </div>
