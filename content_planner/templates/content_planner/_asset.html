@@ -1,6 +1,7 @@
 {% comment %}Asset row. Expects `asset` and `show_caption`.
 Thumbnail (links to the full-size file) on the left; title (links to the asset
 edit page) and caption on the right, with a small copy button top-right.{% endcomment %}
+{% load icons %}
 <div class="d-flex gap-3 border rounded p-2 mb-2">
     <div class="flex-shrink-0">
         {% if asset.is_image %}
@@ -41,8 +42,9 @@ edit page) and caption on the right, with a small copy button top-right.{% endco
             {% if show_caption and asset.caption %}
                 <button type="button"
                         class="btn btn-sm btn-outline-secondary flex-shrink-0"
+                        title="Copy caption"
                         onclick="scCopy('sc-cap-{{ asset.pk }}', this)">
-                    Copy
+                    {% icon "copy" %}<span data-copy-label class="visually-hidden">Copy</span>
                 </button>
             {% endif %}
         </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block head_title %}
     {{ post.title }} · {{ campaign.name }} · {{ block.super }}
 {% endblock head_title %}
@@ -23,13 +24,13 @@
         </h2>
         <div class="d-flex gap-2">
             <a class="btn btn-sm btn-outline-secondary"
-               href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">Edit</a>
+               href="{% url 'content_planner:post_edit' board.slug campaign.slug post.slug %}">{% icon "pen-to-square" class="me-1" %}Edit</a>
             <form method="post"
                   action="{% url 'content_planner:post_delete' board.slug campaign.slug post.slug %}"
                   onsubmit="return confirm('Delete this post? This cannot be undone.');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline-danger">
-                    Delete
+                    {% icon "trash-can" class="me-1" %}Delete
                 </button>
             </form>
         </div>
@@ -37,16 +38,22 @@
     <div class="d-flex justify-content-between gap-2 mb-3">
         <span>
             {% if prev_post %}
-                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
                    style="max-width: 20rem"
-                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">← {{ prev_post.title }}</a>
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug prev_post.slug %}">
+                    <span class="flex-shrink-0">←&nbsp;</span>
+                    <span class="text-truncate">{{ prev_post.title }}</span>
+                </a>
             {% endif %}
         </span>
         <span class="text-end">
             {% if next_post %}
-                <a class="btn btn-sm btn-outline-secondary text-truncate"
+                <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
                    style="max-width: 20rem"
-                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">{{ next_post.title }} →</a>
+                   href="{% url 'content_planner:post_detail' board.slug campaign.slug next_post.slug %}">
+                    <span class="text-truncate">{{ next_post.title }}</span>
+                    <span class="flex-shrink-0">&nbsp;→</span>
+                </a>
             {% endif %}
         </span>
     </div>
@@ -126,8 +133,8 @@
             </div>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
-                    onclick="scCopyBody(this)">
-                Copy
+                    onclick="scCopy('sc-post-body', this)">
+                {% icon "copy" class="me-1" %}<span data-copy-label>Copy</span>
             </button>
         </div>
         {# Hidden raw copy preserves newlines (and hashtags on social) for pasting. #}
@@ -135,17 +142,6 @@
         <p>
             {{ post.body_snippet|linebreaksbr }}
         </p>
-        <script>
-          function scCopyBody(btn) {
-            var ta = document.getElementById('sc-post-body');
-            if (!ta || !navigator.clipboard) return;
-            navigator.clipboard.writeText(ta.value).then(function () {
-              var old = btn.textContent;
-              btn.textContent = 'Copied!';
-              setTimeout(function () { btn.textContent = old; }, 1500);
-            });
-          }
-        </script>
     {% endif %}
     {% if post.hashtag_list %}
         <div class="mb-3">

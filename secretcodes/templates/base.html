@@ -15,14 +15,17 @@
         } catch (e) {}
       })();
       // Generic "copy to clipboard" from an element's value/text, with feedback.
+      // Updates a [data-copy-label] span if present so an icon in the button
+      // survives the "Copied!" flash.
       function scCopy(elId, btn) {
         var el = document.getElementById(elId);
         if (!el || !navigator.clipboard) return;
         var text = el.value !== undefined ? el.value : el.textContent;
         navigator.clipboard.writeText(text).then(function () {
-          var old = btn.textContent;
-          btn.textContent = 'Copied!';
-          setTimeout(function () { btn.textContent = old; }, 1500);
+          var label = btn.querySelector('[data-copy-label]') || btn;
+          var old = label.textContent;
+          label.textContent = 'Copied!';
+          setTimeout(function () { label.textContent = old; }, 1500);
         });
       }
       function scThemeIsDark() {
@@ -363,9 +366,14 @@
             <div class="modal-content">
                 <div class="modal-header py-2">
                     <span class="modal-title small text-truncate" id="sc-lightbox-title"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
                 </div>
-                <div class="modal-body text-center" id="sc-lightbox-body"></div>
+                <div class="modal-body text-center" id="sc-lightbox-body">
+                </div>
             </div>
         </div>
     </div>
