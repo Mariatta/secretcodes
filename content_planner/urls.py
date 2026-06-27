@@ -52,6 +52,11 @@ urlpatterns = [
         name="campaign_edit",
     ),
     path(
+        "<slug:board_slug>/c/<slug:slug>/bulk/",
+        views.campaign_bulk_update,
+        name="campaign_bulk_update",
+    ),
+    path(
         "<slug:board_slug>/c/<slug:slug>/p/new/",
         views.post_create,
         name="post_create",

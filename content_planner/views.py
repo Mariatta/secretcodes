@@ -245,7 +245,38 @@ def campaign_detail(request, board, slug):
             "campaign": campaign,
             "posts": posts,
             "stats": campaign_stats(campaign),
+            "status_choices": Post.Status.choices,
         },
+    )
+
+
+@board_required
+@require_http_methods(["POST"])
+def campaign_bulk_update(request, board, slug):
+    """Apply a bulk action to the selected posts in a campaign.
+
+    Dispatches on ``action`` so new bulk operations are a single branch to add.
+    v1 supports ``set_status``.
+    """
+    campaign = get_object_or_404(Campaign, board=board, slug=slug)
+    posts = campaign.posts.filter(pk__in=request.POST.getlist("posts"))
+    count = posts.count()
+    action = request.POST.get("action")
+    if not count:
+        messages.info(request, "No posts selected.")
+    elif action == "set_status":
+        status = request.POST.get("status")
+        if status in Post.Status.values:
+            posts.update(status=status, modified_date=timezone.now())
+            messages.success(request, f"Updated {count} post{pluralize(count)}.")
+        else:
+            messages.error(request, "Pick a valid status.")
+    else:
+        messages.error(request, "Pick a bulk action.")
+    return redirect(
+        "content_planner:campaign_detail",
+        board_slug=board.slug,
+        slug=campaign.slug,
     )
 
 
