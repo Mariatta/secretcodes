@@ -100,6 +100,19 @@ def test_board_home_renders_for_owner(auth_client, board):
     assert b"Today" in resp.content
 
 
+def test_board_home_empty_state_offers_import(auth_client, board):
+    """With no campaigns, the overview still links to JSON import — importing
+    is a way to create your first campaign."""
+    resp = auth_client.get(
+        reverse("content_planner:board_home", kwargs={"board_slug": board.slug})
+    )
+    import_url = reverse(
+        "content_planner:campaign_create_from_chat",
+        kwargs={"board_slug": board.slug},
+    )
+    assert import_url.encode() in resp.content
+
+
 def test_no_external_script_or_style_resources(auth_client, board):
     """Guard: all JS/CSS is served locally — no CDNs (and thus no third-party
     cookies). Fails if a template ever adds an external script/stylesheet."""
