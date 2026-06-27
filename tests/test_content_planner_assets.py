@@ -190,6 +190,27 @@ def test_render_asset_tag_modes(board):
     assert render_asset(asset, show_caption=True)["show_caption"] is True
 
 
+def test_post_detail_image_asset_has_lightbox(auth_client, board, tmp_path, settings):
+    settings.MEDIA_ROOT = str(tmp_path)
+    campaign = Campaign.objects.create(board=board, name="C")
+    asset = Asset.objects.create(
+        board=board, name="Hero", file=SimpleUploadedFile("h.png", b"x")
+    )
+    post = Post.objects.create(campaign=campaign, title="P", channel="blog")
+    post.assets.add(asset)
+    resp = auth_client.get(
+        reverse(
+            "content_planner:post_detail",
+            kwargs={
+                "board_slug": board.slug,
+                "slug": campaign.slug,
+                "post_slug": post.slug,
+            },
+        )
+    )
+    assert b"data-lightbox=" in resp.content
+
+
 def test_post_detail_shows_asset_caption_and_edit_link(auth_client, board):
     campaign = Campaign.objects.create(board=board, name="C")
     asset = Asset.objects.create(

@@ -4,7 +4,11 @@ edit page) and caption on the right, with a small copy button top-right.{% endco
 <div class="d-flex gap-3 border rounded p-2 mb-2">
     <div class="flex-shrink-0">
         {% if asset.is_image %}
-            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+            <a href="{{ asset.media_url }}"
+               rel="noopener"
+               target="_blank"
+               data-lightbox="{{ asset.media_url }}"
+               data-lightbox-title="{{ asset.name }}">
                 <img class="sc-asset-thumb"
                      width="48"
                      height="48"
@@ -12,7 +16,12 @@ edit page) and caption on the right, with a small copy button top-right.{% endco
                      alt="{{ asset.name }}">
             </a>
         {% elif asset.is_video %}
-            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+            <a href="{{ asset.media_url }}"
+               rel="noopener"
+               target="_blank"
+               data-lightbox="{{ asset.media_url }}"
+               data-lightbox-title="{{ asset.name }}"
+               data-lightbox-type="video">
                 <video class="sc-asset-thumb"
                        width="48"
                        height="48"

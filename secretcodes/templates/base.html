@@ -353,5 +353,22 @@
             </div>
         </div>
     </footer>
+    {# Shared lightbox: any element with data-lightbox opens its media here. #}
+    <div class="modal fade"
+         id="sc-lightbox"
+         tabindex="-1"
+         aria-labelledby="sc-lightbox-title"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <span class="modal-title small text-truncate" id="sc-lightbox-title"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center" id="sc-lightbox-body"></div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'brand/lightbox.js' %}" defer></script>
 </body>
 </html>
