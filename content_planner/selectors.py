@@ -30,8 +30,12 @@ WEEK_DAYS = 7
 
 
 def board_posts(board):
-    """All posts in a board, with campaign + board preloaded for display."""
-    return Post.objects.filter(campaign__board=board).select_related("campaign__board")
+    """All posts in a board, with campaign + board + assets preloaded."""
+    return (
+        Post.objects.filter(campaign__board=board)
+        .select_related("campaign__board")
+        .prefetch_related("assets")
+    )
 
 
 def daily_sections(board, *, now=None):
@@ -119,4 +123,42 @@ def month_schedule(board, year, month):
         "label": first.strftime("%B %Y"),
         "prev": {"year": prev_year, "month": prev_month},
         "next": {"year": next_year, "month": next_month},
+    }
+
+
+def campaign_stats(campaign, *, now=None):
+    """At-a-glance dashboard numbers for a single campaign.
+
+    ``now`` is injectable for deterministic tests (used for "days until event").
+    """
+    posts = list(campaign.posts.prefetch_related("assets"))
+    inactive = set(INACTIVE_STATUSES)
+    published = sum(1 for post in posts if post.status == Post.Status.PUBLISHED)
+    planned = sum(1 for post in posts if post.status not in inactive)
+    overdue = sum(1 for post in posts if post.is_overdue)
+    expected_assets = sum(len(post.expected_asset_list) for post in posts)
+    # Count delivered against expectations: cap each post at what it expects so
+    # extra assets on one post can't mask a shortfall on another (which would
+    # contradict the missing-asset count).
+    delivered_assets = sum(
+        min(post.attached_asset_count, len(post.expected_asset_list)) for post in posts
+    )
+    posts_missing_assets = sum(1 for post in posts if post.is_missing_asset)
+
+    days_until_event = None
+    if campaign.event_date is not None:
+        now = now or timezone.now()
+        today = local_date(now, campaign.board.timezone)
+        days_until_event = (campaign.event_date - today).days
+
+    return {
+        "total_posts": len(posts),
+        "published": published,
+        "planned": planned,
+        "overdue": overdue,
+        "expected_assets": expected_assets,
+        "delivered_assets": delivered_assets,
+        "posts_missing_assets": posts_missing_assets,
+        "event_date": campaign.event_date,
+        "days_until_event": days_until_event,
     }

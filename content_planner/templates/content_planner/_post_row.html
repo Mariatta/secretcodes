@@ -17,6 +17,12 @@
         {% if post.is_overdue %}
             <span class="badge bg-danger">Overdue</span>
         {% endif %}
+        {% if post.expected_asset_list %}
+            <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}"
+                   title="Expected: {{ post.expected_asset }}">
+                {{ post.attached_asset_count }}/{{ post.expected_asset_list|length }} assets
+            </small>
+        {% endif %}
         {% include "content_planner/_status_badge.html" with value=post.status label=post.get_status_display %}
         <a class="btn btn-sm btn-outline-secondary"
            href="{% url 'content_planner:post_edit' board.slug post.campaign.slug post.slug %}">Edit</a>

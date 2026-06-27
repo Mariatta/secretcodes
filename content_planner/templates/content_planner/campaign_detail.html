@@ -35,6 +35,62 @@
                href="{% url 'content_planner:post_create' board.slug campaign.slug %}">+ Post</a>
         </div>
     </div>
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0">
+                    {{ stats.total_posts }}
+                </div>
+                <small class="text-muted">post{{ stats.total_posts|pluralize }}</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0">
+                    {{ stats.published }} / {{ stats.planned }}
+                </div>
+                <small class="text-muted">done / still planned</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0 {% if stats.posts_missing_assets %}text-warning{% endif %}">
+                    {{ stats.delivered_assets }} / {{ stats.expected_assets }}
+                </div>
+                <small class="text-muted">assets delivered / expected</small>
+                {% if stats.posts_missing_assets %}
+                    <div class="small text-warning">
+                        {{ stats.posts_missing_assets }} post{{ stats.posts_missing_assets|pluralize }} need assets
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                {% if stats.days_until_event is not None %}
+                    <div class="h4 mb-0">
+                        {% if stats.days_until_event >= 0 %}
+                            {{ stats.days_until_event }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">
+                        {% if stats.days_until_event >= 0 %}
+                            days to event
+                        {% else %}
+                            event passed
+                        {% endif %}
+                    </small>
+                {% else %}
+                    <div class="h4 mb-0 {% if stats.overdue %}text-danger{% endif %}">
+                        {{ stats.overdue }}
+                    </div>
+                    <small class="text-muted">overdue</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
     {% if campaign.narrative_notes %}
         <p>
             {{ campaign.narrative_notes|linebreaksbr }}

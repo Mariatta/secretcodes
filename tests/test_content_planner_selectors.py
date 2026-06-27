@@ -6,9 +6,10 @@ from zoneinfo import ZoneInfo
 import pytest
 from django.contrib.auth import get_user_model
 
-from content_planner.models import Campaign, ContentBoard, Post, Tag
+from content_planner.models import Asset, Campaign, ContentBoard, Post, Tag
 from content_planner.selectors import (
     WEEKDAY_HEADERS,
+    campaign_stats,
     daily_sections,
     month_schedule,
     pending_summary,
@@ -175,6 +176,75 @@ def test_month_schedule_january_wraps_to_prev_december(board):
 def test_month_schedule_december_wraps_to_next_january(board):
     grid = month_schedule(board, 2026, 12)
     assert grid["next"] == {"year": 2027, "month": 1}
+
+
+# ------------------------------------------------------------ campaign stats
+
+
+def test_campaign_stats_full(board):
+    campaign = Campaign.objects.create(
+        board=board, name="Stats", event_date=datetime.date(2026, 7, 1)
+    )
+    Post.objects.create(
+        campaign=campaign, title="Pub", channel="blog", status="published"
+    )
+    drafting = Post.objects.create(
+        campaign=campaign,
+        title="Draft",
+        channel="blog",
+        status="drafting",
+        expected_asset="hero\nsquare",
+    )
+    drafting.assets.add(Asset.objects.create(board=board, name="A"))
+    Post.objects.create(
+        campaign=campaign,
+        title="Late",
+        channel="blog",
+        status="ready",
+        scheduled_at=_at(2020, 1, 1),
+    )
+    stats = campaign_stats(campaign, now=NOW)
+    assert stats["total_posts"] == 3
+    assert stats["published"] == 1
+    assert stats["planned"] == 2  # drafting + ready
+    assert stats["overdue"] == 1
+    assert stats["expected_assets"] == 2
+    assert stats["delivered_assets"] == 1
+    assert stats["posts_missing_assets"] == 1
+    assert stats["event_date"] == datetime.date(2026, 7, 1)
+    assert stats["days_until_event"] == 16  # 2026-06-15 -> 2026-07-01
+
+
+def test_campaign_stats_delivered_capped_per_post(board):
+    campaign = Campaign.objects.create(board=board, name="Cap")
+    short = Post.objects.create(
+        campaign=campaign, title="Short", channel="blog", expected_asset="x\ny"
+    )
+    short.assets.add(Asset.objects.create(board=board, name="s1"))  # 1 of 2
+    extra = Post.objects.create(
+        campaign=campaign, title="Extra", channel="blog", expected_asset="p\nq"
+    )
+    for name in ("e1", "e2", "e3"):  # 3 attached, only 2 expected
+        extra.assets.add(Asset.objects.create(board=board, name=name))
+    stats = campaign_stats(campaign)
+    assert stats["expected_assets"] == 4
+    assert stats["delivered_assets"] == 3  # 1 + min(3, 2)
+    assert stats["posts_missing_assets"] == 1  # only the short post
+
+
+def test_campaign_stats_non_event(board):
+    campaign = Campaign.objects.create(board=board, name="NoEvent")
+    stats = campaign_stats(campaign)
+    assert stats["total_posts"] == 0
+    assert stats["days_until_event"] is None
+
+
+def test_campaign_stats_days_until_uses_real_now(board):
+    campaign = Campaign.objects.create(
+        board=board, name="Future", event_date=datetime.date(2099, 1, 1)
+    )
+    stats = campaign_stats(campaign)
+    assert stats["days_until_event"] > 0
 
 
 # ------------------------------------------------------------ tagging

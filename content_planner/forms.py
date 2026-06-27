@@ -66,6 +66,7 @@ _POST_SHARED_FIELDS = [
     "draft_url",
     "published_url",
     "assets",
+    "expected_asset",
     "notes",
 ]
 _POST_SHARED_WIDGETS = {
@@ -77,8 +78,16 @@ _POST_SHARED_WIDGETS = {
         attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"
     ),
     "body_snippet": forms.Textarea(attrs={"rows": 10}),
+    "expected_asset": forms.Textarea(attrs={"rows": 2}),
     "notes": forms.Textarea(attrs={"rows": 3}),
 }
+
+
+def _create_uploaded_asset(board, uploaded_file):
+    """Create a board asset from a file uploaded on the post form."""
+    return Asset.objects.create(
+        board=board, name=uploaded_file.name, file=uploaded_file
+    )
 
 
 def _configure_shared_post_fields(form, campaign):
@@ -90,6 +99,8 @@ def _configure_shared_post_fields(form, campaign):
     as a specific date (``scheduled_at``); whichever you don't use is cleared in
     ``clean`` so the model computes it. ``is_all_day`` applies either way.
     """
+    # It holds a list (one per line), so label it plural to match the detail page.
+    form.fields["expected_asset"].label = "Expected assets"
     # Accept a full datetime or a bare date (all-day posts only need a date).
     form.fields["scheduled_at"].input_formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d"]
     if campaign.event_date is None:
@@ -113,18 +124,18 @@ def _configure_shared_post_fields(form, campaign):
             "A specific date/time in the board's timezone. Stored as an offset "
             "from the event date, so it still moves if the event date changes."
         )
-    # Scope the asset picker to the campaign's board (form-layer board isolation
-    # — a cross-board asset id is rejected as an invalid choice). Until the board
-    # has any assets there's nothing to pick, so hide the field rather than show
-    # a confusing empty box. (Asset library: PR 2.5.)
-    board_assets = Asset.objects.filter(board=campaign.board)
-    if board_assets.exists():
-        form.fields["assets"].queryset = board_assets
-        form.fields["assets"].help_text = (
-            "Attach images or files from this board's asset library."
-        )
-    else:
-        del form.fields["assets"]
+    # Scope the asset picker to the campaign's board, excluding archived assets
+    # (form-layer board isolation — a cross-board asset id is an invalid choice).
+    # The field is always present; the template renders it as a thumbnail grid.
+    form.fields["assets"].queryset = Asset.objects.filter(board=campaign.board).exclude(
+        status=Asset.Status.ARCHIVED
+    )
+    # Inline upload: create + attach a brand-new asset without leaving the post.
+    form.fields["new_asset"] = forms.FileField(
+        required=False,
+        label="Upload a new asset",
+        help_text="Creates an asset on this board and attaches it to the post.",
+    )
 
 
 def _resolve_schedule_mode(cleaned_data):
@@ -171,6 +182,9 @@ class PostForm(forms.ModelForm):
         if commit:
             post.save()
             self.save_m2m()
+            uploaded = self.cleaned_data.get("new_asset")
+            if uploaded:
+                post.assets.add(_create_uploaded_asset(self.campaign.board, uploaded))
         return post
 
 
@@ -206,6 +220,10 @@ class PostCreateForm(forms.ModelForm):
         data = self.cleaned_data
         shared = {name: data[name] for name in _POST_SHARED_FIELDS if name in data}
         assets = shared.pop("assets", None)
+        uploaded = data.get("new_asset")
+        extra_asset = (
+            _create_uploaded_asset(self.campaign.board, uploaded) if uploaded else None
+        )
         posts = []
         for channel in data["channels"]:
             post = Post(
@@ -217,5 +235,20 @@ class PostCreateForm(forms.ModelForm):
             post.save()
             if assets is not None:
                 post.assets.set(assets)
+            if extra_asset is not None:
+                post.assets.add(extra_asset)
             posts.append(post)
         return posts
+
+
+class AssetForm(forms.ModelForm):
+    """Create / edit a board asset. Status renders as a dot+pill toggle group."""
+
+    class Meta:
+        model = Asset
+        fields = ["name", "kind", "file", "source_url", "caption", "status", "notes"]
+        widgets = {
+            "status": forms.RadioSelect(attrs={"class": "btn-check"}),
+            "caption": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 2}),
+        }

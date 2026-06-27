@@ -352,6 +352,48 @@ def test_is_overdue_false_for_future_post(board):
     assert post.is_overdue is False
 
 
+def test_is_missing_asset_when_expected_and_none(board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    post = Post.objects.create(
+        campaign=campaign, title="Needs", channel="blog", expected_asset="hero image"
+    )
+    assert post.is_missing_asset is True
+
+
+def test_is_missing_asset_false_when_attached(board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    asset = Asset.objects.create(board=board, name="Hero")
+    post = Post.objects.create(
+        campaign=campaign, title="Has", channel="blog", expected_asset="hero image"
+    )
+    post.assets.add(asset)
+    assert post.is_missing_asset is False
+
+
+def test_is_missing_asset_false_when_not_expected(board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    post = Post.objects.create(campaign=campaign, title="NoExpect", channel="blog")
+    assert post.is_missing_asset is False
+
+
+def test_expected_asset_list_and_partial_attachment(board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    post = Post.objects.create(
+        campaign=campaign,
+        title="Multi",
+        channel="blog",
+        expected_asset="hero\n square \n\nsquare",
+    )
+    assert post.expected_asset_list == ["hero", "square", "square"]
+    assert post.is_missing_asset is True  # 3 expected, 0 attached
+    post.assets.add(Asset.objects.create(board=board, name="A1"))
+    assert post.is_missing_asset is True  # 3 expected, 1 attached
+    post.assets.add(Asset.objects.create(board=board, name="A2"))
+    post.assets.add(Asset.objects.create(board=board, name="A3"))
+    assert post.attached_asset_count == 3
+    assert post.is_missing_asset is False  # 3 expected, 3 attached
+
+
 def test_compute_scheduled_at_default_time():
     result = compute_scheduled_at(
         event_date=datetime.date(2026, 5, 15),

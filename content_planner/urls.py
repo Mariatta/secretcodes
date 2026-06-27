@@ -9,6 +9,18 @@ urlpatterns = [
     path("new/", views.board_create, name="board_create"),
     path("<slug:board_slug>/", views.board_home, name="board_home"),
     path("<slug:board_slug>/schedule/", views.schedule, name="schedule"),
+    path("<slug:board_slug>/assets/", views.asset_list, name="asset_list"),
+    path("<slug:board_slug>/assets/new/", views.asset_create, name="asset_create"),
+    path(
+        "<slug:board_slug>/assets/<int:pk>/edit/",
+        views.asset_edit,
+        name="asset_edit",
+    ),
+    path(
+        "<slug:board_slug>/assets/<int:pk>/archive/",
+        views.asset_archive,
+        name="asset_archive",
+    ),
     path(
         "<slug:board_slug>/campaigns/",
         views.campaign_list,

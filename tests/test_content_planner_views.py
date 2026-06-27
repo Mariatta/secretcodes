@@ -268,6 +268,18 @@ def test_campaign_detail(auth_client, board):
     assert b"Detail Me" in resp.content
 
 
+def test_campaign_detail_includes_stats(auth_client, board):
+    campaign = Campaign.objects.create(board=board, name="Stats Me")
+    Post.objects.create(campaign=campaign, title="P", channel="blog")
+    resp = auth_client.get(
+        reverse(
+            "content_planner:campaign_detail",
+            kwargs={"board_slug": board.slug, "slug": campaign.slug},
+        )
+    )
+    assert resp.context["stats"]["total_posts"] == 1
+
+
 # ------------------------------------------------------------ posts
 
 
@@ -334,6 +346,29 @@ def test_post_create_fans_out_to_multiple_channels(auth_client, user, board, cam
     }
     assert all(p.created_by == user for p in posts)
     assert all(p.body_snippet == "shared body" for p in posts)
+
+
+def test_post_create_records_expected_asset(auth_client, board, campaign):
+    resp = auth_client.post(
+        reverse(
+            "content_planner:post_create",
+            kwargs={"board_slug": board.slug, "slug": campaign.slug},
+        ),
+        {
+            "title": "Hero post",
+            "channels": ["blog"],
+            "status": "drafting",
+            "expected_asset": "hero image",
+            "body_snippet": "",
+            "draft_url": "",
+            "published_url": "",
+            "notes": "",
+        },
+    )
+    assert resp.status_code == 302
+    post = Post.objects.get(title="Hero post")
+    assert post.expected_asset == "hero image"
+    assert post.is_missing_asset is True
 
 
 def test_post_create_requires_a_channel(auth_client, board, campaign):
@@ -406,12 +441,60 @@ def test_post_detail(auth_client, board, campaign):
     assert b"Show Me" in resp.content
 
 
+def test_post_detail_prev_next(auth_client, board, campaign):
+    import datetime
+    from zoneinfo import ZoneInfo
+
+    def _detail_url(post):
+        return reverse(
+            "content_planner:post_detail",
+            kwargs={
+                "board_slug": board.slug,
+                "slug": campaign.slug,
+                "post_slug": post.slug,
+            },
+        )
+
+    utc = ZoneInfo("UTC")
+    p1 = Post.objects.create(
+        campaign=campaign,
+        title="One",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 1, tzinfo=utc),
+    )
+    p2 = Post.objects.create(
+        campaign=campaign,
+        title="Two",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 2, tzinfo=utc),
+    )
+    p3 = Post.objects.create(
+        campaign=campaign,
+        title="Three",
+        channel="blog",
+        scheduled_at=datetime.datetime(2026, 1, 3, tzinfo=utc),
+    )
+
+    middle = auth_client.get(_detail_url(p2))
+    assert middle.context["prev_post"] == p1
+    assert middle.context["next_post"] == p3
+
+    first = auth_client.get(_detail_url(p1))
+    assert first.context["prev_post"] is None
+    assert first.context["next_post"] == p2
+
+    last = auth_client.get(_detail_url(p3))
+    assert last.context["prev_post"] == p2
+    assert last.context["next_post"] is None
+
+
 # ------------------------------------------------------------ PostForm scoping
 
 
-def test_post_form_hides_assets_when_board_has_none(board, campaign):
+def test_post_form_asset_field_present_but_empty(board, campaign):
     form = PostForm(campaign=campaign)
-    assert "assets" not in form.fields
+    assert "assets" in form.fields
+    assert not form.fields["assets"].queryset.exists()
 
 
 def test_post_form_rejects_cross_board_asset(board, campaign):

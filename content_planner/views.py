@@ -8,10 +8,16 @@ from django.template.defaultfilters import pluralize
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .forms import BoardForm, CampaignForm, PostCreateForm, PostForm
-from .models import Campaign, ContentBoard, Post
+from .billing import check_quota
+from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
+from .models import Asset, Campaign, ContentBoard, Post
 from .permissions import can_access_board, is_content_user
-from .selectors import daily_sections, month_schedule, pending_summary
+from .selectors import (
+    campaign_stats,
+    daily_sections,
+    month_schedule,
+    pending_summary,
+)
 
 
 def _accessible_boards(user):
@@ -19,6 +25,15 @@ def _accessible_boards(user):
     owned = ContentBoard.objects.filter(owner=user)
     collab = ContentBoard.objects.filter(collaborators__user=user)
     return (owned | collab).distinct()
+
+
+def _asset_picker_context(form):
+    """Pickable assets + currently-selected ids, for the thumbnail picker."""
+    selected = {str(value) for value in (form["assets"].value() or [])}
+    return {
+        "pickable_assets": form.fields["assets"].queryset,
+        "selected_asset_ids": selected,
+    }
 
 
 def board_required(view):
@@ -162,11 +177,16 @@ def campaign_edit(request, board, slug):
 @board_required
 def campaign_detail(request, board, slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
-    posts = campaign.posts.select_related("campaign__board")
+    posts = campaign.posts.select_related("campaign__board").prefetch_related("assets")
     return render(
         request,
         "content_planner/campaign_detail.html",
-        {"board": board, "campaign": campaign, "posts": posts},
+        {
+            "board": board,
+            "campaign": campaign,
+            "posts": posts,
+            "stats": campaign_stats(campaign),
+        },
     )
 
 
@@ -175,7 +195,7 @@ def campaign_detail(request, board, slug):
 def post_create(request, board, slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     if request.method == "POST":
-        form = PostCreateForm(request.POST, campaign=campaign)
+        form = PostCreateForm(request.POST, request.FILES, campaign=campaign)
         if form.is_valid():
             posts = form.create_posts(request.user)
             messages.success(
@@ -191,7 +211,13 @@ def post_create(request, board, slug):
     return render(
         request,
         "content_planner/post_form.html",
-        {"board": board, "campaign": campaign, "form": form, "is_create": True},
+        {
+            "board": board,
+            "campaign": campaign,
+            "form": form,
+            "is_create": True,
+            **_asset_picker_context(form),
+        },
     )
 
 
@@ -201,7 +227,7 @@ def post_edit(request, board, slug, post_slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
     if request.method == "POST":
-        form = PostForm(request.POST, campaign=campaign, instance=post)
+        form = PostForm(request.POST, request.FILES, campaign=campaign, instance=post)
         if form.is_valid():
             post = form.save()
             messages.success(request, "Post updated.")
@@ -222,6 +248,7 @@ def post_edit(request, board, slug, post_slug):
             "post": post,
             "form": form,
             "is_create": False,
+            **_asset_picker_context(form),
         },
     )
 
@@ -230,8 +257,83 @@ def post_edit(request, board, slug, post_slug):
 def post_detail(request, board, slug, post_slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
+    # Previous / next within the campaign, in the campaign's post order.
+    siblings = list(campaign.posts.all())
+    index = [sibling.pk for sibling in siblings].index(post.pk)
+    prev_post = siblings[index - 1] if index > 0 else None
+    next_post = siblings[index + 1] if index + 1 < len(siblings) else None
     return render(
         request,
         "content_planner/post_detail.html",
-        {"board": board, "campaign": campaign, "post": post},
+        {
+            "board": board,
+            "campaign": campaign,
+            "post": post,
+            "prev_post": prev_post,
+            "next_post": next_post,
+        },
     )
+
+
+@board_required
+def asset_list(request, board):
+    """The board's asset library — active assets and an archived section."""
+    return render(
+        request,
+        "content_planner/asset_list.html",
+        {
+            "board": board,
+            "active_assets": board.assets.exclude(status=Asset.Status.ARCHIVED),
+            "archived_assets": board.assets.filter(status=Asset.Status.ARCHIVED),
+        },
+    )
+
+
+@board_required
+@require_http_methods(["GET", "POST"])
+def asset_create(request, board):
+    if request.method == "POST":
+        form = AssetForm(request.POST, request.FILES)
+        if form.is_valid():
+            check_quota(request.user, "assets", board.assets.count())
+            asset = form.save(commit=False)
+            asset.board = board
+            asset.save()
+            messages.success(request, f"Added asset '{asset.name}'.")
+            return redirect("content_planner:asset_list", board_slug=board.slug)
+    else:
+        form = AssetForm()
+    return render(
+        request,
+        "content_planner/asset_form.html",
+        {"board": board, "form": form, "is_create": True},
+    )
+
+
+@board_required
+@require_http_methods(["GET", "POST"])
+def asset_edit(request, board, pk):
+    asset = get_object_or_404(Asset, board=board, pk=pk)
+    if request.method == "POST":
+        form = AssetForm(request.POST, request.FILES, instance=asset)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Asset updated.")
+            return redirect("content_planner:asset_list", board_slug=board.slug)
+    else:
+        form = AssetForm(instance=asset)
+    return render(
+        request,
+        "content_planner/asset_form.html",
+        {"board": board, "form": form, "asset": asset, "is_create": False},
+    )
+
+
+@board_required
+@require_http_methods(["POST"])
+def asset_archive(request, board, pk):
+    asset = get_object_or_404(Asset, board=board, pk=pk)
+    asset.status = Asset.Status.ARCHIVED
+    asset.save()
+    messages.success(request, f"Archived '{asset.name}'.")
+    return redirect("content_planner:asset_list", board_slug=board.slug)
