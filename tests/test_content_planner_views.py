@@ -440,6 +440,64 @@ def test_post_edit_get(auth_client, board, campaign):
     assert resp.status_code == 200
 
 
+def _bulk_url(board, campaign):
+    return reverse(
+        "content_planner:campaign_bulk_update",
+        kwargs={"board_slug": board.slug, "slug": campaign.slug},
+    )
+
+
+def test_bulk_set_status_updates_selected(auth_client, board, campaign):
+    p1 = Post.objects.create(campaign=campaign, title="A", channel="blog")
+    p2 = Post.objects.create(campaign=campaign, title="B", channel="blog")
+    resp = auth_client.post(
+        _bulk_url(board, campaign),
+        {"posts": [p1.pk, p2.pk], "action": "set_status", "status": "published"},
+    )
+    assert resp.status_code == 302
+    p1.refresh_from_db()
+    p2.refresh_from_db()
+    assert p1.status == "published"
+    assert p2.status == "published"
+
+
+def test_bulk_no_selection_changes_nothing(auth_client, board, campaign):
+    post = Post.objects.create(
+        campaign=campaign, title="A", channel="blog", status="drafting"
+    )
+    resp = auth_client.post(
+        _bulk_url(board, campaign), {"action": "set_status", "status": "published"}
+    )
+    assert resp.status_code == 302
+    post.refresh_from_db()
+    assert post.status == "drafting"
+
+
+def test_bulk_invalid_status_rejected(auth_client, board, campaign):
+    post = Post.objects.create(
+        campaign=campaign, title="A", channel="blog", status="drafting"
+    )
+    resp = auth_client.post(
+        _bulk_url(board, campaign),
+        {"posts": [post.pk], "action": "set_status", "status": "bogus"},
+    )
+    assert resp.status_code == 302
+    post.refresh_from_db()
+    assert post.status == "drafting"
+
+
+def test_bulk_unknown_action_rejected(auth_client, board, campaign):
+    post = Post.objects.create(
+        campaign=campaign, title="A", channel="blog", status="drafting"
+    )
+    resp = auth_client.post(
+        _bulk_url(board, campaign), {"posts": [post.pk], "action": "frobnicate"}
+    )
+    assert resp.status_code == 302
+    post.refresh_from_db()
+    assert post.status == "drafting"
+
+
 def test_post_delete(auth_client, board, campaign):
     post = Post.objects.create(campaign=campaign, title="Doomed", channel="blog")
     resp = auth_client.post(
