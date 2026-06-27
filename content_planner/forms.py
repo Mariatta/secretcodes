@@ -33,6 +33,9 @@ class CampaignForm(forms.ModelForm):
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "narrative_notes": forms.Textarea(attrs={"rows": 3}),
+            "hashtags": forms.TextInput(
+                attrs={"data-tag-input": "", "data-placeholder": "Add a hashtag…"}
+            ),
         }
 
     def __init__(self, *args, board, **kwargs):
@@ -80,6 +83,9 @@ _POST_SHARED_WIDGETS = {
     ),
     "body_snippet": forms.Textarea(attrs={"rows": 10}),
     "expected_asset": forms.Textarea(attrs={"rows": 2}),
+    "hashtags": forms.TextInput(
+        attrs={"data-tag-input": "", "data-placeholder": "Add a hashtag…"}
+    ),
     "notes": forms.Textarea(attrs={"rows": 3}),
 }
 

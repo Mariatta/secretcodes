@@ -37,6 +37,7 @@ def campaign_to_export_dict(campaign):
             ),
             "narrative_notes": campaign.narrative_notes,
             "source_url": campaign.source_url,
+            "hashtags": campaign.hashtags,
             "creation_date": campaign.creation_date.isoformat(),
             "modified_date": campaign.modified_date.isoformat(),
         },
@@ -54,6 +55,7 @@ def campaign_to_export_dict(campaign):
                 "draft_url": post.draft_url,
                 "published_url": post.published_url,
                 "expected_asset": post.expected_asset,
+                "hashtags": post.hashtags,
                 "notes": post.notes,
                 "created_by": (post.created_by.username if post.created_by else None),
             }

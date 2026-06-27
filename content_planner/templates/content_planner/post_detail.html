@@ -71,17 +71,6 @@
                         <span class="badge bg-warning text-dark">Missing asset</span>
                     {% endif %}
                 </dd>
-                {% if post.hashtag_list %}
-                    <dt class="col-sm-4">
-                        Hashtags
-                    </dt>
-                    <dd class="col-sm-8">
-                        {{ post.hashtag_list|join:" " }}
-                        {% if post.channel not in post.SOCIAL_CHANNELS %}
-                            <span class="text-muted small">(not added on copy — non-social channel)</span>
-                        {% endif %}
-                    </dd>
-                {% endif %}
                 {% if post.expected_asset_list %}
                     <dt class="col-sm-4">
                         Expected assets
@@ -176,6 +165,16 @@
             });
           }
         </script>
+    {% endif %}
+    {% if post.hashtag_list %}
+        <div class="mb-3">
+            {% for tag in post.hashtag_list %}
+                <span class="badge rounded-pill text-bg-secondary">{{ tag }}</span>
+            {% endfor %}
+            {% if post.channel not in post.SOCIAL_CHANNELS %}
+                <span class="text-muted small">(not appended on copy — non-social channel)</span>
+            {% endif %}
+        </div>
     {% endif %}
     {% if post.notes %}
         <div class="fw-bold mb-2">
