@@ -28,10 +28,10 @@
                 {% for week in grid.weeks %}
                     <tr>
                         {% for cell in week %}
-                            <td class="align-top{% if not cell.in_month %} bg-body-tertiary text-muted{% endif %}"
+                            <td class="align-top{% if not cell.in_month %} sc-cal-outside{% endif %}"
                                 style="width: 14.28%;
                                        height: 7rem">
-                                <div class="small mb-1{% if cell.date == today %} sc-today{% endif %}">
+                                <div class="small mb-1 sc-cal-daynum{% if cell.date == today %} sc-today{% endif %}">
                                     {{ cell.date.day }}
                                     {% if cell.date == today %}
                                         · today
