@@ -1,0 +1,154 @@
+{% extends "../base.html" %}
+{% load allauth i18n %}
+{% load django_bootstrap5 %}
+{% load static %}
+{% block head_title %}
+    QR code customizer
+{% endblock head_title %}
+{% block body %}
+{% endblock body %}
+{% block content %}
+    <div class="row g-4">
+        <div class="col-md-6">
+            <form id="qr-customizer-form"
+                  action="{% url post_url %}"
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="form">
+                {% csrf_token %}
+                {% bootstrap_form qr_preview_form %}
+                {% bootstrap_button button_type="submit" content="Save QR Code" %}
+                {% bootstrap_button button_type="reset" content="Reset" %}
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="sc-qr-preview">
+                <p class="sc-mono small sc-qr-preview__label">
+                    Live preview
+                </p>
+                <img id="qr-preview-image" alt="QR code preview" hidden />
+                <p id="qr-preview-placeholder" class="text-muted small">
+                    Fill in the URL and slug to see a preview. Tweak the colors
+                    and logo until it looks right — nothing is saved until you
+                    press "Save QR Code".
+                </p>
+                <a id="qr-preview-download"
+                   class="btn btn-outline-secondary btn-sm mt-2"
+                   download="qr-code.png"
+                   hidden>Download preview</a>
+            </div>
+            {% if result_url %}
+                <div class="sc-qr-preview mt-4">
+                    <p class="sc-mono small sc-qr-preview__label">
+                        Saved
+                    </p>
+                    <a href="{{ result_url }}">{{ result_url }}</a>
+                    {% if qr_image_presigned %}
+                        <img src="{{ qr_image_presigned }}" alt="Saved QR Code" />
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        (function () {
+            const form = document.getElementById("qr-customizer-form");
+            const image = document.getElementById("qr-preview-image");
+            const placeholder = document.getElementById("qr-preview-placeholder");
+            const download = document.getElementById("qr-preview-download");
+            const previewUrl = "{% url 'qrcode_preview' %}";
+            let timer = null;
+            let blobUrl = null;
+            let inFlight = null;
+
+            function showPreview(blob) {
+                if (blobUrl) URL.revokeObjectURL(blobUrl);
+                blobUrl = URL.createObjectURL(blob);
+                image.src = blobUrl;
+                image.hidden = false;
+                placeholder.hidden = true;
+                download.href = blobUrl;
+                const description = form.elements["description"].value.trim();
+                download.download = (description || "qr-code") + ".png";
+                download.hidden = false;
+            }
+
+            function hidePreview() {
+                image.hidden = true;
+                download.hidden = true;
+                placeholder.hidden = false;
+            }
+
+            async function refreshPreview() {
+                if (inFlight) inFlight.abort();
+                inFlight = new AbortController();
+                try {
+                    const response = await fetch(previewUrl, {
+                        method: "POST",
+                        body: new FormData(form),
+                        signal: inFlight.signal,
+                    });
+                    if (!response.ok) {
+                        hidePreview();
+                        return;
+                    }
+                    showPreview(await response.blob());
+                } catch (err) {
+                    if (err.name !== "AbortError") hidePreview();
+                }
+            }
+
+            function scheduleRefresh() {
+                clearTimeout(timer);
+                timer = setTimeout(refreshPreview, 300);
+            }
+
+            // Each color field is a swatch (name ..._0) paired with a hex
+            // text box (name ..._1). Keep the two in sync so typing a code
+            // moves the swatch and vice versa.
+            const hexPattern = /^#[0-9a-fA-F]{6}$/;
+            form.querySelectorAll(".sc-color-swatch").forEach(function (swatch) {
+                const hex = form.querySelector(
+                    '[name="' + swatch.name.replace(/_0$/, "_1") + '"]'
+                );
+                if (!hex) return;
+                swatch.addEventListener("input", function () {
+                    hex.value = swatch.value;
+                });
+                hex.addEventListener("input", function () {
+                    if (hexPattern.test(hex.value.trim())) {
+                        swatch.value = hex.value.trim();
+                    }
+                });
+            });
+
+            // The gradient color only applies to gradient color styles, so
+            // hide its field while a solid color style is selected.
+            const maskSelect = form.elements["color_mask_style"];
+            const gradientInput = form.querySelector('[name="gradient_color_1"]');
+            const gradientField = gradientInput
+                ? gradientInput.closest(".mb-3, .form-group, .row")
+                : null;
+
+            function toggleGradientField() {
+                if (!gradientField || !maskSelect) return;
+                gradientField.hidden = maskSelect.value === "solid";
+            }
+
+            form.addEventListener("input", scheduleRefresh);
+            form.addEventListener("change", function () {
+                toggleGradientField();
+                scheduleRefresh();
+            });
+            form.addEventListener("reset", function () {
+                clearTimeout(timer);
+                setTimeout(function () {
+                    toggleGradientField();
+                    refreshPreview();
+                }, 0);
+            });
+
+            toggleGradientField();
+        })();
+    </script>
+{% endblock content %}

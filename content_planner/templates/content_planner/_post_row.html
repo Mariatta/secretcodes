@@ -1,0 +1,30 @@
+{% comment %}One post line. Expects `board` and `post`.{% endcomment %}
+<li class="list-group-item d-flex justify-content-between align-items-center">
+    <span>
+        <a href="{% url 'content_planner:post_detail' board.slug post.campaign.slug post.slug %}">{{ post.title }}</a>
+        <small class="text-muted">· {{ post.get_channel_display }} · {{ post.campaign.name }}</small>
+    </span>
+    <span class="text-end d-flex align-items-center gap-2">
+        {% if post.scheduled_at %}
+            <small class="text-muted">
+                {% if post.is_all_day %}
+                    {{ post.scheduled_at|date:"M j" }}
+                {% else %}
+                    {{ post.scheduled_at|date:"M j, P" }}
+                {% endif %}
+            </small>
+        {% endif %}
+        {% if post.is_overdue %}
+            <span class="badge bg-danger">Overdue</span>
+        {% endif %}
+        {% if post.expected_asset_list %}
+            <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}"
+                   title="Expected: {{ post.expected_asset }}">
+                {{ post.attached_asset_count }}/{{ post.expected_asset_list|length }} assets
+            </small>
+        {% endif %}
+        {% include "content_planner/_status_badge.html" with value=post.status label=post.get_status_display %}
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{% url 'content_planner:post_edit' board.slug post.campaign.slug post.slug %}">Edit</a>
+    </span>
+</li>

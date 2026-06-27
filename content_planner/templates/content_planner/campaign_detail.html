@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block head_title %}
+    {{ campaign.name }} · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ campaign.name }}
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="h4 mb-1">
+                {{ campaign.name }}
+            </h2>
+            {% if campaign.event_date %}
+                <p class="text-muted mb-1">
+                    Event-anchored · {{ campaign.event_date|date:"M j, Y" }}
+                </p>
+            {% endif %}
+            {% for tag in campaign.tags.all %}
+                <span class="badge bg-light text-dark border">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+        <div class="text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary"
+               href="{% url 'content_planner:campaign_export' board.slug campaign.slug %}?view=html">View as JSON</a>
+            <a class="btn btn-sm btn-outline-secondary"
+               href="{% url 'content_planner:campaign_edit' board.slug campaign.slug %}">Edit</a>
+            <a class="btn btn-sm btn-primary"
+               href="{% url 'content_planner:post_create' board.slug campaign.slug %}">+ Post</a>
+        </div>
+    </div>
+    <div class="row g-2 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0">
+                    {{ stats.total_posts }}
+                </div>
+                <small class="text-muted">post{{ stats.total_posts|pluralize }}</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0">
+                    {{ stats.published }} / {{ stats.planned }}
+                </div>
+                <small class="text-muted">done / still planned</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                <div class="h4 mb-0 {% if stats.posts_missing_assets %}text-warning{% endif %}">
+                    {{ stats.delivered_assets }} / {{ stats.expected_assets }}
+                </div>
+                <small class="text-muted">assets delivered / expected</small>
+                {% if stats.posts_missing_assets %}
+                    <div class="small text-warning">
+                        {{ stats.posts_missing_assets }} post{{ stats.posts_missing_assets|pluralize }} need assets
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 text-center h-100">
+                {% if stats.days_until_event is not None %}
+                    <div class="h4 mb-0">
+                        {% if stats.days_until_event >= 0 %}
+                            {{ stats.days_until_event }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">
+                        {% if stats.days_until_event >= 0 %}
+                            days to event
+                        {% else %}
+                            event passed
+                        {% endif %}
+                    </small>
+                {% else %}
+                    <div class="h4 mb-0 {% if stats.overdue %}text-danger{% endif %}">
+                        {{ stats.overdue }}
+                    </div>
+                    <small class="text-muted">overdue</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if campaign.narrative_notes %}
+        <p>
+            {{ campaign.narrative_notes|linebreaksbr }}
+        </p>
+    {% endif %}
+    {% if campaign.source_url %}
+        <p>
+            <a href="{{ campaign.source_url }}" rel="noopener" target="_blank">Planning source ↗</a>
+        </p>
+    {% endif %}
+    <h3 class="h5 mt-4">
+        Posts
+    </h3>
+    {% if posts %}
+        <ul class="list-group">
+            {% for post in posts %}
+                {% include "content_planner/_post_row.html" %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            No posts yet.
+        </p>
+    {% endif %}
+{% endblock content %}
