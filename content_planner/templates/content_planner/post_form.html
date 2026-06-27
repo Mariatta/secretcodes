@@ -39,7 +39,7 @@
             Please fix the errors highlighted below.
         </div>
     {% endif %}
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% bootstrap_field form.title %}
         {% include "content_planner/_status_picker.html" with field=form.status %}
@@ -106,9 +106,45 @@
             </div>
         </div>
         {% bootstrap_field form.expected_asset %}
-        {% if form.fields.assets %}
-            {% bootstrap_field form.assets %}
-        {% endif %}
+        <div class="mb-3">
+            <label class="form-label d-block">
+                Assets
+            </label>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                {% for asset in pickable_assets %}
+                    <label class="sc-asset-pick">
+                        <input type="checkbox"
+                               name="assets"
+                               value="{{ asset.pk }}"
+                               class="visually-hidden"
+                               {% if asset.pk|stringformat:"s" in selected_asset_ids %}checked{% endif %}>
+                        {% if asset.is_image %}
+                            <img class="sc-asset-thumb"
+                                 width="48"
+                                 height="48"
+                                 src="{{ asset.media_url }}"
+                                 alt="{{ asset.name }}">
+                        {% elif asset.is_video %}
+                            <video class="sc-asset-thumb"
+                                   width="48"
+                                   height="48"
+                                   src="{{ asset.media_url }}#t=0.1"
+                                   muted
+                                   preload="metadata">
+                            </video>
+                        {% else %}
+                            <span class="sc-asset-thumb d-inline-flex align-items-center justify-content-center small">{{ asset.get_kind_display }}</span>
+                        {% endif %}
+                        <span class="small text-truncate" style="max-width: 80px">{{ asset.name }}</span>
+                    </label>
+                {% empty %}
+                    <p class="text-muted small mb-0">
+                        No assets in this board yet — upload one below.
+                    </p>
+                {% endfor %}
+            </div>
+            {% bootstrap_field form.new_asset %}
+        </div>
         {% bootstrap_field form.notes %}
         <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">

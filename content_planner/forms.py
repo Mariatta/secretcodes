@@ -78,8 +78,16 @@ _POST_SHARED_WIDGETS = {
         attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"
     ),
     "body_snippet": forms.Textarea(attrs={"rows": 10}),
+    "expected_asset": forms.Textarea(attrs={"rows": 2}),
     "notes": forms.Textarea(attrs={"rows": 3}),
 }
+
+
+def _create_uploaded_asset(board, uploaded_file):
+    """Create a board asset from a file uploaded on the post form."""
+    return Asset.objects.create(
+        board=board, name=uploaded_file.name, file=uploaded_file
+    )
 
 
 def _configure_shared_post_fields(form, campaign):
@@ -114,20 +122,18 @@ def _configure_shared_post_fields(form, campaign):
             "A specific date/time in the board's timezone. Stored as an offset "
             "from the event date, so it still moves if the event date changes."
         )
-    # Scope the asset picker to the campaign's board (form-layer board isolation
-    # — a cross-board asset id is rejected as an invalid choice). Archived assets
-    # are excluded. Until the board has any pickable assets there's nothing to
-    # pick, so hide the field rather than show a confusing empty box.
-    board_assets = Asset.objects.filter(board=campaign.board).exclude(
+    # Scope the asset picker to the campaign's board, excluding archived assets
+    # (form-layer board isolation — a cross-board asset id is an invalid choice).
+    # The field is always present; the template renders it as a thumbnail grid.
+    form.fields["assets"].queryset = Asset.objects.filter(board=campaign.board).exclude(
         status=Asset.Status.ARCHIVED
     )
-    if board_assets.exists():
-        form.fields["assets"].queryset = board_assets
-        form.fields["assets"].help_text = (
-            "Attach images or files from this board's asset library."
-        )
-    else:
-        del form.fields["assets"]
+    # Inline upload: create + attach a brand-new asset without leaving the post.
+    form.fields["new_asset"] = forms.FileField(
+        required=False,
+        label="Upload a new asset",
+        help_text="Creates an asset on this board and attaches it to the post.",
+    )
 
 
 def _resolve_schedule_mode(cleaned_data):
@@ -174,6 +180,9 @@ class PostForm(forms.ModelForm):
         if commit:
             post.save()
             self.save_m2m()
+            uploaded = self.cleaned_data.get("new_asset")
+            if uploaded:
+                post.assets.add(_create_uploaded_asset(self.campaign.board, uploaded))
         return post
 
 
@@ -209,6 +218,10 @@ class PostCreateForm(forms.ModelForm):
         data = self.cleaned_data
         shared = {name: data[name] for name in _POST_SHARED_FIELDS if name in data}
         assets = shared.pop("assets", None)
+        uploaded = data.get("new_asset")
+        extra_asset = (
+            _create_uploaded_asset(self.campaign.board, uploaded) if uploaded else None
+        )
         posts = []
         for channel in data["channels"]:
             post = Post(
@@ -220,6 +233,8 @@ class PostCreateForm(forms.ModelForm):
             post.save()
             if assets is not None:
                 post.assets.set(assets)
+            if extra_asset is not None:
+                post.assets.add(extra_asset)
             posts.append(post)
         return posts
 

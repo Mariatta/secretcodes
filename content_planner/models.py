@@ -347,13 +347,13 @@ class Post(BaseModel):
         max_length=20, choices=Status.choices, default=Status.DRAFTING
     )
     assets = models.ManyToManyField(Asset, related_name="posts", blank=True)
-    expected_asset = models.CharField(
-        max_length=200,
+    expected_asset = models.TextField(
         blank=True,
         default="",
         help_text=(
-            "What asset this post needs, e.g. “hero image” or “square graphic”. "
-            "Leave blank if none. Flagged as missing until an asset is attached."
+            "Assets this post needs, one per line (e.g. “hero image”, "
+            "“square graphic”). Flagged as missing until that many assets are "
+            "attached. Leave blank if none."
         ),
     )
     notes = models.TextField(blank=True, default="")
@@ -398,9 +398,21 @@ class Post(BaseModel):
         )
 
     @property
+    def expected_asset_list(self):
+        """The expected-asset briefs as a cleaned list (one per line)."""
+        return [
+            line.strip() for line in self.expected_asset.splitlines() if line.strip()
+        ]
+
+    @property
+    def attached_asset_count(self):
+        """How many assets are attached (uses the prefetch cache when present)."""
+        return len(self.assets.all())
+
+    @property
     def is_missing_asset(self):
-        """True if the post declares an expected asset but none is attached."""
-        return bool(self.expected_asset) and not self.assets.exists()
+        """True if fewer assets are attached than the post expects."""
+        return len(self.expected_asset_list) > self.attached_asset_count
 
     def save(self, *args, **kwargs):
         self._sync_slug()

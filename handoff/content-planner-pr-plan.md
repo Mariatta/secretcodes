@@ -129,10 +129,16 @@ channel needs a narrower set.
   assets. Tests in `tests/test_content_planner_assets.py` (incl. file upload via tmp MEDIA_ROOT).
   - **Thumbnails (2026-06-26):** `Asset.is_image`/`is_video`/`media_url` (by file/URL extension);
     image/video previews shown in the library list and the post detail Assets section.
-  - **Expected-asset tracking (2026-06-26):** `Post.expected_asset` CharField +
-    `Post.is_missing_asset` property (expected but none attached). Surfaced as a "Missing asset"
-    badge on post rows + detail, an "Expected asset … attached/not attached yet" line on detail,
-    and the field on the post form. Migration `0004_post_expected_asset`.
+  - **Expected-asset tracking (2026-06-26):** `Post.expected_asset` (now a multi-line TextField —
+    one expected asset per line; migrations `0004`/`0005`), `expected_asset_list`,
+    `attached_asset_count`, and count-based `is_missing_asset` (fewer attached than expected).
+    Surfaced on post detail and on list rows as an `N/M assets` indicator (green/amber) plus a
+    "Missing asset" cue — the at-a-glance "what needs work" view.
+  - **Post-page asset picker rework (2026-06-26):** the post form renders board assets as a
+    **thumbnail selection grid** (`.sc-asset-pick`, checked-state highlight) instead of a filename
+    list, supports **inline upload** of a new asset (`new_asset` FileField → created on the board
+    and attached; on fan-out create, attached to every channel's post), and the asset field is
+    always present (scoped, archived excluded). Views pass `pickable_assets` + `selected_asset_ids`.
 - **PR 2.6 — Bulk-shift.** Shift-by-delta + re-anchor, diff preview → confirm, locked posts
   skipped. Reusable diff component (also used by 4b). Tests: skips `date_locked`, re-anchor
   recompute.

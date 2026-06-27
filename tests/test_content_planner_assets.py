@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from content_planner.forms import PostForm
-from content_planner.models import Asset, Campaign, ContentBoard
+from content_planner.models import Asset, Campaign, ContentBoard, Post
 
 User = get_user_model()
 
@@ -171,11 +171,94 @@ def test_post_picker_excludes_archived(board):
     assert not queryset.filter(status="archived").exists()
 
 
-def test_post_picker_hidden_when_only_archived(board):
+def test_post_picker_queryset_excludes_archived(board):
     campaign = Campaign.objects.create(board=board, name="C")
     Asset.objects.create(board=board, name="Gone", status="archived")
     form = PostForm(campaign=campaign)
-    assert "assets" not in form.fields
+    assert "assets" in form.fields
+    assert not form.fields["assets"].queryset.exists()
+
+
+# ----------------------------------------------- post-page picker + upload
+
+
+def test_post_create_renders_thumbnail_picker(auth_client, board, tmp_path, settings):
+    settings.MEDIA_ROOT = str(tmp_path)
+    campaign = Campaign.objects.create(board=board, name="C")
+    Asset.objects.create(
+        board=board, name="Pickme", file=SimpleUploadedFile("p.png", b"x")
+    )
+    resp = auth_client.get(_url("post_create", board, slug=campaign.slug))
+    assert resp.status_code == 200
+    assert b"Pickme" in resp.content
+    assert b'name="assets"' in resp.content
+
+
+def test_post_edit_marks_attached_asset_checked(auth_client, board, tmp_path, settings):
+    settings.MEDIA_ROOT = str(tmp_path)
+    campaign = Campaign.objects.create(board=board, name="C")
+    asset = Asset.objects.create(
+        board=board, name="Sel", file=SimpleUploadedFile("s.png", b"x")
+    )
+    post = Post.objects.create(campaign=campaign, title="P", channel="blog")
+    post.assets.add(asset)
+    resp = auth_client.get(
+        _url("post_edit", board, slug=campaign.slug, post_slug=post.slug)
+    )
+    content = resp.content.decode()
+    assert f'value="{asset.pk}"' in content
+    assert "checked" in content
+
+
+def test_post_edit_inline_upload_creates_and_attaches(
+    auth_client, board, tmp_path, settings
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    campaign = Campaign.objects.create(board=board, name="C")
+    post = Post.objects.create(campaign=campaign, title="P", channel="blog")
+    resp = auth_client.post(
+        _url("post_edit", board, slug=campaign.slug, post_slug=post.slug),
+        {
+            "title": "P",
+            "channel": "blog",
+            "status": "drafting",
+            "expected_asset": "",
+            "body_snippet": "",
+            "draft_url": "",
+            "published_url": "",
+            "notes": "",
+            "new_asset": SimpleUploadedFile("new.png", b"data"),
+        },
+    )
+    assert resp.status_code == 302
+    assert post.assets.get().name == "new.png"
+
+
+def test_post_create_inline_upload_attaches_to_all_channels(
+    auth_client, board, tmp_path, settings
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    campaign = Campaign.objects.create(board=board, name="C")
+    resp = auth_client.post(
+        _url("post_create", board, slug=campaign.slug),
+        {
+            "title": "Multi",
+            "channels": ["blog", "mastodon"],
+            "status": "drafting",
+            "expected_asset": "",
+            "body_snippet": "",
+            "draft_url": "",
+            "published_url": "",
+            "notes": "",
+            "new_asset": SimpleUploadedFile("shared.png", b"data"),
+        },
+    )
+    assert resp.status_code == 302
+    posts = Post.objects.filter(title="Multi")
+    assert posts.count() == 2
+    attached = {p.assets.get().pk for p in posts}
+    assert len(attached) == 1  # the same single uploaded asset on both
+    assert Asset.objects.filter(board=board, name="shared.png").count() == 1
 
 
 # --------------------------------------------------------- media previews

@@ -432,9 +432,10 @@ def test_post_detail(auth_client, board, campaign):
 # ------------------------------------------------------------ PostForm scoping
 
 
-def test_post_form_hides_assets_when_board_has_none(board, campaign):
+def test_post_form_asset_field_present_but_empty(board, campaign):
     form = PostForm(campaign=campaign)
-    assert "assets" not in form.fields
+    assert "assets" in form.fields
+    assert not form.fields["assets"].queryset.exists()
 
 
 def test_post_form_rejects_cross_board_asset(board, campaign):

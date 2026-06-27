@@ -22,6 +22,15 @@ def _accessible_boards(user):
     return (owned | collab).distinct()
 
 
+def _asset_picker_context(form):
+    """Pickable assets + currently-selected ids, for the thumbnail picker."""
+    selected = {str(value) for value in (form["assets"].value() or [])}
+    return {
+        "pickable_assets": form.fields["assets"].queryset,
+        "selected_asset_ids": selected,
+    }
+
+
 def board_required(view):
     """Resolve ``board_slug`` to a board, gate access, and activate its tz.
 
@@ -176,7 +185,7 @@ def campaign_detail(request, board, slug):
 def post_create(request, board, slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     if request.method == "POST":
-        form = PostCreateForm(request.POST, campaign=campaign)
+        form = PostCreateForm(request.POST, request.FILES, campaign=campaign)
         if form.is_valid():
             posts = form.create_posts(request.user)
             messages.success(
@@ -192,7 +201,13 @@ def post_create(request, board, slug):
     return render(
         request,
         "content_planner/post_form.html",
-        {"board": board, "campaign": campaign, "form": form, "is_create": True},
+        {
+            "board": board,
+            "campaign": campaign,
+            "form": form,
+            "is_create": True,
+            **_asset_picker_context(form),
+        },
     )
 
 
@@ -202,7 +217,7 @@ def post_edit(request, board, slug, post_slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
     if request.method == "POST":
-        form = PostForm(request.POST, campaign=campaign, instance=post)
+        form = PostForm(request.POST, request.FILES, campaign=campaign, instance=post)
         if form.is_valid():
             post = form.save()
             messages.success(request, "Post updated.")
@@ -223,6 +238,7 @@ def post_edit(request, board, slug, post_slug):
             "post": post,
             "form": form,
             "is_create": False,
+            **_asset_picker_context(form),
         },
     )
 
