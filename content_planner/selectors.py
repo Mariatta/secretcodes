@@ -137,7 +137,12 @@ def campaign_stats(campaign, *, now=None):
     planned = sum(1 for post in posts if post.status not in inactive)
     overdue = sum(1 for post in posts if post.is_overdue)
     expected_assets = sum(len(post.expected_asset_list) for post in posts)
-    delivered_assets = sum(post.attached_asset_count for post in posts)
+    # Count delivered against expectations: cap each post at what it expects so
+    # extra assets on one post can't mask a shortfall on another (which would
+    # contradict the missing-asset count).
+    delivered_assets = sum(
+        min(post.attached_asset_count, len(post.expected_asset_list)) for post in posts
+    )
     posts_missing_assets = sum(1 for post in posts if post.is_missing_asset)
 
     days_until_event = None

@@ -99,6 +99,8 @@ def _configure_shared_post_fields(form, campaign):
     as a specific date (``scheduled_at``); whichever you don't use is cleared in
     ``clean`` so the model computes it. ``is_all_day`` applies either way.
     """
+    # It holds a list (one per line), so label it plural to match the detail page.
+    form.fields["expected_asset"].label = "Expected assets"
     # Accept a full datetime or a bare date (all-day posts only need a date).
     form.fields["scheduled_at"].input_formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d"]
     if campaign.event_date is None:

@@ -215,6 +215,23 @@ def test_campaign_stats_full(board):
     assert stats["days_until_event"] == 16  # 2026-06-15 -> 2026-07-01
 
 
+def test_campaign_stats_delivered_capped_per_post(board):
+    campaign = Campaign.objects.create(board=board, name="Cap")
+    short = Post.objects.create(
+        campaign=campaign, title="Short", channel="blog", expected_asset="x\ny"
+    )
+    short.assets.add(Asset.objects.create(board=board, name="s1"))  # 1 of 2
+    extra = Post.objects.create(
+        campaign=campaign, title="Extra", channel="blog", expected_asset="p\nq"
+    )
+    for name in ("e1", "e2", "e3"):  # 3 attached, only 2 expected
+        extra.assets.add(Asset.objects.create(board=board, name=name))
+    stats = campaign_stats(campaign)
+    assert stats["expected_assets"] == 4
+    assert stats["delivered_assets"] == 3  # 1 + min(3, 2)
+    assert stats["posts_missing_assets"] == 1  # only the short post
+
+
 def test_campaign_stats_non_event(board):
     campaign = Campaign.objects.create(board=board, name="NoEvent")
     stats = campaign_stats(campaign)
