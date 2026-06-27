@@ -12,7 +12,12 @@ from .billing import check_quota
 from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
 from .models import Asset, Campaign, ContentBoard, Post
 from .permissions import can_access_board, is_content_user
-from .selectors import daily_sections, month_schedule, pending_summary
+from .selectors import (
+    campaign_stats,
+    daily_sections,
+    month_schedule,
+    pending_summary,
+)
 
 
 def _accessible_boards(user):
@@ -176,7 +181,12 @@ def campaign_detail(request, board, slug):
     return render(
         request,
         "content_planner/campaign_detail.html",
-        {"board": board, "campaign": campaign, "posts": posts},
+        {
+            "board": board,
+            "campaign": campaign,
+            "posts": posts,
+            "stats": campaign_stats(campaign),
+        },
     )
 
 

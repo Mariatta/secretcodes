@@ -268,6 +268,18 @@ def test_campaign_detail(auth_client, board):
     assert b"Detail Me" in resp.content
 
 
+def test_campaign_detail_includes_stats(auth_client, board):
+    campaign = Campaign.objects.create(board=board, name="Stats Me")
+    Post.objects.create(campaign=campaign, title="P", channel="blog")
+    resp = auth_client.get(
+        reverse(
+            "content_planner:campaign_detail",
+            kwargs={"board_slug": board.slug, "slug": campaign.slug},
+        )
+    )
+    assert resp.context["stats"]["total_posts"] == 1
+
+
 # ------------------------------------------------------------ posts
 
 
