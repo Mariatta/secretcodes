@@ -268,9 +268,7 @@ def campaign_bulk_update(request, board, slug):
         status = request.POST.get("status")
         if status in Post.Status.values:
             posts.update(status=status, modified_date=timezone.now())
-            messages.success(
-                request, f"Updated {count} post{pluralize(count)}."
-            )
+            messages.success(request, f"Updated {count} post{pluralize(count)}.")
         else:
             messages.error(request, "Pick a valid status.")
     else:
