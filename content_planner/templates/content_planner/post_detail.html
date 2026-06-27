@@ -48,18 +48,19 @@
                 Expected assets
             </dt>
             <dd class="col-sm-9">
-                <ul class="list-unstyled mb-1">
+                <ul class="mb-1">
                     {% for item in post.expected_asset_list %}
                         <li>
-                            {% if forloop.counter0 < post.attached_asset_count %}
-                                <span class="text-success">✓ {{ item }} — attached</span>
-                            {% else %}
-                                <span class="text-warning">○ {{ item }} — not attached yet</span>
-                            {% endif %}
+                            {{ item }}
                         </li>
                     {% endfor %}
                 </ul>
-                <small class="text-muted">{{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached</small>
+                <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}">
+                    {{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached
+                    {% if post.is_missing_asset %}
+                        — some still needed
+                    {% endif %}
+                </small>
             </dd>
         {% endif %}
         <dt class="col-sm-3">
