@@ -184,7 +184,11 @@ def campaign_create_from_chat(request, board):
     return render(
         request,
         "content_planner/campaign_from_chat.html",
-        {"board": board, "payload": raw},
+        {
+            "board": board,
+            "payload": raw,
+            "channels": ", ".join(value for value, _ in Post.CHANNEL_CHOICES),
+        },
     )
 
 
