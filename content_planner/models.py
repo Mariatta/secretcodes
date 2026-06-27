@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
@@ -248,11 +251,36 @@ class Asset(BaseModel):
     )
     notes = models.TextField(blank=True, default="")
 
+    IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".avif"}
+    VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".ogg", ".m4v"}
+
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    @property
+    def media_url(self):
+        """The asset's displayable URL — uploaded file, else the source URL."""
+        if self.file:
+            return self.file.url
+        return self.source_url or ""
+
+    @property
+    def _media_extension(self):
+        reference = self.file.name if self.file else (self.source_url or "")
+        return os.path.splitext(urlparse(reference).path)[1].lower()
+
+    @property
+    def is_image(self):
+        """True if the asset points at an image (by file/URL extension)."""
+        return bool(self.media_url) and self._media_extension in self.IMAGE_EXTENSIONS
+
+    @property
+    def is_video(self):
+        """True if the asset points at a video (by file/URL extension)."""
+        return bool(self.media_url) and self._media_extension in self.VIDEO_EXTENSIONS
 
 
 class Post(BaseModel):

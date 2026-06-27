@@ -176,3 +176,41 @@ def test_post_picker_hidden_when_only_archived(board):
     Asset.objects.create(board=board, name="Gone", status="archived")
     form = PostForm(campaign=campaign)
     assert "assets" not in form.fields
+
+
+# --------------------------------------------------------- media previews
+
+
+def test_asset_is_image_from_file(board):
+    asset = Asset(board=board, name="Pic")
+    asset.file = "content_planner/assets/photo.PNG"
+    assert asset.is_image is True
+    assert asset.is_video is False
+    assert asset.media_url.endswith("photo.PNG")
+
+
+def test_asset_is_video_from_file(board):
+    asset = Asset(board=board, name="Clip")
+    asset.file = "content_planner/assets/movie.mp4"
+    assert asset.is_video is True
+    assert asset.is_image is False
+
+
+def test_asset_non_media_file(board):
+    asset = Asset(board=board, name="Doc")
+    asset.file = "content_planner/assets/handout.pdf"
+    assert asset.is_image is False
+    assert asset.is_video is False
+
+
+def test_asset_is_image_from_source_url(board):
+    asset = Asset(board=board, name="Remote", source_url="https://ex.com/a.jpg?v=2")
+    assert asset.is_image is True
+    assert asset.media_url == "https://ex.com/a.jpg?v=2"
+
+
+def test_asset_without_media(board):
+    asset = Asset(board=board, name="Nothing")
+    assert asset.media_url == ""
+    assert asset.is_image is False
+    assert asset.is_video is False

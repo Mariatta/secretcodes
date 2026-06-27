@@ -15,20 +15,22 @@
         <div class="list-group mb-4">
             {% for asset in active_assets %}
                 <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>
-                        <span class="fw-semibold">{{ asset.name }}</span>
-                        <small class="text-muted">· {{ asset.get_kind_display }}</small>
-                        {% if asset.file %}
-                            <a class="small ms-2"
-                               href="{{ asset.file.url }}"
-                               rel="noopener"
-                               target="_blank">file ↗</a>
-                        {% elif asset.source_url %}
-                            <a class="small ms-2"
-                               href="{{ asset.source_url }}"
-                               rel="noopener"
-                               target="_blank">source ↗</a>
+                    <span class="d-flex align-items-center gap-2">
+                        {% if asset.is_image %}
+                            <img class="sc-asset-thumb" src="{{ asset.media_url }}" alt="{{ asset.name }}">
+                        {% elif asset.is_video %}
+                            <video class="sc-asset-thumb" src="{{ asset.media_url }}#t=0.1" muted preload="metadata"></video>
                         {% endif %}
+                        <span>
+                            <span class="fw-semibold">{{ asset.name }}</span>
+                            <small class="text-muted">· {{ asset.get_kind_display }}</small>
+                            {% if asset.media_url %}
+                                <a class="small ms-2"
+                                   href="{{ asset.media_url }}"
+                                   rel="noopener"
+                                   target="_blank">open ↗</a>
+                            {% endif %}
+                        </span>
                     </span>
                     <span class="text-end d-flex align-items-center gap-2">
                         {% include "content_planner/_status_badge.html" with value=asset.status label=asset.get_status_display %}

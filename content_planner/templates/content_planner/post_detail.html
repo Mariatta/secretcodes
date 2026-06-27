@@ -114,13 +114,20 @@
         <h3 class="h6">
             Assets
         </h3>
-        <ul>
+        <div class="d-flex flex-wrap gap-3">
             {% for asset in post.assets.all %}
-                <li>
-                    {{ asset.name }}
-                </li>
+                <div class="text-center">
+                    {% if asset.is_image %}
+                        <img class="sc-asset-thumb" src="{{ asset.media_url }}" alt="{{ asset.name }}">
+                    {% elif asset.is_video %}
+                        <video class="sc-asset-thumb" src="{{ asset.media_url }}#t=0.1" muted preload="metadata"></video>
+                    {% endif %}
+                    <div class="small">
+                        {{ asset.name }}
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
     {% if post.notes %}
         <h3 class="h6">
