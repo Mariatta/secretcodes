@@ -1,12 +1,10 @@
-{% comment %}Attached-asset cards for a post (with copyable captions). Expects `post`.{% endcomment %}
+{% comment %}Attached-asset rows for a post (with copyable captions). Expects `post`.{% endcomment %}
 {% load content_planner_tags %}
 {% if post.assets.all %}
     <div class="fw-bold mb-2">
         Assets
     </div>
-    <div class="d-flex flex-wrap gap-3">
-        {% for asset in post.assets.all %}
-            {% render_asset asset show_caption=True %}
-        {% endfor %}
-    </div>
+    {% for asset in post.assets.all %}
+        {% render_asset asset show_caption=True %}
+    {% endfor %}
 {% endif %}

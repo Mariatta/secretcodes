@@ -209,7 +209,7 @@ def test_post_detail_shows_asset_caption_and_edit_link(auth_client, board):
     )
     content = resp.content.decode()
     assert "A photo of the venue" in content  # caption shown
-    assert "Copy caption" in content
+    assert f"sc-cap-{asset.pk}" in content  # copyable caption element
     assert (
         reverse(
             "content_planner:asset_edit",

@@ -1,39 +1,47 @@
-{% comment %}Asset card. Expects `asset` and `show_caption`.
-Thumbnail links to the full-size file; the title links to the asset's edit page.{% endcomment %}
-<div class="text-center" style="max-width: 12rem">
-    {% if asset.is_image %}
-        <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
-            <img class="sc-asset-thumb"
-                 width="48"
-                 height="48"
-                 src="{{ asset.media_url }}"
-                 alt="{{ asset.name }}">
-        </a>
-    {% elif asset.is_video %}
-        <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
-            <video class="sc-asset-thumb"
-                   width="48"
-                   height="48"
-                   src="{{ asset.media_url }}#t=0.1"
-                   muted
-                   preload="metadata">
-            </video>
-        </a>
-    {% endif %}
-    <div class="small">
-        <a href="{% url 'content_planner:asset_edit' asset.board.slug asset.pk %}">{{ asset.name }}</a>
+{% comment %}Asset row. Expects `asset` and `show_caption`.
+Thumbnail (links to the full-size file) on the left; title (links to the asset
+edit page) and caption on the right, with a small copy button top-right.{% endcomment %}
+<div class="d-flex gap-3 border rounded p-2 mb-2">
+    <div class="flex-shrink-0">
+        {% if asset.is_image %}
+            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                <img class="sc-asset-thumb"
+                     width="48"
+                     height="48"
+                     src="{{ asset.media_url }}"
+                     alt="{{ asset.name }}">
+            </a>
+        {% elif asset.is_video %}
+            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                <video class="sc-asset-thumb"
+                       width="48"
+                       height="48"
+                       src="{{ asset.media_url }}#t=0.1"
+                       muted
+                       preload="metadata">
+                </video>
+            </a>
+        {% else %}
+            <span class="sc-asset-thumb d-inline-block"></span>
+        {% endif %}
     </div>
-    {% if show_caption and asset.caption %}
-        <div class="small text-start mt-1">
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary mb-1"
-                    onclick="scCopy('sc-cap-{{ asset.pk }}', this)">
-                Copy caption
-            </button>
+    <div class="flex-grow-1" style="min-width: 0">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+            <a class="fw-semibold text-break"
+               href="{% url 'content_planner:asset_edit' asset.board.slug asset.pk %}">{{ asset.name }}</a>
+            {% if show_caption and asset.caption %}
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary flex-shrink-0"
+                        onclick="scCopy('sc-cap-{{ asset.pk }}', this)">
+                    Copy
+                </button>
+            {% endif %}
+        </div>
+        {% if show_caption and asset.caption %}
             <textarea id="sc-cap-{{ asset.pk }}" class="visually-hidden" readonly>{{ asset.caption }}</textarea>
-            <div class="text-muted">
+            <div class="small text-muted">
                 {{ asset.caption }}
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
