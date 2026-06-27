@@ -135,10 +135,14 @@
                 <div class="text-center">
                     {% if asset.is_image %}
                         <img class="sc-asset-thumb"
+                             width="48"
+                             height="48"
                              src="{{ asset.media_url }}"
                              alt="{{ asset.name }}">
                     {% elif asset.is_video %}
                         <video class="sc-asset-thumb"
+                               width="48"
+                               height="48"
                                src="{{ asset.media_url }}#t=0.1"
                                muted
                                preload="metadata">
