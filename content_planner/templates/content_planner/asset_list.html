@@ -17,7 +17,11 @@
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <span class="d-flex align-items-center gap-2">
                         {% if asset.is_image %}
-                            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                            <a href="{{ asset.media_url }}"
+                               rel="noopener"
+                               target="_blank"
+                               data-lightbox="{{ asset.media_url }}"
+                               data-lightbox-title="{{ asset.name }}">
                                 <img class="sc-asset-thumb"
                                      width="48"
                                      height="48"
@@ -25,7 +29,12 @@
                                      alt="{{ asset.name }}">
                             </a>
                         {% elif asset.is_video %}
-                            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                            <a href="{{ asset.media_url }}"
+                               rel="noopener"
+                               target="_blank"
+                               data-lightbox="{{ asset.media_url }}"
+                               data-lightbox-title="{{ asset.name }}"
+                               data-lightbox-type="video">
                                 <video class="sc-asset-thumb"
                                        width="48"
                                        height="48"

@@ -100,6 +100,21 @@ def test_board_home_renders_for_owner(auth_client, board):
     assert b"Today" in resp.content
 
 
+def test_no_external_script_or_style_resources(auth_client, board):
+    """Guard: all JS/CSS is served locally — no CDNs (and thus no third-party
+    cookies). Fails if a template ever adds an external script/stylesheet."""
+    import re
+
+    html = auth_client.get(
+        reverse("content_planner:board_home", kwargs={"board_slug": board.slug})
+    ).content.decode()
+    urls = re.findall(r'<script[^>]+src="([^"]+)"', html)
+    urls += re.findall(r'<link[^>]+href="([^"]+)"', html)
+    assert urls  # sanity: there are scripts/styles to check
+    external = [u for u in urls if u.startswith(("http://", "https://", "//"))]
+    assert external == [], f"external resources found: {external}"
+
+
 # ------------------------------------------------------------ board_create
 
 
@@ -423,6 +438,44 @@ def test_post_edit_get(auth_client, board, campaign):
         )
     )
     assert resp.status_code == 200
+
+
+def test_post_delete(auth_client, board, campaign):
+    post = Post.objects.create(campaign=campaign, title="Doomed", channel="blog")
+    resp = auth_client.post(
+        reverse(
+            "content_planner:post_delete",
+            kwargs={
+                "board_slug": board.slug,
+                "slug": campaign.slug,
+                "post_slug": post.slug,
+            },
+        )
+    )
+    assert resp.status_code == 302
+    assert not Post.objects.filter(pk=post.pk).exists()
+
+
+def test_post_create_records_hashtags(auth_client, board, campaign):
+    resp = auth_client.post(
+        reverse(
+            "content_planner:post_create",
+            kwargs={"board_slug": board.slug, "slug": campaign.slug},
+        ),
+        {
+            "title": "Tagged",
+            "channels": ["mastodon"],
+            "status": "drafting",
+            "hashtags": "#python",
+            "body_snippet": "",
+            "draft_url": "",
+            "published_url": "",
+            "notes": "",
+            "expected_asset": "",
+        },
+    )
+    assert resp.status_code == 302
+    assert Post.objects.get(title="Tagged").hashtags == "#python"
 
 
 def test_post_detail(auth_client, board, campaign):

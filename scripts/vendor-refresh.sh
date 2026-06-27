@@ -8,7 +8,7 @@
 set -euo pipefail
 
 V=secretcodes/static/vendor
-mkdir -p "$V/bootstrap" "$V/sortablejs"
+mkdir -p "$V/bootstrap" "$V/sortablejs" "$V/tagify"
 
 cp node_modules/bootstrap/dist/css/bootstrap.min.css         "$V/bootstrap/"
 cp node_modules/bootstrap/dist/css/bootstrap.min.css.map     "$V/bootstrap/"
@@ -18,3 +18,7 @@ cp node_modules/bootstrap/LICENSE                            "$V/bootstrap/"
 
 cp node_modules/sortablejs/Sortable.min.js  "$V/sortablejs/"
 cp node_modules/sortablejs/LICENSE          "$V/sortablejs/"
+
+cp node_modules/@yaireo/tagify/dist/tagify.js   "$V/tagify/"
+cp node_modules/@yaireo/tagify/dist/tagify.css  "$V/tagify/"
+cp node_modules/@yaireo/tagify/LICENSE          "$V/tagify/"

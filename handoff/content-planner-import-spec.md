@@ -19,7 +19,8 @@ form (`/content/<board>/campaigns/new-from-chat/`) accepts.
     "event_date": "YYYY-MM-DD",        // optional; set ⇒ event-anchored campaign
     "tags": ["string", ...],           // optional; created on the board if new
     "narrative_notes": "string",       // optional
-    "source_url": "https://..."        // optional; link to the planning chat/doc
+    "source_url": "https://...",       // optional; link to the planning chat/doc
+    "hashtags": "#PyLadiesCon #Python" // optional; default hashtags for social posts
   },
   "posts": [
     {
@@ -36,6 +37,7 @@ form (`/content/<board>/campaigns/new-from-chat/`) accepts.
       "is_all_day": true,              // optional; default true for blog/newsletter, else false
       "body_snippet": "string",        // optional; full text for socials, subject+preview for blog/newsletter
       "expected_asset": "hero image\nsquare graphic",  // optional; one expected asset per line
+      "hashtags": "#extra",            // optional; added to the campaign's, used on social posts
       "notes": "string"                // optional
     }
   ]

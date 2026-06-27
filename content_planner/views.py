@@ -313,6 +313,21 @@ def post_edit(request, board, slug, post_slug):
 
 
 @board_required
+@require_http_methods(["POST"])
+def post_delete(request, board, slug, post_slug):
+    campaign = get_object_or_404(Campaign, board=board, slug=slug)
+    post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
+    title = post.title
+    post.delete()
+    messages.success(request, f"Deleted post '{title}'.")
+    return redirect(
+        "content_planner:campaign_detail",
+        board_slug=board.slug,
+        slug=campaign.slug,
+    )
+
+
+@board_required
 def post_detail(request, board, slug, post_slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     post = get_object_or_404(Post, campaign=campaign, slug=post_slug)

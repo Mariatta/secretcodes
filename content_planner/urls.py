@@ -66,4 +66,9 @@ urlpatterns = [
         views.post_edit,
         name="post_edit",
     ),
+    path(
+        "<slug:board_slug>/c/<slug:slug>/p/<slug:post_slug>/delete/",
+        views.post_delete,
+        name="post_delete",
+    ),
 ]

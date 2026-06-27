@@ -262,6 +262,20 @@ def test_import_bad_scheduled_at(auth_client, board):
     assert b"scheduled_at" in resp.content
 
 
+def test_import_export_hashtags(auth_client, board):
+    payload = {
+        "campaign": {"name": "Tagged", "hashtags": "#PyLadiesCon"},
+        "posts": [{"title": "P", "channel": "mastodon", "hashtags": "#python"}],
+    }
+    auth_client.post(_import_url(board), {"payload": json.dumps(payload)})
+    campaign = Campaign.objects.get(name="Tagged")
+    assert campaign.hashtags == "#PyLadiesCon"
+    assert campaign.posts.get().hashtags == "#python"
+    data = auth_client.get(_export_url(board, campaign)).json()
+    assert data["campaign"]["hashtags"] == "#PyLadiesCon"
+    assert data["posts"][0]["hashtags"] == "#python"
+
+
 def test_export_import_round_trip(auth_client, board):
     source = Campaign.objects.create(board=board, name="Source", event_date=None)
     Post.objects.create(

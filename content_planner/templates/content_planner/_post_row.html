@@ -1,4 +1,5 @@
 {% comment %}One post line. Expects `board` and `post`.{% endcomment %}
+{% load icons %}
 <li class="list-group-item d-flex justify-content-between align-items-center">
     <span>
         <a href="{% url 'content_planner:post_detail' board.slug post.campaign.slug post.slug %}">{{ post.title }}</a>
@@ -25,6 +26,16 @@
         {% endif %}
         {% include "content_planner/_status_badge.html" with value=post.status label=post.get_status_display %}
         <a class="btn btn-sm btn-outline-secondary"
-           href="{% url 'content_planner:post_edit' board.slug post.campaign.slug post.slug %}">Edit</a>
+           href="{% url 'content_planner:post_edit' board.slug post.campaign.slug post.slug %}"
+           title="Edit">{% icon "pen-to-square" label="Edit" %}</a>
+        <form method="post"
+              class="d-inline"
+              action="{% url 'content_planner:post_delete' board.slug post.campaign.slug post.slug %}"
+              onsubmit="return confirm('Delete this post? This cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                {% icon "trash-can" label="Delete" %}
+            </button>
+        </form>
     </span>
 </li>

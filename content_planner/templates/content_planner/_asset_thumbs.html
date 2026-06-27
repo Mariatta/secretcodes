@@ -1,34 +1,10 @@
-{% comment %}Read-only attached-asset thumbnails for a post. Expects `post`.{% endcomment %}
+{% comment %}Attached-asset rows for a post (with copyable captions). Expects `post`.{% endcomment %}
+{% load content_planner_tags %}
 {% if post.assets.all %}
     <div class="fw-bold mb-2">
         Assets
     </div>
-    <div class="d-flex flex-wrap gap-3">
-        {% for asset in post.assets.all %}
-            <div class="text-center">
-                {% if asset.is_image %}
-                    <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
-                        <img class="sc-asset-thumb"
-                             width="48"
-                             height="48"
-                             src="{{ asset.media_url }}"
-                             alt="{{ asset.name }}">
-                    </a>
-                {% elif asset.is_video %}
-                    <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
-                        <video class="sc-asset-thumb"
-                               width="48"
-                               height="48"
-                               src="{{ asset.media_url }}#t=0.1"
-                               muted
-                               preload="metadata">
-                        </video>
-                    </a>
-                {% endif %}
-                <div class="small">
-                    {{ asset.name }}
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+    {% for asset in post.assets.all %}
+        {% render_asset asset show_caption=True %}
+    {% endfor %}
 {% endif %}
