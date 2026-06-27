@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block head_title %}
-    New from chat · {{ board.name }} · {{ block.super }}
+    Import campaign · {{ board.name }} · {{ block.super }}
 {% endblock head_title %}
 {% block content %}
     {% include "content_planner/_board_nav.html" with active="campaigns" %}
@@ -10,26 +10,27 @@
                 <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
-                New from chat
+                Import JSON
             </li>
         </ol>
     </nav>
     <h2 class="h4 mb-2">
-        Import a campaign from a Claude chat
+        Import a campaign from JSON
     </h2>
     <p class="text-muted">
-        Paste the JSON Claude produced. A campaign and its posts are created in one step —
-        every post starts as a draft, and you can adjust them afterwards.
+        Paste a campaign as JSON — for example, what you planned with an AI assistant.
+        A campaign and its posts are created in one step; every post starts as a draft,
+        and you can adjust them afterwards.
     </p>
     <details class="mb-3">
         <summary style="cursor: pointer">
-            JSON format — and a spec to give Claude
+            JSON format — and a spec to give your AI tool
         </summary>
         <div class="mt-2">
             <button type="button"
                     class="btn btn-sm btn-outline-secondary mb-2"
                     onclick="scCopySpec(this)">
-                Copy spec for Claude
+                Copy spec
             </button>
             <p class="small mb-1">
                 No ids needed — <code>id</code>, <code>slug</code>, and <code>status</code> are

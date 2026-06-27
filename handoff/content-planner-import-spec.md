@@ -1,9 +1,9 @@
 # Content planner — create-from-chat JSON spec
 
-Paste this into a Claude chat so it produces JSON the **Import from chat**
+Paste this into your AI assistant's chat so it produces JSON the **Import JSON**
 form (`/content/<board>/campaigns/new-from-chat/`) accepts.
 
-## Instruction to give Claude
+## Instruction to give the AI assistant
 
 > Output the campaign as a single JSON object with this shape. Only use the
 > fields listed. Use `anchor_offset_days` when the campaign has an `event_date`,

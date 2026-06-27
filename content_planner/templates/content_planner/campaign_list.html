@@ -6,7 +6,7 @@
     {% include "content_planner/_board_nav.html" with active="campaigns" %}
     <div class="d-flex justify-content-end gap-2 mb-3">
         <a class="btn btn-outline-secondary"
-           href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import from chat</a>
+           href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import JSON</a>
         <a class="btn btn-primary"
            href="{% url 'content_planner:campaign_create' board.slug %}">+ New campaign</a>
     </div>
