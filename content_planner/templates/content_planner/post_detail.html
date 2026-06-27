@@ -130,9 +130,9 @@
     </div>
     {% if post.body_snippet %}
         <div class="d-flex justify-content-between align-items-center mb-1">
-            <h3 class="h6 mb-0">
+            <div class="fw-bold">
                 Body
-            </h3>
+            </div>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
                     onclick="scCopyBody(this)">
@@ -157,9 +157,9 @@
         </script>
     {% endif %}
     {% if post.notes %}
-        <h3 class="h6">
+        <div class="fw-bold mb-2">
             Notes
-        </h3>
+        </div>
         <p>
             {{ post.notes|linebreaksbr }}
         </p>
