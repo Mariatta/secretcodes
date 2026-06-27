@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Campaigns · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <div class="d-flex justify-content-end gap-2 mb-3">
+        <a class="btn btn-outline-secondary"
+           href="{% url 'content_planner:campaign_create_from_chat' board.slug %}">Import JSON</a>
+        <a class="btn btn-primary"
+           href="{% url 'content_planner:campaign_create' board.slug %}">+ New campaign</a>
+    </div>
+    {% if campaigns %}
+        <div class="list-group">
+            {% for campaign in campaigns %}
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                   href="{% url 'content_planner:campaign_detail' board.slug campaign.slug %}">
+                    <span>
+                        <span class="fw-semibold">{{ campaign.name }}</span>
+                        {% if campaign.event_date %}
+                            <small class="text-muted">· event {{ campaign.event_date|date:"M j, Y" }}</small>
+                        {% endif %}
+                    </span>
+                    <small class="text-muted">{{ campaign.posts.count }} post{{ campaign.posts.count|pluralize }}</small>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            No campaigns yet.
+        </p>
+    {% endif %}
+{% endblock content %}

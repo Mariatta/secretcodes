@@ -1,3 +1,5 @@
+import io
+
 import pytest
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -79,3 +81,58 @@ def test_clean_rejects_reserved_slug():
 def test_clean_passes_for_non_reserved_slug():
     qr = QRCode(url="https://example.com", description="x", slug="mytalk")
     qr.clean()
+
+
+@pytest.mark.django_db
+def test_generate_qr_passes_styling(mock_s3_wrapper):
+    QRCode.objects.create(
+        url="https://example.com",
+        description="styled",
+        fill_color="#112233",
+        back_color="#ffeedd",
+    )
+    _, kwargs = mock_s3_wrapper.generate_qr.call_args
+    assert kwargs["fill_color"] == "#112233"
+    assert kwargs["back_color"] == "#ffeedd"
+    assert kwargs["logo_key"] == ""
+
+
+@pytest.mark.django_db
+def test_attach_logo_uploads_and_sets_filename(mock_s3_wrapper):
+    qr = QRCode(url="https://example.com", description="logo")
+    qr.attach_logo(io.BytesIO(b"fake"))
+    assert qr.logo_filename == "logo.png.logo.png"
+    mock_s3_wrapper.upload_logo.assert_called_once()
+    _, key = mock_s3_wrapper.upload_logo.call_args.args
+    assert key.endswith("/qrcode/logos/logo.png.logo.png")
+    qr.save()
+    _, kwargs = mock_s3_wrapper.generate_qr.call_args
+    assert kwargs["logo_key"] == qr.logo_key
+
+
+@pytest.mark.django_db
+def test_logo_key_empty_without_logo():
+    qr = QRCode(url="https://example.com", description="plain")
+    assert qr.logo_key == ""
+
+
+@pytest.mark.django_db
+def test_generate_qr_passes_module_and_mask_styles(mock_s3_wrapper):
+    QRCode.objects.create(
+        url="https://example.com",
+        description="styled",
+        module_style="rounded",
+        color_mask_style="radial_gradient",
+        gradient_color="#445566",
+    )
+    _, kwargs = mock_s3_wrapper.generate_qr.call_args
+    assert kwargs["module_style"] == "rounded"
+    assert kwargs["color_mask_style"] == "radial_gradient"
+    assert kwargs["gradient_color"] == "#445566"
+
+
+@pytest.mark.django_db
+def test_style_defaults_on_plain_create(mock_s3_wrapper):
+    qr = QRCode.objects.create(url="https://example.com", description="plain")
+    assert qr.module_style == "square"
+    assert qr.color_mask_style == "solid"

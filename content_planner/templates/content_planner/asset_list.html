@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Assets · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="assets" %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">
+            Reusable images and files for this board's posts.
+        </p>
+        <a class="btn btn-primary"
+           href="{% url 'content_planner:asset_create' board.slug %}">+ Upload asset</a>
+    </div>
+    {% if active_assets %}
+        <div class="list-group mb-4">
+            {% for asset in active_assets %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="d-flex align-items-center gap-2">
+                        {% if asset.is_image %}
+                            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                                <img class="sc-asset-thumb"
+                                     width="48"
+                                     height="48"
+                                     src="{{ asset.media_url }}"
+                                     alt="{{ asset.name }}">
+                            </a>
+                        {% elif asset.is_video %}
+                            <a href="{{ asset.media_url }}" rel="noopener" target="_blank">
+                                <video class="sc-asset-thumb"
+                                       width="48"
+                                       height="48"
+                                       src="{{ asset.media_url }}#t=0.1"
+                                       muted
+                                       preload="metadata">
+                                </video>
+                            </a>
+                        {% endif %}
+                        <span>
+                            <span class="fw-semibold">{{ asset.name }}</span>
+                            <small class="text-muted">· {{ asset.get_kind_display }}</small>
+                            {% if asset.media_url %}
+                                <a class="small ms-2"
+                                   href="{{ asset.media_url }}"
+                                   rel="noopener"
+                                   target="_blank">open ↗</a>
+                            {% endif %}
+                        </span>
+                    </span>
+                    <span class="text-end d-flex align-items-center gap-2">
+                        {% include "content_planner/_status_badge.html" with value=asset.status label=asset.get_status_display %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{% url 'content_planner:asset_edit' board.slug asset.pk %}">Edit</a>
+                        <form method="post"
+                              action="{% url 'content_planner:asset_archive' board.slug asset.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                Archive
+                            </button>
+                        </form>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            No assets yet. Upload one to attach it to posts.
+        </p>
+    {% endif %}
+    {% if archived_assets %}
+        <h2 class="h6 text-muted">
+            Archived
+        </h2>
+        <div class="list-group">
+            {% for asset in archived_assets %}
+                <div class="list-group-item d-flex justify-content-between align-items-center text-muted">
+                    <span>{{ asset.name }} <small>· {{ asset.get_kind_display }}</small></span>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'content_planner:asset_edit' board.slug asset.pk %}">Edit</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock content %}

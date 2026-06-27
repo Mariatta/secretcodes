@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Import campaign · {{ board.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="campaigns" %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:campaign_list' board.slug %}">Campaigns</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Import JSON
+            </li>
+        </ol>
+    </nav>
+    <h2 class="h4 mb-2">
+        Import a campaign from JSON
+    </h2>
+    <p class="text-muted">
+        Paste a campaign as JSON — for example, what you planned with an AI assistant.
+        A campaign and its posts are created in one step; every post starts as a draft,
+        and you can adjust them afterwards.
+    </p>
+    <details class="mb-3">
+        <summary style="cursor: pointer">
+            JSON format — and a spec to give your AI tool
+        </summary>
+        <div class="mt-2">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary mb-2"
+                    onclick="scCopySpec(this)">
+                Copy spec
+            </button>
+            <p class="small mb-1">
+                No ids needed — <code>id</code>, <code>slug</code>, and <code>status</code> are
+                ignored. Use <code>anchor_offset_days</code> when the campaign has an
+                <code>event_date</code>, otherwise <code>scheduled_at</code>.
+                Channels: <code>{{ channels }}</code>.
+            </p>
+            <textarea id="sc-spec" class="visually-hidden" readonly>{% verbatim %}Output the campaign as one JSON object in this exact shape. Do NOT include ids, slugs, or statuses — they are ignored, and every post is imported as a draft. Use anchor_offset_days (days relative to event_date; negative = before) when campaign.event_date is set; otherwise use scheduled_at (interpreted in the board's timezone).
+{
+  "campaign": {
+    "name": "string (required)",
+    "event_date": "YYYY-MM-DD (optional; set => event-anchored)",
+    "tags": ["string"],
+    "narrative_notes": "string"
+  },
+  "posts": [
+    {
+      "title": "string (required)",
+      "channel": "blog|mastodon|linkedin|x|instagram|newsletter|podcast|talk|other",
+      "anchor_offset_days": -90,
+      "time_of_day": "09:00",
+      "scheduled_at": "YYYY-MM-DDTHH:MM:SS",
+      "is_all_day": true,
+      "body_snippet": "string",
+      "expected_asset": "one expected asset per line",
+      "notes": "string"
+    }
+  ]
+}{% endverbatim %}</textarea>
+            <pre class="border rounded p-3 small" style="max-height: 40vh; overflow: auto">{% verbatim %}{
+  "campaign": { "name": "Confession series", "tags": ["advocacy"] },
+  "posts": [
+    { "title": "Part 1 — blog", "channel": "blog", "scheduled_at": "2026-05-30T00:00:00", "is_all_day": true },
+    { "title": "Part 1 — announce", "channel": "mastodon", "scheduled_at": "2026-05-30T09:00:00" }
+  ]
+}{% endverbatim %}</pre>
+        </div>
+    </details>
+    <script>
+      function scCopySpec(btn) {
+        var ta = document.getElementById('sc-spec');
+        if (!ta || !navigator.clipboard) return;
+        navigator.clipboard.writeText(ta.value).then(function () {
+          var old = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = old; }, 1500);
+        });
+      }
+    </script>
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="payload"
+                  class="form-control mb-3"
+                  rows="16"
+                  spellcheck="false"
+                  placeholder='{&quot;campaign&quot;: {&quot;name&quot;: &quot;...&quot;}, &quot;posts&quot;: [...]}'>{{ payload }}</textarea>
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+                Import
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'content_planner:campaign_list' board.slug %}">Cancel</a>
+        </div>
+    </form>
+{% endblock content %}

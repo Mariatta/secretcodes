@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block head_title %}
+    {{ board.name }} · Content · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    {% include "content_planner/_board_nav.html" with active="overview" %}
+    {% if board.campaigns.exists %}
+        <div class="d-flex justify-content-end mb-3">
+            <a class="btn btn-primary"
+               href="{% url 'content_planner:campaign_create' board.slug %}">+ New campaign</a>
+        </div>
+    {% else %}
+        <div class="border rounded p-4 text-center mb-4">
+            <p class="mb-3">
+                This board has no campaigns yet. Create one, then add posts to it.
+            </p>
+            <a class="btn btn-primary"
+               href="{% url 'content_planner:campaign_create' board.slug %}">Create your first campaign</a>
+        </div>
+    {% endif %}
+    {% with overdue=sections.overdue today=sections.today week=sections.this_week awaiting=sections.awaiting recent=sections.recently_published %}
+        {% if overdue %}
+            <h2 class="h5 text-danger">
+                Overdue
+            </h2>
+            <ul class="list-group mb-4">
+                {% for post in overdue %}
+                    {% include "content_planner/_post_row.html" %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <h2 class="h5">
+            Today
+        </h2>
+        <ul class="list-group mb-4">
+            {% for post in today %}
+                {% include "content_planner/_post_row.html" %}
+            {% empty %}
+                <li class="list-group-item text-muted">
+                    Nothing scheduled today.
+                </li>
+            {% endfor %}
+        </ul>
+        <h2 class="h5">
+            This week
+        </h2>
+        <ul class="list-group mb-4">
+            {% for post in week %}
+                {% include "content_planner/_post_row.html" %}
+            {% empty %}
+                <li class="list-group-item text-muted">
+                    Nothing in the next 7 days.
+                </li>
+            {% endfor %}
+        </ul>
+        {% if awaiting %}
+            <h2 class="h5">
+                Awaiting your action
+            </h2>
+            <ul class="list-group mb-4">
+                {% for post in awaiting %}
+                    {% include "content_planner/_post_row.html" %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% if recent %}
+            <h2 class="h5">
+                Recently published
+            </h2>
+            <ul class="list-group mb-4">
+                {% for post in recent %}
+                    {% include "content_planner/_post_row.html" %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+{% endblock content %}
