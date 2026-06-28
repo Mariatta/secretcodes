@@ -210,6 +210,33 @@ class QuestionForm(forms.ModelForm):
                 return False
         return super().has_changed()
 
+    def validate_unique(self):
+        self._validate_uniqueness_excluding_order(self.instance.validate_unique)
+
+    def validate_constraints(self):
+        self._validate_uniqueness_excluding_order(self.instance.validate_constraints)
+
+    def _validate_uniqueness_excluding_order(self, validator):
+        """Run a per-form uniqueness validator with ``order`` excluded.
+
+        The builder reassigns every row's ``order`` on save (shifting existing
+        rows aside first), so a client-side reorder legitimately submits
+        ``order`` values still held by sibling rows at validation time. Django
+        6.0 runs the ``(survey, order)`` ``UniqueConstraint`` per-form against
+        the DB, which rejected valid swaps. Excluding ``order`` here allows the
+        swap; ``_get_validation_exclusions`` is left untouched, so the formset
+        still rejects two submitted rows sharing an order, and the DB constraint
+        guards the committed state.
+        """
+        exclude = self._get_validation_exclusions()
+        exclude.add("order")
+        try:
+            validator(exclude=exclude)
+        except forms.ValidationError as exc:  # pragma: no cover - order is the
+            # only uniqueness on Question, so excluding it leaves nothing to
+            # raise here; kept to surface any future non-order constraint.
+            self._update_errors(exc)
+
     def clean_config(self):
         """Allow blank to mean ``{}``; otherwise require parseable JSON object."""
         raw = self.cleaned_data.get("config")
