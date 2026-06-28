@@ -121,6 +121,16 @@ def test_asset_edit_get(auth_client, board):
     assert auth_client.get(_url("asset_edit", board, pk=asset.pk)).status_code == 200
 
 
+def test_asset_edit_shows_current_file_preview(auth_client, board, tmp_path, settings):
+    settings.MEDIA_ROOT = str(tmp_path)
+    asset = Asset.objects.create(
+        board=board, name="Hero", file=SimpleUploadedFile("h.png", b"x")
+    )
+    content = auth_client.get(_url("asset_edit", board, pk=asset.pk)).content
+    assert b"Current file" in content
+    assert b"data-lightbox=" in content  # preview opens in the lightbox
+
+
 def test_asset_edit_post(auth_client, board):
     asset = Asset.objects.create(board=board, name="Before", status="drafting")
     resp = auth_client.post(
@@ -225,12 +235,13 @@ def test_asset_edit_sets_and_prechecks_posts(auth_client, board):
     asset = Asset.objects.create(board=board, name="Hero", status="ready")
     asset.posts.add(p1)
 
-    # GET pre-checks the currently-attached post and labels by campaign.
+    # GET groups posts by campaign, offers a filter, and pre-checks p1.
     get = auth_client.get(_url("asset_edit", board, pk=asset.pk))
     content = get.content.decode()
     assert "Attach to posts" in content
-    assert "Campaign C · P1 · Blog" in content  # label_from_instance
-    assert p1 in get.context["form"].fields["posts"].initial  # pre-checked
+    assert "Campaign C" in content  # campaign group header
+    assert "data-search=" in content  # live filter wiring
+    assert get.context["attached_post_ids"] == {p1.pk}  # pre-checked
 
     # POST swaps the attachment from p1 to p2.
     resp = auth_client.post(

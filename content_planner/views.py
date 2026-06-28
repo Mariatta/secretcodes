@@ -438,6 +438,13 @@ def asset_list(request, board):
     )
 
 
+def _attached_post_ids(form):
+    """Post ids checked in the asset form's picker — the asset's current posts
+    on GET, or the submitted selection when re-rendering after a validation
+    error, so the picker keeps its state either way."""
+    return {int(getattr(value, "pk", value)) for value in form["posts"].value() or []}
+
+
 @board_required
 @require_http_methods(["GET", "POST"])
 def asset_create(request, board):
@@ -456,7 +463,12 @@ def asset_create(request, board):
     return render(
         request,
         "content_planner/asset_form.html",
-        {"board": board, "form": form, "is_create": True},
+        {
+            "board": board,
+            "form": form,
+            "is_create": True,
+            "attached_post_ids": _attached_post_ids(form),
+        },
     )
 
 
@@ -476,7 +488,13 @@ def asset_edit(request, board, pk):
     return render(
         request,
         "content_planner/asset_form.html",
-        {"board": board, "form": form, "asset": asset, "is_create": False},
+        {
+            "board": board,
+            "form": form,
+            "asset": asset,
+            "is_create": False,
+            "attached_post_ids": _attached_post_ids(form),
+        },
     )
 
 

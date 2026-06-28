@@ -280,9 +280,6 @@ class AssetForm(forms.ModelForm):
             .select_related("campaign")
             .order_by("campaign__name", "scheduled_at", "title")
         )
-        field.label_from_instance = lambda post: (
-            f"{post.campaign.name} · {post.title} · {post.get_channel_display()}"
-        )
         if self.instance.pk:
             field.initial = self.instance.posts.all()
 
