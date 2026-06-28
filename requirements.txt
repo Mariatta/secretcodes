@@ -19,7 +19,7 @@ django-solo==2.5.1
 django-storages==1.14.6
 django-timezone-field==7.2.2
 django-widget-tweaks==1.5.1
-google-api-python-client==2.196.0
+google-api-python-client==2.198.0
 google-auth==2.53.0
 google-auth-oauthlib==1.4.0
 jsonschema==4.26.0
