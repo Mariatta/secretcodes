@@ -71,8 +71,11 @@ services:
   maildev:
     image: maildev/maildev:2.2.1
     ports:
-      - "1080:1080"
-      - "1025:1025"
+      # Host ports overridable (e.g. via .env) to run beside another project's
+      # maildev. The web service reaches maildev over the compose network on the
+      # internal 1025, so these only affect host access.
+      - "${SECRETCODES_MAILDEV_WEB_PORT:-1080}:1080"
+      - "${SECRETCODES_MAILDEV_SMTP_PORT:-1025}:1025"
 
 volumes:
   pgdata:
