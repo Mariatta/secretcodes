@@ -3,7 +3,11 @@
 {% load icons %}
 {% load static %}
 {% block head_title %}
-    {% if is_new %}New survey{% else %}Edit · {{ survey.title }}{% endif %}
+    {% if is_new %}
+        New survey
+    {% else %}
+        Edit · {{ survey.title }}
+    {% endif %}
 {% endblock head_title %}
 {% block extra_head %}
     {{ block.super }}
@@ -32,7 +36,11 @@
             {% endif %}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h3 mb-0">
-                    {% if is_new %}New survey{% else %}Edit survey{% endif %}
+                    {% if is_new %}
+                        New survey
+                    {% else %}
+                        Edit survey
+                    {% endif %}
                 </h1>
                 {% if is_new %}
                     <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">← All surveys</a>
@@ -45,13 +53,17 @@
                             <div class="d-flex flex-wrap gap-3 align-items-center mb-3 pb-3 border-bottom">
                                 <img src="{{ survey.short_url.get_qr_image_url }}"
                                      alt="QR code for {{ survey.title }}"
-                                     width="84" height="84"
-                                     style="border-radius: 6px; flex-shrink: 0;">
+                                     width="84"
+                                     height="84"
+                                     style="border-radius: 6px;
+                                            flex-shrink: 0">
                                 <div class="flex-grow-1" style="min-width: 220px;">
                                     <div class="small text-muted mb-1">Short link & QR</div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <a class="font-monospace small text-break copy-source"
-                                           href="/qr/{{ survey.short_url.slug }}/" target="_blank" rel="noopener">
+                                           href="{% url 'url_reverse' slug=survey.short_url.slug %}"
+                                           target="_blank"
+                                           rel="noopener">
                                             {{ request.scheme }}://{{ request.get_host }}/qr/{{ survey.short_url.slug }}
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
@@ -71,7 +83,8 @@
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <a class="font-monospace small text-break copy-source"
                                    href="{% url 'surveys:respond' slug=survey.slug %}"
-                                   target="_blank" rel="noopener">
+                                   target="_blank"
+                                   rel="noopener">
                                     {{ request.scheme }}://{{ request.get_host }}{% url 'surveys:respond' slug=survey.slug %}
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-secondary copy-btn">
@@ -93,20 +106,28 @@
                     <div class="mb-3 description-field-wrap">
                         {% bootstrap_field survey_form.description %}
                         <div class="form-text small text-end description-counter"
-                             aria-live="polite"></div>
+                             aria-live="polite">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">Status</label>
-                        <div class="btn-group status-btn-group" role="group" aria-label="Survey status">
+                        <div class="btn-group status-btn-group"
+                             role="group"
+                             aria-label="Survey status">
                             {% for radio in survey_form.status %}
                                 {{ radio.tag }}
                                 <label class="btn status-btn status-{{ radio.data.value }}"
                                        for="{{ radio.id_for_label }}">
                                     <span class="dot"></span>
-                                    {% if radio.data.value == "published" %}Live
-                                    {% elif radio.data.value == "draft" %}Draft
-                                    {% elif radio.data.value == "closed" %}Closed
-                                    {% else %}{{ radio.choice_label }}{% endif %}
+                                    {% if radio.data.value == "published" %}
+                                        Live
+                                    {% elif radio.data.value == "draft" %}
+                                        Draft
+                                    {% elif radio.data.value == "closed" %}
+                                        Closed
+                                    {% else %}
+                                        {{ radio.choice_label }}
+                                    {% endif %}
                                 </label>
                             {% endfor %}
                         </div>
@@ -135,7 +156,9 @@
                                     <div class="d-none">{{ form.DELETE }}</div>
                                     <div class="row g-2 align-items-start">
                                         <div class="col-auto d-flex align-items-center pt-2">
-                                            <span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span>
+                                            <span class="drag-handle"
+                                                  title="Drag to reorder"
+                                                  aria-label="Drag to reorder">⋮⋮</span>
                                         </div>
                                         <div class="col">
                                             <div class="type-pill-btn-group mb-2">
@@ -149,8 +172,7 @@
                                         <div class="col-12 d-flex justify-content-between align-items-center">
                                             <div class="form-check">
                                                 {{ form.required }}
-                                                <label class="form-check-label small"
-                                                       for="{{ form.required.id_for_label }}">
+                                                <label class="form-check-label small" for="{{ form.required.id_for_label }}">
                                                     Required — respondent must answer
                                                 </label>
                                             </div>
@@ -169,7 +191,8 @@
                          data-warn-threshold="{{ question_warn_threshold }}"
                          data-hard-limit="{{ question_hard_limit }}"
                          role="status"
-                         aria-live="polite"></div>
+                         aria-live="polite">
+                    </div>
                     <button type="button" id="add-question" class="btn btn-outline-primary mb-3">
                         + Add question
                     </button>
@@ -180,7 +203,6 @@
                     </button>
                 </div>
             </form>
-
             {% if not is_new and is_owner %}
                 <div class="border-top mt-5 pt-4">
                     <h2 class="h6 text-muted">
@@ -196,7 +218,6 @@
                     </a>
                 </div>
             {% endif %}
-
             <template id="question-template">
                 <div class="card mb-3 question-row" data-existing="0">
                     <div class="card-body">
@@ -204,7 +225,9 @@
                         <div class="d-none">{{ formset.empty_form.DELETE }}</div>
                         <div class="row g-2 align-items-start">
                             <div class="col-auto d-flex align-items-center pt-2">
-                                <span class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</span>
+                                <span class="drag-handle"
+                                      title="Drag to reorder"
+                                      aria-label="Drag to reorder">⋮⋮</span>
                             </div>
                             <div class="col">
                                 <div class="type-pill-btn-group mb-2">
@@ -233,7 +256,6 @@
             </template>
         </div>
     </div>
-
     <script>
         document.querySelectorAll('.copy-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
