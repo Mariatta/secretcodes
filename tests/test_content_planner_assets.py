@@ -6,7 +6,7 @@ from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from content_planner.forms import PostForm
+from content_planner.forms import AssetForm, PostForm
 from content_planner.models import Asset, Campaign, ContentBoard, Post
 
 User = get_user_model()
@@ -177,6 +177,76 @@ def test_post_picker_queryset_excludes_archived(board):
     form = PostForm(campaign=campaign)
     assert "assets" in form.fields
     assert not form.fields["assets"].queryset.exists()
+
+
+# -------------------------------------------- asset -> posts attach picker
+
+
+def test_asset_form_scopes_posts_to_board(board, user):
+    other = ContentBoard.objects.create(name="Other", slug="other2", owner=user)
+    mine = Post.objects.create(
+        campaign=Campaign.objects.create(board=board, name="C"),
+        title="Mine",
+        channel="blog",
+    )
+    theirs = Post.objects.create(
+        campaign=Campaign.objects.create(board=other, name="D"),
+        title="Theirs",
+        channel="blog",
+    )
+    queryset = AssetForm(board=board).fields["posts"].queryset
+    assert mine in queryset
+    assert theirs not in queryset
+
+
+def test_asset_create_attaches_posts(auth_client, board):
+    campaign = Campaign.objects.create(board=board, name="C")
+    post = Post.objects.create(campaign=campaign, title="P", channel="blog")
+    resp = auth_client.post(
+        _url("asset_create", board),
+        {
+            "name": "Hero",
+            "kind": "image",
+            "status": "drafting",
+            "source_url": "",
+            "caption": "",
+            "notes": "",
+            "posts": [post.pk],
+        },
+    )
+    assert resp.status_code == 302
+    assert list(Asset.objects.get(name="Hero").posts.all()) == [post]
+
+
+def test_asset_edit_sets_and_prechecks_posts(auth_client, board):
+    campaign = Campaign.objects.create(board=board, name="Campaign C")
+    p1 = Post.objects.create(campaign=campaign, title="P1", channel="blog")
+    p2 = Post.objects.create(campaign=campaign, title="P2", channel="mastodon")
+    asset = Asset.objects.create(board=board, name="Hero", status="ready")
+    asset.posts.add(p1)
+
+    # GET pre-checks the currently-attached post and labels by campaign.
+    get = auth_client.get(_url("asset_edit", board, pk=asset.pk))
+    content = get.content.decode()
+    assert "Attach to posts" in content
+    assert "Campaign C · P1 · Blog" in content  # label_from_instance
+    assert p1 in get.context["form"].fields["posts"].initial  # pre-checked
+
+    # POST swaps the attachment from p1 to p2.
+    resp = auth_client.post(
+        _url("asset_edit", board, pk=asset.pk),
+        {
+            "name": "Hero",
+            "kind": "image",
+            "status": "ready",
+            "source_url": "",
+            "caption": "",
+            "notes": "",
+            "posts": [p2.pk],
+        },
+    )
+    assert resp.status_code == 302
+    assert set(asset.posts.all()) == {p2}
 
 
 # ----------------------------------------------- post-page picker + upload

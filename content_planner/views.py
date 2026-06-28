@@ -442,16 +442,17 @@ def asset_list(request, board):
 @require_http_methods(["GET", "POST"])
 def asset_create(request, board):
     if request.method == "POST":
-        form = AssetForm(request.POST, request.FILES)
+        form = AssetForm(request.POST, request.FILES, board=board)
         if form.is_valid():
             check_quota(request.user, "assets", board.assets.count())
             asset = form.save(commit=False)
             asset.board = board
             asset.save()
+            form.save_posts(asset)
             messages.success(request, f"Added asset '{asset.name}'.")
             return redirect("content_planner:asset_list", board_slug=board.slug)
     else:
-        form = AssetForm()
+        form = AssetForm(board=board)
     return render(
         request,
         "content_planner/asset_form.html",
@@ -464,13 +465,14 @@ def asset_create(request, board):
 def asset_edit(request, board, pk):
     asset = get_object_or_404(Asset, board=board, pk=pk)
     if request.method == "POST":
-        form = AssetForm(request.POST, request.FILES, instance=asset)
+        form = AssetForm(request.POST, request.FILES, instance=asset, board=board)
         if form.is_valid():
-            form.save()
+            asset = form.save()
+            form.save_posts(asset)
             messages.success(request, "Asset updated.")
             return redirect("content_planner:asset_list", board_slug=board.slug)
     else:
-        form = AssetForm(instance=asset)
+        form = AssetForm(instance=asset, board=board)
     return render(
         request,
         "content_planner/asset_form.html",

@@ -249,7 +249,19 @@ class PostCreateForm(forms.ModelForm):
 
 
 class AssetForm(forms.ModelForm):
-    """Create / edit a board asset. Status renders as a dot+pill toggle group."""
+    """Create / edit a board asset. Status renders as a dot+pill toggle group.
+
+    ``posts`` attaches this asset to any number of the board's posts at once —
+    the reverse of the post form's asset picker, so one asset can be put on
+    several posts from one place.
+    """
+
+    posts = forms.ModelMultipleChoiceField(
+        queryset=Post.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Attach to posts",
+    )
 
     class Meta:
         model = Asset
@@ -259,3 +271,25 @@ class AssetForm(forms.ModelForm):
             "caption": forms.Textarea(attrs={"rows": 2}),
             "notes": forms.Textarea(attrs={"rows": 2}),
         }
+
+    def __init__(self, *args, board, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields["posts"]
+        field.queryset = (
+            Post.objects.filter(campaign__board=board)
+            .select_related("campaign")
+            .order_by("campaign__name", "scheduled_at", "title")
+        )
+        field.label_from_instance = lambda post: (
+            f"{post.campaign.name} · {post.title} · {post.get_channel_display()}"
+        )
+        if self.instance.pk:
+            field.initial = self.instance.posts.all()
+
+    def save_posts(self, asset):
+        """Set the asset's post attachments from the cleaned ``posts`` field.
+
+        ``posts`` is the reverse side of ``Post.assets``, so ModelForm won't
+        persist it automatically; the views call this once the asset has a pk.
+        """
+        asset.posts.set(self.cleaned_data["posts"])
