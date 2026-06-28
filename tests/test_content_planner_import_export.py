@@ -58,6 +58,22 @@ def _import_url(board):
     )
 
 
+# ------------------------------------------------------------ import help
+
+
+def test_import_help_renders_conventions_and_examples(auth_client, board):
+    resp = auth_client.get(
+        reverse("content_planner:import_help", kwargs={"board_slug": board.slug})
+    )
+    assert resp.status_code == 200
+    assert b"Import format guide" in resp.content
+    assert b"event-anchored-campaign" in resp.content  # example shown
+    assert b"PyCon attendee comms" in resp.content  # example content
+    assert b"Channels" in resp.content  # rendered from conventions.md
+    assert b"Copy AI instructions" in resp.content  # paste-once block
+    assert b"/mcp/content/" in resp.content  # connector URL shown
+
+
 # ---------------------------------------------------------------- export
 
 
@@ -209,20 +225,20 @@ def test_import_aware_datetime_preserved(auth_client, board):
     "payload,fragment",
     [
         ("not json {", "Invalid JSON"),
-        ('["a list"]', "must be an object"),
-        ('{"posts": []}', "campaign.name"),
-        ('{"campaign": {"name": "X"}}', "posts list"),
+        ('["a list"]', "is not of type"),
+        ('{"posts": []}', "is a required property"),
+        ('{"campaign": {"name": "X"}}', "is a required property"),
         (
             '{"campaign": {"name": "X", "event_date": "nope"}, "posts": []}',
             "event_date",
         ),
         (
             '{"campaign": {"name": "X"}, "posts": [{"channel": "blog"}]}',
-            "needs a title",
+            "posts.0",
         ),
         (
             '{"campaign": {"name": "X"}, "posts": [{"title": "T", "channel": "zzz"}]}',
-            "Unknown channel",
+            "is not one of",
         ),
     ],
 )

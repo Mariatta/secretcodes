@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schema://content/export",
+  "title": "Content planner - campaign export",
+  "description": "Full export shape for a campaign. A superset of create-from-chat: re-importing ignores id, slug, status, created_by and the dates.",
+  "type": "object",
+  "required": [
+    "campaign",
+    "posts"
+  ],
+  "properties": {
+    "campaign": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "event_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "narrative_notes": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "hashtags": {
+          "type": "string"
+        },
+        "creation_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified_date": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "posts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "blog",
+              "mastodon",
+              "linkedin",
+              "x",
+              "instagram",
+              "newsletter",
+              "podcast",
+              "talk",
+              "other"
+            ]
+          },
+          "scheduled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_all_day": {
+            "type": "boolean"
+          },
+          "anchor_offset_days": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "drafting",
+              "ready",
+              "uploaded",
+              "scheduled",
+              "published",
+              "archived",
+              "cancelled"
+            ]
+          },
+          "body_snippet": {
+            "type": "string"
+          },
+          "draft_url": {
+            "type": "string"
+          },
+          "published_url": {
+            "type": "string"
+          },
+          "expected_asset": {
+            "type": "string"
+          },
+          "hashtags": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

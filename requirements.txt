@@ -22,6 +22,7 @@ django-widget-tweaks==1.5.1
 google-api-python-client==2.196.0
 google-auth==2.53.0
 google-auth-oauthlib==1.4.0
+jsonschema==4.26.0
 pillow==12.2.0
 qrcode==8.2
 qrcode[pil]

@@ -1,13 +1,18 @@
 import json
 from functools import wraps
 
+import markdown
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import pluralize
+from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
+from django_ratelimit.decorators import ratelimit
 
 from .billing import check_quota
 from .chat_import import (
@@ -16,8 +21,10 @@ from .chat_import import (
     parse_chat_payload,
 )
 from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
+from .mcp import dispatch as mcp_dispatch
 from .models import Asset, Campaign, ContentBoard, Post
 from .permissions import can_access_board, is_content_user
+from .schemas import SCHEMA_DIR
 from .selectors import (
     campaign_stats,
     daily_sections,
@@ -188,6 +195,43 @@ def campaign_create_from_chat(request, board):
             "board": board,
             "payload": raw,
             "channels": ", ".join(value for value, _ in Post.CHANNEL_CHOICES),
+        },
+    )
+
+
+@board_required
+def import_help(request, board):
+    """The create-from-chat format for humans: the rendered conventions, the
+    worked examples, and a one-click instruction block to paste into an AI tool
+    so it produces valid JSON without guessing the shape."""
+    examples = [
+        {"name": path.stem, "content": path.read_text()}
+        for path in sorted((SCHEMA_DIR / "examples").glob("*.json"))
+    ]
+    conventions_md = (SCHEMA_DIR / "conventions.md").read_text()
+    schema_json = (SCHEMA_DIR / "create_from_chat.schema.json").read_text()
+    conventions_html = markdown.markdown(
+        conventions_md, extensions=["fenced_code", "tables"]
+    )
+    ai_instructions = (
+        "When I ask you to plan a content campaign, reply with ONLY a JSON "
+        "object in exactly the format below — no prose, no markdown fences. "
+        "I will paste it into a content planner.\n\n"
+        "# Conventions\n\n"
+        f"{conventions_md}\n\n"
+        "# JSON Schema (authoritative)\n\n"
+        f"{schema_json}\n\n"
+        "# Examples\n\n" + "\n\n".join(example["content"] for example in examples)
+    )
+    return render(
+        request,
+        "content_planner/import_help.html",
+        {
+            "board": board,
+            "conventions_html": conventions_html,
+            "examples": examples,
+            "ai_instructions": ai_instructions,
+            "mcp_url": request.build_absolute_uri(reverse("content_mcp_endpoint")),
         },
     )
 
@@ -442,3 +486,43 @@ def asset_archive(request, board, pk):
     asset.save()
     messages.success(request, f"Archived '{asset.name}'.")
     return redirect("content_planner:asset_list", board_slug=board.slug)
+
+
+def _mcp_rate(group, request):
+    return settings.MCP_RATE_LIMIT
+
+
+@csrf_exempt
+@require_POST
+@ratelimit(key="ip", rate=_mcp_rate, block=False)
+def content_mcp_endpoint(request):
+    """MCP server for the content_planner format — JSON-RPC 2.0 over HTTP POST.
+
+    Resources-only (schema, conventions, examples); no private board data, so
+    no auth. Add this URL as a custom connector in your AI tool. Mirrors the
+    availability MCP endpoint.
+    """
+    if getattr(request, "limited", False):
+        return JsonResponse(
+            {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32000, "message": "Rate limit exceeded"},
+            },
+            status=429,
+        )
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": "Parse error"},
+            },
+            status=400,
+        )
+    response_payload = mcp_dispatch(payload)
+    if response_payload is None:
+        return HttpResponse(status=202)
+    return JsonResponse(response_payload)
