@@ -179,11 +179,28 @@
                 </div>
             </a>
         </div>
+        <div class="col-md-4">
+            <a href="{% url 'content_planner:index' %}" class="sc-card sc-tile">
+                <div class="sc-eyebrow">
+                    <span class="sc-num">06</span>Planning
+                </div>
+                <h4 class="sc-display sc-tile-title">
+                    Content planner
+                </h4>
+                <p class="sc-muted sc-tile-body">
+                    Plan blog series and social posts across channels — schedule,
+                    assets, and status in one place. Invite-only.
+                </p>
+                <div class="sc-arrow">
+                    open →
+                </div>
+            </a>
+        </div>
         {% if perms.qrcode_manager.create_slug_qrcode %}
             <div class="col-md-4">
                 <a href="{% url 'qrcode_slug_generator' %}" class="sc-card sc-tile">
                     <div class="sc-eyebrow">
-                        <span class="sc-num">06</span>Utility
+                        <span class="sc-num">07</span>Utility
                     </div>
                     <h4 class="sc-display sc-tile-title">
                         QR + slug

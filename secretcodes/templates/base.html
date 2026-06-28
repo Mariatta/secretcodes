@@ -182,21 +182,30 @@
                                     {% endif %}
                                 </ul>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if ns == 'expenses' %} active{% endif %}"
-                                   {% if ns == 'expenses' %}aria-current="page"{% endif %}
-                                   href="{% url 'expenses:event_list' %}">Expenses</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if ns == 'surveys' %} active{% endif %}"
-                                   {% if ns == 'surveys' %}aria-current="page"{% endif %}
-                                   href="{% url 'surveys:dashboard' %}">Surveys</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if ns == 'content_planner' %} active{% endif %}"
-                                   {% if ns == 'content_planner' %}aria-current="page"{% endif %}
-                                   href="{% url 'content_planner:index' %}">Content</a>
-                            </li>
+                            {% comment %}Personal / invite-only apps — only shown to
+                            users who can actually use them, so the navbar stays
+                            relevant for general visitors.{% endcomment %}
+                            {% if perms.expenses.access_expenses %}
+                                <li class="nav-item">
+                                    <a class="nav-link{% if ns == 'expenses' %} active{% endif %}"
+                                       {% if ns == 'expenses' %}aria-current="page"{% endif %}
+                                       href="{% url 'expenses:event_list' %}">Expenses</a>
+                                </li>
+                            {% endif %}
+                            {% if perms.surveys.access_surveys %}
+                                <li class="nav-item">
+                                    <a class="nav-link{% if ns == 'surveys' %} active{% endif %}"
+                                       {% if ns == 'surveys' %}aria-current="page"{% endif %}
+                                       href="{% url 'surveys:dashboard' %}">Surveys</a>
+                                </li>
+                            {% endif %}
+                            {% if perms.content_planner.access_content_planner %}
+                                <li class="nav-item">
+                                    <a class="nav-link{% if ns == 'content_planner' %} active{% endif %}"
+                                       {% if ns == 'content_planner' %}aria-current="page"{% endif %}
+                                       href="{% url 'content_planner:index' %}">Content</a>
+                                </li>
+                            {% endif %}
                         </ul>
                     {% endwith %}
                     <button type="button"
