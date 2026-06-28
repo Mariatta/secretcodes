@@ -3,7 +3,10 @@ services:
     image: postgres:16
     restart: always
     ports:
-      - "5433:5432"
+      # Host port is overridable (e.g. via .env) so this can run alongside
+      # another project that already publishes 5433. The app connects over the
+      # compose network on the internal 5432, so this only affects host access.
+      - "${SECRETCODES_POSTGRES_PORT:-5433}:5432"
     environment:
       POSTGRES_USER: secretcodes
       POSTGRES_PASSWORD: secretcodes
@@ -20,7 +23,7 @@ services:
   redis:
     image: redis:7-bullseye
     ports:
-      - "6379:6379"
+      - "${SECRETCODES_REDIS_PORT:-6379}:6379"
     healthcheck:
      test: ["CMD", "redis-cli","ping"]
      interval: 1s
@@ -34,7 +37,7 @@ services:
       - .:/code
       - ./media:/code/media
     ports:
-      - "8000:8000"
+      - "${SECRETCODES_WEB_PORT:-8000}:8000"
     environment:
       DEBUG: True
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,[::1]
