@@ -36,15 +36,102 @@
             Please fix the errors highlighted below.
         </div>
     {% endif %}
-    <form method="post" enctype="multipart/form-data" style="max-width: 720px">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {% bootstrap_field form.name %}
-        {% bootstrap_field form.kind %}
+        <div class="row">
+            <div class="col-md-8">
+                {% bootstrap_field form.name %}
+            </div>
+            <div class="col-md-4">
+                {% bootstrap_field form.kind %}
+            </div>
+        </div>
         {% include "content_planner/_status_picker.html" with field=form.status %}
-        {% bootstrap_field form.file %}
-        {% bootstrap_field form.source_url %}
+        <div class="row">
+            <div class="{% if asset.media_url %}col-md-7{% else %}col-12{% endif %}">
+                {% bootstrap_field form.file %}
+                {% bootstrap_field form.source_url %}
+            </div>
+            {% if asset.media_url %}
+                <div class="col-md-5">
+                    <div class="fw-semibold mb-1">Current file</div>
+                    {% if asset.is_image %}
+                        <a href="{{ asset.media_url }}"
+                           rel="noopener"
+                           target="_blank"
+                           data-lightbox="{{ asset.media_url }}"
+                           data-lightbox-title="{{ asset.name }}">
+                            <img class="sc-asset-thumb"
+                                 width="96"
+                                 height="96"
+                                 src="{{ asset.media_url }}"
+                                 alt="{{ asset.name }}">
+                        </a>
+                    {% elif asset.is_video %}
+                        <a href="{{ asset.media_url }}"
+                           rel="noopener"
+                           target="_blank"
+                           data-lightbox="{{ asset.media_url }}"
+                           data-lightbox-title="{{ asset.name }}"
+                           data-lightbox-type="video">
+                            <video class="sc-asset-thumb"
+                                   width="96"
+                                   height="96"
+                                   src="{{ asset.media_url }}#t=0.1"
+                                   muted
+                                   preload="metadata">
+                            </video>
+                        </a>
+                    {% else %}
+                        <a href="{{ asset.media_url }}" rel="noopener" target="_blank">{{ asset.media_url }} ↗</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
         {% bootstrap_field form.caption %}
         {% bootstrap_field form.notes %}
+        {% if form.posts.field.queryset %}
+            <div class="mb-3">
+                <div class="fw-semibold mb-1">Attach to posts</div>
+                <div class="text-muted small mb-1">
+                    Put this asset on any of the board's posts. Filter to narrow a long list.
+                </div>
+                <input type="search"
+                       class="form-control form-control-sm mb-2"
+                       placeholder="Filter by campaign, title, or channel…"
+                       oninput="scFilterAttachPosts(this)"
+                       aria-label="Filter posts">
+                {% if form.posts.errors %}
+                    <div class="text-danger small mb-1">{{ form.posts.errors }}</div>
+                {% endif %}
+                <div class="border rounded p-2" style="max-height: 22rem; overflow: auto">
+                    {% regroup form.posts.field.queryset by campaign as campaign_groups %}
+                    {% for group in campaign_groups %}
+                        <div data-attach-group>
+                            <div class="fw-semibold small text-muted mt-2">{{ group.grouper.name }}</div>
+                            {% for post in group.list %}
+                                <div class="form-check"
+                                     data-attach-row
+                                     data-search="{{ group.grouper.name|lower }} {{ post.title|lower }} {{ post.get_channel_display|lower }}">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="posts"
+                                           value="{{ post.pk }}"
+                                           id="attach-post-{{ post.pk }}"
+                                           {% if post.pk in attached_post_ids %}checked{% endif %}>
+                                    <label class="form-check-label" for="attach-post-{{ post.pk }}">
+                                        {{ post.title }}
+                                        <span class="text-muted">· {{ post.get_channel_display }}
+                                            {% if post.scheduled_at %} · {{ post.scheduled_at|date:"M j" }}{% endif %}
+                                        </span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">
                 Save
@@ -53,4 +140,18 @@
                href="{% url 'content_planner:asset_list' board.slug %}">Cancel</a>
         </div>
     </form>
+    <script>
+      function scFilterAttachPosts(input) {
+        var q = input.value.trim().toLowerCase();
+        document.querySelectorAll('[data-attach-group]').forEach(function (group) {
+          var anyVisible = false;
+          group.querySelectorAll('[data-attach-row]').forEach(function (row) {
+            var match = !q || row.dataset.search.indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+            if (match) anyVisible = true;
+          });
+          group.style.display = anyVisible ? '' : 'none';
+        });
+      }
+    </script>
 {% endblock content %}

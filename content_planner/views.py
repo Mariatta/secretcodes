@@ -438,24 +438,37 @@ def asset_list(request, board):
     )
 
 
+def _attached_post_ids(form):
+    """Post ids checked in the asset form's picker — the asset's current posts
+    on GET, or the submitted selection when re-rendering after a validation
+    error, so the picker keeps its state either way."""
+    return {int(getattr(value, "pk", value)) for value in form["posts"].value() or []}
+
+
 @board_required
 @require_http_methods(["GET", "POST"])
 def asset_create(request, board):
     if request.method == "POST":
-        form = AssetForm(request.POST, request.FILES)
+        form = AssetForm(request.POST, request.FILES, board=board)
         if form.is_valid():
             check_quota(request.user, "assets", board.assets.count())
             asset = form.save(commit=False)
             asset.board = board
             asset.save()
+            form.save_posts(asset)
             messages.success(request, f"Added asset '{asset.name}'.")
             return redirect("content_planner:asset_list", board_slug=board.slug)
     else:
-        form = AssetForm()
+        form = AssetForm(board=board)
     return render(
         request,
         "content_planner/asset_form.html",
-        {"board": board, "form": form, "is_create": True},
+        {
+            "board": board,
+            "form": form,
+            "is_create": True,
+            "attached_post_ids": _attached_post_ids(form),
+        },
     )
 
 
@@ -464,17 +477,24 @@ def asset_create(request, board):
 def asset_edit(request, board, pk):
     asset = get_object_or_404(Asset, board=board, pk=pk)
     if request.method == "POST":
-        form = AssetForm(request.POST, request.FILES, instance=asset)
+        form = AssetForm(request.POST, request.FILES, instance=asset, board=board)
         if form.is_valid():
-            form.save()
+            asset = form.save()
+            form.save_posts(asset)
             messages.success(request, "Asset updated.")
             return redirect("content_planner:asset_list", board_slug=board.slug)
     else:
-        form = AssetForm(instance=asset)
+        form = AssetForm(instance=asset, board=board)
     return render(
         request,
         "content_planner/asset_form.html",
-        {"board": board, "form": form, "asset": asset, "is_create": False},
+        {
+            "board": board,
+            "form": form,
+            "asset": asset,
+            "is_create": False,
+            "attached_post_ids": _attached_post_ids(form),
+        },
     )
 
 
