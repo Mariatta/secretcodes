@@ -38,7 +38,7 @@
                                     {% endif %}
                                 </div>
                                 {% for post in cell.posts %}
-                                    <div class="text-truncate">
+                                    <div class="text-break small lh-sm mb-1">
                                         <span class="sc-status-dot sc-st-{{ post.status }}"
                                               title="{{ post.get_status_display }}"></span>
                                         <a class="small{% if post.is_overdue %} text-danger fw-semibold{% endif %}"
