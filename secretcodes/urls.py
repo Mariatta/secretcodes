@@ -21,6 +21,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from availability import views as availability_views
+from content_planner import views as content_planner_views
 from qrcode_manager import views as qr_views
 from secretcodes import views
 
@@ -34,6 +35,12 @@ urlpatterns = [
     path("content/", include("content_planner.urls")),
     path("mcp/", availability_views.mcp_endpoint, name="mcp_endpoint"),
     path("mcp", availability_views.mcp_endpoint),
+    path(
+        "mcp/content/",
+        content_planner_views.content_mcp_endpoint,
+        name="content_mcp_endpoint",
+    ),
+    path("mcp/content", content_planner_views.content_mcp_endpoint),
     path(".well-known/mcp.json", views.well_known_mcp, name="well_known_mcp"),
     path("agents/", views.agents, name="agents"),
     path("about/", views.about, name="about"),

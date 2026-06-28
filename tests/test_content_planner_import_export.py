@@ -70,6 +70,8 @@ def test_import_help_renders_conventions_and_examples(auth_client, board):
     assert b"event-anchored-campaign" in resp.content  # example shown
     assert b"PyCon attendee comms" in resp.content  # example content
     assert b"Channels" in resp.content  # rendered from conventions.md
+    assert b"Copy AI instructions" in resp.content  # paste-once block
+    assert b"/mcp/content/" in resp.content  # connector URL shown
 
 
 # ---------------------------------------------------------------- export

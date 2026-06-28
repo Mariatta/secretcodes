@@ -24,6 +24,39 @@
         The same contract an AI assistant follows when generating a campaign JSON.
         Hand it (or paste it) to your assistant so it produces valid JSON the first time.
     </p>
+    {% load icons %}
+    <div class="border rounded p-3 mb-4 sc-bg-subtle">
+        <div class="d-flex justify-content-between align-items-center gap-2">
+            <div>
+                <div class="fw-bold">
+                    Use with your AI tool
+                </div>
+                <div class="text-muted small">
+                    Paste this once into your AI tool (e.g. a Claude Project's instructions).
+                    Then just ask it to plan a campaign — it'll produce JSON you paste below.
+                </div>
+            </div>
+            <button type="button"
+                    class="btn btn-primary flex-shrink-0"
+                    onclick="scCopy('sc-ai-instructions', this)">
+                {% icon "copy" class="me-1" %}<span data-copy-label>Copy AI instructions</span>
+            </button>
+        </div>
+        <textarea id="sc-ai-instructions" class="visually-hidden" readonly>{{ ai_instructions }}</textarea>
+        <hr class="my-3">
+        <div class="small">
+            <span class="fw-bold">Or add a connector</span> (Claude Desktop / a custom
+            connector) so you never paste again — point it at this MCP endpoint:
+            <div class="d-flex align-items-center gap-2 mt-1">
+                <code id="sc-mcp-url" class="flex-grow-1 text-break">{{ mcp_url }}</code>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary flex-shrink-0"
+                        onclick="scCopy('sc-mcp-url', this)">
+                    {% icon "copy" class="me-1" %}<span data-copy-label>Copy</span>
+                </button>
+            </div>
+        </div>
+    </div>
     <div class="sc-prose">
         {{ conventions_html|safe }}
     </div>
