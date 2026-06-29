@@ -3,18 +3,5 @@
     Content planner · {{ block.super }}
 {% endblock head_title %}
 {% block content %}
-    <div class="row">
-        <div class="col-lg-8">
-            <h1 class="h3">
-                Content planner
-            </h1>
-            <p class="lead">
-                Plan blog series and the social posts around them, track each piece from
-                drafting to published, and reschedule a whole campaign at once.
-            </p>
-            <p class="text-muted">
-                This area is invite-only. Ask the site owner for access.
-            </p>
-        </div>
-    </div>
+    {% include "_app_landing.html" with num="06" name="Content planner" title_lead="Blog and social," title_accent="planned together" lede="A planner for blog series and the social posts around them. Track each piece from drafting to published, schedule across channels, and reschedule a whole campaign at once." access="This planner is invite-only." access_hint="Signed in without access yet? Ask the site owner to add you." status="invitation only" show_signin=True %}
 {% endblock content %}

@@ -1,0 +1,66 @@
+{% comment %}
+    Reusable public-app landing hero: the shared pattern every app's landing
+    page should use, so they stay visually consistent.
+
+    Renders the numbered eyebrow, a two-tone sc-display title, the lede, an
+    optional access note + Sign in button, and the sc-coords status bar. Include
+    it from an app's landing template inside {% block content %}, e.g.:
+
+        {% include "_app_landing.html" with num="06" name="Content planner" title_lead="Blog and social," title_accent="planned together" lede="One sentence about the app." access="This planner is invite-only." access_hint="You're signed in but don't have access yet." status="invitation only" show_signin=True %}
+
+    Parameters:
+      num           tile number string, e.g. "06" (matches the home-page tile)
+      name          app name shown in the eyebrow
+      title_lead    plain first part of the display title (include trailing comma)
+      title_accent  italic accent part of the title
+      lede          descriptive paragraph
+      access        optional bold access note (e.g. the invite-only line)
+      access_hint   optional extra sentence shown only to signed-in visitors
+      status        sc-coords STATUS text (e.g. "invitation only", "private use")
+      signal        sc-coords SIGNAL morse (default "·  ·  · —")
+      owner         sc-coords OWNER handle (default "@mariatta")
+      show_signin   truthy to show a Sign in button for anonymous visitors
+{% endcomment %}
+<section class="sc-hero py-4 mb-5">
+    <div class="sc-eyebrow mb-3">
+        <span class="sc-num">{{ num }}</span>{{ name }}
+    </div>
+    <h1 class="sc-display mb-4">
+        {{ title_lead }} <em class="sc-italic">{{ title_accent }}</em>.
+    </h1>
+    <p class="sc-muted sc-lede mb-4">
+        {{ lede }}
+    </p>
+    {% if access %}
+        <p class="sc-muted mb-4">
+            <strong>{{ access }}</strong>
+            {% if user.is_authenticated and access_hint %}
+                {{ access_hint }}
+            {% endif %}
+        </p>
+    {% endif %}
+    {% if show_signin and not user.is_authenticated %}
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'account_login' %}" class="sc-btn sc-btn--accent">
+                Sign in
+            </a>
+        </div>
+    {% endif %}
+</section>
+<div class="sc-coords mb-4">
+    <span><b>STATUS</b> {{ status }}</span>
+    <span><b>SIGNAL</b>
+        {% if signal %}
+            {{ signal }}
+        {% else %}
+            ·  ·  · —
+        {% endif %}
+    </span>
+    <span><b>OWNER</b>
+        {% if owner %}
+            {{ owner }}
+        {% else %}
+            @mariatta
+        {% endif %}
+    </span>
+</div>
