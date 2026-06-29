@@ -3,16 +3,37 @@
     Content planner · {{ block.super }}
 {% endblock head_title %}
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">
-            Content planner
+    <section class="sc-hero py-4 mb-5">
+        <div class="sc-eyebrow mb-3">
+            <span class="sc-num">06</span>Content planner
+        </div>
+        <h1 class="sc-display mb-4">
+            Blog and social, <em class="sc-italic">planned together</em>.
         </h1>
+        <p class="sc-muted sc-lede mb-4">
+            A planner for blog series and the social posts around them. Track each
+            piece from drafting to published, schedule across channels, and
+            reschedule a whole campaign at once.
+        </p>
+        <p class="sc-muted mb-4">
+            <strong>This planner is invite-only.</strong>
+            {% if user.is_authenticated %}
+                You're signed in but don't have access yet — ask the site owner and I'll add you.
+            {% else %}
+                Ask the site owner for access.
+            {% endif %}
+        </p>
+        {% if not user.is_authenticated %}
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'account_login' %}" class="sc-btn sc-btn--accent">
+                    Sign in
+                </a>
+            </div>
+        {% endif %}
+    </section>
+    <div class="sc-coords mb-4">
+        <span><b>STATUS</b> invitation only</span>
+        <span><b>SIGNAL</b> ·  ·  · —</span>
+        <span><b>OWNER</b> @mariatta</span>
     </div>
-    <p class="lead">
-        Plan blog series and the social posts around them, track each piece from
-        drafting to published, and reschedule a whole campaign at once.
-    </p>
-    <p class="text-muted">
-        This area is invite-only. Ask the site owner for access.
-    </p>
 {% endblock content %}
