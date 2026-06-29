@@ -1,0 +1,63 @@
+site_name: "Secret Codes: Infrastructure"
+site_description: How the secretcodes platform is built, deployed, and operated.
+site_url: https://docs.secretcodes.dev
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/logo-wordmark-light.svg
+  favicon: assets/favicon.svg
+  # Self-hosted brand fonts via @font-face in stylesheets/brand.css; disable
+  # Material's Google Fonts fetch so the docs make no third-party requests.
+  font: false
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/brand.css
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - Overview: architecture/overview.md
+  - Deployment:
+      - Azure (App Service + Postgres): deployment/azure.md
+      - Infrastructure as Code (Terraform): deployment/terraform.md
+      - Heroku → Azure migration: deployment/migration.md
+  - Runbooks: runbooks/index.md
+  - Reference: reference/index.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  # Uncomment when you start documenting the Python API surface (it pulls
+  # reference docs straight from your docstrings, keeping them in-repo):
+  # - mkdocstrings:
+  #     handlers:
+  #       python:
+  #         options:
+  #           docstring_style: google
