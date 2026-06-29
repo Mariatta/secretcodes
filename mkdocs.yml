@@ -5,7 +5,7 @@ site_url: https://docs.secretcodes.dev
 theme:
   name: material
   custom_dir: overrides
-  logo: assets/logo-monogram-light.svg
+  logo: assets/logo-wordmark-light.svg
   favicon: assets/favicon.svg
   # Self-hosted brand fonts via @font-face in stylesheets/brand.css; disable
   # Material's Google Fonts fetch so the docs make no third-party requests.

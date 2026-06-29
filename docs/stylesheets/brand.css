@@ -119,10 +119,15 @@
   --sc-accent: #D84C2F;
 }
 
-/* Brand logo to the top-right of the header (title stays left). */
-.md-header__button.md-logo {
-  order: 10;
-  margin-left: 0.4rem;
+/* Brand wordmark in the header (top-left, like the main site). The wordmark
+   already reads "Secret Codes", so hide Material's redundant text title. */
+.md-header__button.md-logo img {
+  height: 1.6rem;
+  width: auto;
+}
+
+.md-header__title {
+  display: none;
 }
 
 /* ---- Branded footer: the morse wordmark, like the app footer ---- */
@@ -146,4 +151,28 @@
   max-width: 300px;
   height: auto;
   color: #F2ECDD; /* cream, on the navy footer */
+}
+
+/* Footer links row (by Mariatta + socials), mirroring the app footer. */
+.sc-doc-footer__links {
+  margin-top: 0.7rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  opacity: 0.85;
+}
+
+.sc-doc-footer__links a {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.sc-doc-footer__links a:hover {
+  color: var(--sc-accent);
+}
+
+.sc-doc-footer__links .sc-doc-footer__sep {
+  opacity: 0.4;
+  margin: 0 0.45rem;
 }

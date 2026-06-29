@@ -1,7 +1,8 @@
 {#
   Secret Codes branded footer, mirroring the app footer: the "Secret Codes"
-  wordmark in Fraunces over a morse rendering of the name, with the signal-red
-  middle stroke. Overrides Material's default copyright partial.
+  wordmark in Fraunces over a morse rendering of the name, then a row of links
+  back to the main site and Mariatta's social presence. Overrides Material's
+  default copyright partial.
 #}
 <div class="md-copyright sc-doc-footer">
   <a href="https://secretcodes.dev" title="secretcodes.dev" class="sc-doc-footer__link">
@@ -16,7 +17,20 @@
       <text x="20" y="150" font-family="'JetBrains Mono', monospace" font-size="9" letter-spacing="3" fill="currentColor" opacity="0.5">S · E · C · R · E · T     C · O · D · E · S</text>
     </svg>
   </a>
-  {% if config.copyright %}
-    <div class="md-copyright__highlight">{{ config.copyright }}</div>
-  {% endif %}
+
+  <nav class="sc-doc-footer__links" aria-label="Secret Codes and Mariatta links">
+    <a href="https://secretcodes.dev">secretcodes.dev</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://mariatta.ca" target="_blank" rel="noopener">by Mariatta</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://fosstodon.org/@mariatta" target="_blank" rel="me noopener">Mastodon</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://bsky.app/profile/mariatta.ca" target="_blank" rel="noopener">Bluesky</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://www.linkedin.com/in/mariatta" target="_blank" rel="noopener">LinkedIn</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://www.instagram.com/mariatta81" target="_blank" rel="noopener">Instagram</a>
+    <span class="sc-doc-footer__sep">·</span>
+    <a href="https://github.com/Mariatta/secretcodes" target="_blank" rel="noopener">GitHub</a>
+  </nav>
 </div>
