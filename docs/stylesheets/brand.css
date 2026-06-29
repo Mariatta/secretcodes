@@ -1,0 +1,80 @@
+/* Secret Codes brand theme for MkDocs Material.
+   Mirrors secretcodes/static/brand/secret-codes.css: cream paper + navy ink,
+   maritime signal red and decoded-message gold accents, with the brand's
+   Fraunces / Inter / JetBrains Mono type. */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap");
+
+/* ---- Light: cream paper, navy ink ---- */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color:           #0E1730; /* deep navy ink */
+  --md-primary-fg-color--light:    #1B2747;
+  --md-primary-fg-color--dark:     #0A1124;
+  --md-primary-bg-color:           #F2ECDD; /* cream text on the navy header */
+  --md-primary-bg-color--light:    rgba(242, 236, 221, 0.7);
+
+  --md-accent-fg-color:            #D84C2F; /* maritime signal red */
+
+  --md-default-bg-color:           #F2ECDD; /* cream paper */
+  --md-default-fg-color:           rgba(14, 23, 48, 0.87);
+  --md-default-fg-color--light:    rgba(14, 23, 48, 0.60);
+  --md-default-fg-color--lighter:  rgba(14, 23, 48, 0.32);
+  --md-default-fg-color--lightest: rgba(14, 23, 48, 0.12);
+
+  --md-typeset-color:    #0E1730;
+  --md-typeset-a-color:  #C0432A; /* deepened signal red for link contrast */
+
+  --md-code-bg-color:    #E8DFC6; /* warm paper */
+  --md-code-fg-color:    #1B2747;
+
+  --md-footer-bg-color:       #0E1730;
+  --md-footer-bg-color--dark: #0A1124;
+}
+
+/* ---- Dark: navy ink, cream text ---- */
+[data-md-color-scheme="slate"] {
+  --md-hue: 226; /* push derived slate surfaces toward navy */
+
+  --md-primary-fg-color:           #1B2747; /* ink-soft header */
+  --md-primary-fg-color--light:    #25335A;
+  --md-primary-fg-color--dark:     #0A1124;
+  --md-primary-bg-color:           #F2ECDD;
+
+  --md-accent-fg-color:            #F0A06B; /* warmer accent on dark */
+
+  --md-default-bg-color:           #0E1730;
+  --md-default-fg-color:           rgba(242, 236, 221, 0.90);
+  --md-default-fg-color--light:    rgba(242, 236, 221, 0.62);
+  --md-default-fg-color--lighter:  rgba(242, 236, 221, 0.32);
+  --md-default-fg-color--lightest: rgba(242, 236, 221, 0.12);
+
+  --md-typeset-color:    #F2ECDD;
+  --md-typeset-a-color:  #F0A06B;
+
+  --md-code-bg-color:    #1B2747;
+  --md-code-fg-color:    #F2ECDD;
+
+  --md-footer-bg-color:       #0A1124;
+  --md-footer-bg-color--dark: #070C1A;
+}
+
+/* ---- Display type: Fraunces for headings and titles ---- */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-header__title,
+.md-nav__title {
+  font-family: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+}
+
+/* ---- Branded touch: a thin decoded-gold rule under the header ---- */
+.md-header {
+  border-bottom: 2px solid #C79A3A;
+}

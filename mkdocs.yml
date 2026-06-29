@@ -4,6 +4,9 @@ site_url: https://docs.secretcodes.dev
 
 theme:
   name: material
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
     - navigation.sections
     - navigation.top
@@ -11,15 +14,20 @@ theme:
     - search.suggest
   palette:
     - scheme: default
-      primary: pink # a nod to the roses theme
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: pink
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+
+extra_css:
+  - stylesheets/brand.css
 
 nav:
   - Home: index.md
