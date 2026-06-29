@@ -1,9 +1,44 @@
 /* Secret Codes brand theme for MkDocs Material.
    Mirrors secretcodes/static/brand/secret-codes.css: cream paper + navy ink,
    maritime signal red and decoded-message gold accents, with the brand's
-   Fraunces / Inter / JetBrains Mono type. */
+   Fraunces / Inter / JetBrains Mono type. Fonts are vendored (self-hosted from
+   docs/fonts/), not fetched from a third party. */
 
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap");
+/* ---- Self-hosted brand fonts (variable woff2, weights 400..700) ---- */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/fraunces-normal-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/fraunces-italic-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/inter-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/jetbrains-mono-var.woff2") format("woff2");
+}
+
+/* Point Material's font stacks at the vendored families (theme font: false). */
+:root {
+  --md-text-font: "Inter";
+  --md-code-font: "JetBrains Mono";
+}
 
 /* ---- Light: cream paper, navy ink ---- */
 [data-md-color-scheme="default"] {
@@ -77,4 +112,38 @@
 /* ---- Branded touch: a thin decoded-gold rule under the header ---- */
 .md-header {
   border-bottom: 2px solid #C79A3A;
+}
+
+/* Accent token consumed by the inline logo + footer SVGs. */
+:root {
+  --sc-accent: #D84C2F;
+}
+
+/* Brand logo to the top-right of the header (title stays left). */
+.md-header__button.md-logo {
+  order: 10;
+  margin-left: 0.4rem;
+}
+
+/* ---- Branded footer: the morse wordmark, like the app footer ---- */
+.sc-doc-footer {
+  width: 100%;
+}
+
+.sc-doc-footer__link {
+  display: inline-block;
+  opacity: 0.92;
+  transition: opacity 0.2s;
+}
+
+.sc-doc-footer__link:hover {
+  opacity: 1;
+}
+
+.sc-doc-footer__morse {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  color: #F2ECDD; /* cream, on the navy footer */
 }
