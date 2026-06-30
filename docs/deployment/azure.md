@@ -36,6 +36,33 @@ az ad sp create-for-rbac --name secretcodes-deploy \
   --sdk-auth
 ```
 
+!!! danger "Create `AZURE_CREDENTIALS` once — a re-run invalidates it"
+    Each `az ad sp create-for-rbac --name secretcodes-deploy` run **resets** the
+    SP password, so any earlier JSON's `clientSecret` stops working. If
+    `azure/login` fails with `Invalid client secret provided`, you stored a stale
+    one. Create it once, capture to a file (stdout only — the `--sdk-auth`
+    deprecation warning goes to stderr), eyeball it, then store it:
+    ```bash
+    az ad sp create-for-rbac --name secretcodes-deploy --role contributor \
+      --scopes "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/secretcodes-rg" \
+      --sdk-auth > creds.json
+    gh secret set AZURE_CREDENTIALS < creds.json && rm creds.json
+    ```
+    `clientSecret` should be a long value, not a GUID (a GUID is the secret *ID*,
+    which is exactly what Azure's error warns against).
+
+!!! warning "GHCR package needs the repo's Actions token to have write access"
+    If the image was first pushed **manually**, the package isn't linked to the
+    repo, so the CI `docker push` fails with `denied` / `permission_denied`. Grant
+    it once: GHCR → the `secretcodes` package → **Package settings → Manage Actions
+    access → add the repo with Write**. (Or delete the package and let CI recreate
+    it — a token-pushed package links to the repo with write access automatically.)
+
+!!! note "GHCR tags must be lowercase"
+    `github.repository` keeps the owner's case (`Mariatta/...`), but Docker/GHCR
+    reject mixed-case tags (`repository name must be lowercase`). `deploy.yml`
+    lowercases it via `ghcr.io/${GITHUB_REPOSITORY,,}`.
+
 ## Container contract
 
 The image must:
