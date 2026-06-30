@@ -207,6 +207,35 @@ because Azure's `FERNET_KEY` matches Heroku's. Then bind the apex and flip DNS:
 Before DNS cutover: nothing to roll back, Heroku is still live. After: flip DNS
 back (Heroku intact) and turn its maintenance off. Low TTL keeps this quick.
 
+## Decommission Heroku (once Azure has proven itself)
+
+!!! warning "Maintenance mode does **not** stop billing"
+    Dynos and add-ons keep charging while they exist, and Heroku has no true
+    "pause". Do this only after a few days of confidence, in stages from
+    "keep rollback" to "$0".
+
+**1. Stop dyno (compute) charges — keeps the rollback DB live:**
+```bash
+heroku ps:scale web=0 -a <heroku-app>      # plus worker=0 etc. if you have them
+```
+
+**2. The Postgres add-on is the main ongoing cost** (it's the rollback data).
+See what bills with `heroku addons -a <heroku-app>`, then either keep it a few
+more days, or capture a backup and remove it (rollback becomes the dump):
+```bash
+heroku pg:backups:capture  -a <heroku-app>
+heroku pg:backups:download -a <heroku-app>      # -> latest.dump, keep it safe
+heroku addons:destroy <postgres-addon-name> -a <heroku-app>
+```
+
+**3. Stop all charges** once you're sure you won't roll back:
+```bash
+heroku apps:destroy -a <heroku-app>             # irreversible; prompts for the name
+```
+
+The DigitalOcean Spaces bucket (media + this docs site) is separate and stays —
+it was never a Heroku resource.
+
 ## Leaving Azure later (same playbook, reversed)
 - **App:** point a new host at the *same* GHCR image; recreate the env vars.
 - **DB:** `pg_dump` from Azure → `pg_restore` into the new Postgres. Step 5 in

@@ -12,6 +12,12 @@ location         = "canadacentral"
 name_prefix      = "secretcodes"
 postgres_version = "16" # MUST match your Heroku Postgres major version
 
+# Apex domain bound to the app. When set, it's added to DJANGO_ALLOWED_HOSTS /
+# CSRF_TRUSTED_ORIGINS and used for the OAuth redirect URI. Leave empty to serve
+# only on <name_prefix>-web.azurewebsites.net. Bind the domain + cert in Azure
+# (see migration.md step 6) separately; this only trusts the host in the app.
+custom_domain = "" # e.g. "secretcodes.dev"
+
 image     = "ghcr.io/your-gh-user/secretcodes:latest"
 ghcr_user = "your-gh-user"
 
