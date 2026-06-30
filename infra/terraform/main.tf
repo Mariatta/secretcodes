@@ -3,7 +3,10 @@ locals {
   pg_name  = "${var.name_prefix}-pg"
 
   # sslmode=require is mandatory on Azure Postgres — and harmless everywhere else.
-  database_url = "postgres://${var.postgres_admin_user}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.pg.fqdn}:5432/${var.postgres_db_name}?sslmode=require"
+  # urlencode the password: modern dj-database-url rejects a DATABASE_URL whose
+  # parts aren't percent-encoded, so a password containing +, /, =, etc. (e.g.
+  # from `openssl rand -base64`) would otherwise make the app fail to boot.
+  database_url = "postgres://${var.postgres_admin_user}:${urlencode(var.postgres_admin_password)}@${azurerm_postgresql_flexible_server.pg.fqdn}:5432/${var.postgres_db_name}?sslmode=require"
 
   # application_stack wants the image path + tag WITHOUT the registry host;
   # the host goes in docker_registry_url. Strip "ghcr.io/" from the full ref.
