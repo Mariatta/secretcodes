@@ -1,0 +1,49 @@
+# Keep the image small and secret-free. COPY . in the Dockerfile would
+# otherwise bake all of this into a layer (and push it to the registry).
+
+# --- Secrets: must never enter an image layer ---
+.env
+.env.*
+client_secret_*.json
+
+# --- Virtualenv / deps (image installs its own) ---
+venv/
+.venv/
+node_modules/
+
+# --- VCS / CI / editor ---
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+.DS_Store
+
+# --- Python caches ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Local DBs and runtime dirs (regenerated / live elsewhere in prod) ---
+*.sqlite3
+staticroot/
+media/
+.state/
+
+# --- Docs site build + infra (not part of the app runtime) ---
+site/
+docs/
+infra/
+mkdocs.yml
+
+# --- Misc dev artifacts not needed at runtime ---
+linterr.txt
+comments_*.csv
+tryout.py
+youtube_api.py
+*-design.md
+*-ideas.md
+brand-kit/
+handoff/

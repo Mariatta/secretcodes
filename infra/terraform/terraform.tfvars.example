@@ -1,0 +1,31 @@
+# Copy to terraform.tfvars (which should be gitignored) and fill in.
+# SECRETS: prefer environment variables over this file. Terraform reads any
+# TF_VAR_<name> automatically, e.g.:
+#   export TF_VAR_postgres_admin_password='...'
+#   export TF_VAR_ghcr_pat='...'
+#   export TF_VAR_django_secret_key='...'
+#   export TF_VAR_fernet_key='...'     # python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+#   export TF_VAR_spaces_key='...' TF_VAR_spaces_secret='...'
+#   export ARM_SUBSCRIPTION_ID='...'   # so you can leave subscription_id null
+
+location         = "canadacentral"
+name_prefix      = "secretcodes"
+postgres_version = "16" # MUST match your Heroku Postgres major version
+
+# Apex domain bound to the app. When set, it's added to DJANGO_ALLOWED_HOSTS /
+# CSRF_TRUSTED_ORIGINS and used for the OAuth redirect URI. Leave empty to serve
+# only on <name_prefix>-web.azurewebsites.net. Bind the domain + cert in Azure
+# (see migration.md step 6) separately; this only trusts the host in the app.
+custom_domain = "" # e.g. "secretcodes.dev"
+
+image     = "ghcr.io/your-gh-user/secretcodes:latest"
+ghcr_user = "your-gh-user"
+
+postgres_db_name    = "secretcodes"
+postgres_admin_user = "scadmin"
+
+spaces_bucket   = "your-space-name"
+spaces_endpoint = "https://nyc3.digitaloceanspaces.com"
+
+# Set to your public IP for the migration restore (then blank it out after):
+operator_ip = "" # e.g. "203.0.113.7"

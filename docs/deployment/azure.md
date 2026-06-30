@@ -98,6 +98,19 @@ These are real failures from the first deployment, with their fixes.
     `WEBSITES_CONTAINER_START_TIME_LIMIT` (set to `1800`) buys time, but a
     smaller `python:3.13-slim` image is the durable fix.
 
+    `ContainerTimeout` is **misleading** — App Service reports it for a fast boot
+    *crash* too, not just real slowness. `az webapp log tail` is dominated by
+    platform (`ContainerStatus`) and Kudu (`/opt/Kudu`, port 8181) noise, which
+    is **not** your app. To see the container's own stdout (the real traceback),
+    download the logs and read `*_default_docker.log`:
+    ```bash
+    az webapp log download -n secretcodes-web -g secretcodes-rg --log-file /tmp/azlogs.zip
+    unzip -o /tmp/azlogs.zip -d /tmp/azlogs
+    tail -n 80 /tmp/azlogs/LogFiles/*default_docker.log
+    ```
+    A `dj_database_url.ParseError` at settings import, for example, surfaces here
+    (see [Terraform → URL-encode the DB password](terraform.md#gotchas-worth-knowing)).
+
 !!! note "Run docker/tofu from the right directory"
     `docker build` runs from the **repo root** (it needs the `Dockerfile` and the
     full project as build context). `tofu` runs from **`infra/terraform/`**.

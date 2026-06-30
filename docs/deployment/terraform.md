@@ -62,6 +62,27 @@ terraform output -raw database_url
     Set `postgres_version` to the Heroku Postgres major version before applying,
     or the dump/restore can fail.
 
+!!! warning "`tofu init` fails on a stale `.terraform` cache"
+    If a previous run left a `.terraform/` provider cache, `tofu init` can fail
+    with `existing cached package ... does not match the content of the
+    downloaded package; does it contain local modifications?`. The cache is
+    local and regenerable, so clear it and re-init:
+    ```bash
+    rm -rf .terraform
+    tofu init
+    ```
+    If it still complains (a lock-hash mismatch rather than a cache mismatch),
+    also remove `.terraform.lock.hcl` and re-init.
+
+!!! danger "URL-encode the DB password (or the app won't boot)"
+    `main.tf` builds `DATABASE_URL` with `urlencode(var.postgres_admin_password)`.
+    This matters: modern `dj-database-url` **rejects** a `DATABASE_URL` whose
+    parts aren't percent-encoded, so a password containing `+`, `/`, or `=`
+    (exactly what `openssl rand -base64` produces) makes the container crash at
+    settings import with `dj_database_url.ParseError` — which Azure then reports
+    as the misleading `ContainerTimeout`. With `urlencode()` any password is
+    safe; without it, use a URL-safe password like `openssl rand -hex 24`.
+
 ## State and portability
 
 State is local until the backend in `providers.tf` is uncommented. Two thoughts:
