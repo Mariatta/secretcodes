@@ -22,6 +22,10 @@ jobs:
       image: ${{ steps.build.outputs.image }}
     steps:
       - uses: actions/checkout@v4
+      # github.repository preserves owner case (Mariatta/...), but Docker/GHCR
+      # tags must be lowercase. Override IMAGE with the lowercased repo path.
+      - name: Lowercase the image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
