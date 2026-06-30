@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}
+    {{ event.name }} · Dashboard · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">Events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Dashboard
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1>
+                {{ event.name }} <span class="text-muted fs-4">Dashboard</span>
+            </h1>
+            <p class="text-muted mb-0">
+                Where the money went · base currency {{ event.base_currency }}
+            </p>
+        </div>
+        <div>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_overview' event_id=event.pk %}">Overview</a>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_ledger' event_id=event.pk %}">Ledger</a>
+        </div>
+    </div>
+    {% if breakdown.by_category %}
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h6 text-uppercase text-muted">
+                            By category
+                        </h2>
+                        <div class="sc-chart-box">
+                            <canvas id="chart-category"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h6 text-uppercase text-muted">
+                            Who paid
+                        </h2>
+                        <div class="sc-chart-box">
+                            <canvas id="chart-payer"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h6 text-uppercase text-muted">
+                            Share per person
+                        </h2>
+                        <div class="sc-chart-box">
+                            <canvas id="chart-share"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="h6 text-uppercase text-muted">
+                            Spending over time
+                        </h2>
+                        <div class="sc-chart-box">
+                            <canvas id="chart-time"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ breakdown.by_category|json_script:"data-category" }}
+        {{ breakdown.by_payer|json_script:"data-payer" }}
+        {{ breakdown.by_share|json_script:"data-share" }}
+        {{ breakdown.over_time|json_script:"data-time" }}
+        <span id="dashboard-currency" data-currency="{{ event.base_currency }}"></span>
+        <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+        <script src="{% static 'brand/expenses-dashboard.js' %}"></script>
+    {% else %}
+        <p class="text-muted">
+            No expenses yet. Log a few and the charts will appear here.
+        </p>
+    {% endif %}
+{% endblock content %}

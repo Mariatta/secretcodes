@@ -8,7 +8,7 @@
 set -euo pipefail
 
 V=secretcodes/static/vendor
-mkdir -p "$V/bootstrap" "$V/sortablejs" "$V/tagify"
+mkdir -p "$V/bootstrap" "$V/sortablejs" "$V/tagify" "$V/chartjs"
 
 cp node_modules/bootstrap/dist/css/bootstrap.min.css         "$V/bootstrap/"
 cp node_modules/bootstrap/dist/css/bootstrap.min.css.map     "$V/bootstrap/"
@@ -27,3 +27,10 @@ cp node_modules/@yaireo/tagify/LICENSE          "$V/tagify/"
 # fails `collectstatic` looking for the missing tagify.js.map.
 grep -v sourceMappingURL "$V/tagify/tagify.js" > "$V/tagify/tagify.js.tmp"
 mv "$V/tagify/tagify.js.tmp" "$V/tagify/tagify.js"
+
+cp node_modules/chart.js/dist/chart.umd.js "$V/chartjs/"
+cp node_modules/chart.js/LICENSE.md        "$V/chartjs/LICENSE"
+# Same sourcemap strip as Tagify: we don't ship chart.umd.js.map, so drop the
+# dangling sourceMappingURL or collectstatic's manifest storage 404s on it.
+grep -v sourceMappingURL "$V/chartjs/chart.umd.js" > "$V/chartjs/chart.umd.js.tmp"
+mv "$V/chartjs/chart.umd.js.tmp" "$V/chartjs/chart.umd.js"
