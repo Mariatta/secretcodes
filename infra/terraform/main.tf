@@ -2,6 +2,14 @@ locals {
   app_name = "${var.name_prefix}-web"
   pg_name  = "${var.name_prefix}-pg"
 
+  # Host(s) the app answers on. With a custom apex domain bound, both the
+  # azurewebsites.net hostname and the custom domain must be trusted, or Django
+  # rejects requests to the custom domain (DisallowedHost / CSRF failures).
+  azure_host    = "${var.name_prefix}-web.azurewebsites.net"
+  public_host   = var.custom_domain != "" ? var.custom_domain : local.azure_host
+  allowed_hosts = var.custom_domain != "" ? "${local.azure_host},${var.custom_domain}" : local.azure_host
+  csrf_origins  = var.custom_domain != "" ? "https://${local.azure_host},https://${var.custom_domain}" : "https://${local.azure_host}"
+
   # sslmode=require is mandatory on Azure Postgres — and harmless everywhere else.
   # urlencode the password: modern dj-database-url rejects a DATABASE_URL whose
   # parts aren't percent-encoded, so a password containing +, /, =, etc. (e.g.
@@ -105,16 +113,16 @@ resource "azurerm_linux_web_app" "web" {
     # DEBUG must stay off in prod, which is exactly why FERNET_KEY is required.
     DEBUG = ""
     # The app reads DJANGO_ALLOWED_HOSTS (settings.py), not ALLOWED_HOSTS.
-    DJANGO_ALLOWED_HOSTS = "${local.app_name}.azurewebsites.net"
+    DJANGO_ALLOWED_HOSTS = local.allowed_hosts
     # Scheme+host trusted for CSRF (Django 4.0+). App Service terminates TLS, so
     # the browser's https:// Origin must be listed here or logins fail CSRF.
-    CSRF_TRUSTED_ORIGINS = "https://${local.app_name}.azurewebsites.net"
+    CSRF_TRUSTED_ORIGINS = local.csrf_origins
 
     # Google OAuth for availability calendar sync. Reuse the Heroku client; the
     # redirect URI must point at this host and be registered in Google Console.
     GOOGLE_CLIENT_ID          = var.google_client_id
     GOOGLE_CLIENT_SECRET      = var.google_client_secret
-    GOOGLE_OAUTH_REDIRECT_URI = "https://${local.app_name}.azurewebsites.net/availability/oauth/callback/"
+    GOOGLE_OAUTH_REDIRECT_URI = "https://${local.public_host}/availability/oauth/callback/"
 
     # settings.py only wires up the S3/Spaces storage (and the AWS_* settings the
     # QR generator reads) when USE_SPACES == "true". Without it, QR creation 500s.

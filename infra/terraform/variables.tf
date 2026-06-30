@@ -16,6 +16,12 @@ variable "name_prefix" {
   default     = "secretcodes"
 }
 
+variable "custom_domain" {
+  description = "Custom apex domain bound to the web app, e.g. secretcodes.dev. Added to DJANGO_ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS and used for the OAuth redirect URI. Empty = azurewebsites.net only."
+  type        = string
+  default     = ""
+}
+
 # --- PostgreSQL --------------------------------------------------------------
 
 variable "postgres_version" {
