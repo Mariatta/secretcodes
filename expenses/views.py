@@ -25,6 +25,7 @@ from .permissions import (
     event_participant_required,
     is_expenses_user,
 )
+from .services.breakdown import event_breakdown, event_stats
 from .services.invitations import send_invitation_email
 from .services.settlement import (
     event_balances,
@@ -104,7 +105,18 @@ def event_overview(request, event):
             "rows": rows,
             "transfers": transfers,
             "summary": summary,
+            "stats": event_stats(event),
         },
+    )
+
+
+@event_participant_required
+def event_dashboard(request, event):
+    """Charts and stats breaking down where an event's money went."""
+    return render(
+        request,
+        "expenses/event_dashboard.html",
+        {"event": event, "breakdown": event_breakdown(event)},
     )
 
 

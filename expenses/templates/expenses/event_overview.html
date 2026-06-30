@@ -41,6 +41,75 @@
         </div>
     </div>
     {% include "expenses/_summary.html" %}
+    {% if stats.count %}
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase">
+                            Expenses
+                        </div>
+                        <div class="fs-5 font-monospace">
+                            {{ stats.count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase">
+                            People
+                        </div>
+                        <div class="fs-5 font-monospace">
+                            {{ stats.participants }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase">
+                            Average
+                        </div>
+                        <div class="fs-5 font-monospace">
+                            {{ stats.average|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase">
+                            Largest
+                        </div>
+                        <div class="fs-5 font-monospace">
+                            {{ stats.largest|floatformat:2|intcomma }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase">
+                            Dates
+                        </div>
+                        <div class="small">
+                            {% if stats.first_date %}
+                                {{ stats.first_date|date:"M j" }} – {{ stats.last_date|date:"M j" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="mb-4">
+            <a href="{% url 'expenses:event_dashboard' event_id=event.pk %}">See charts and breakdown →</a>
+        </p>
+    {% endif %}
     <h2 class="h4 mt-4">
         Balances
     </h2>

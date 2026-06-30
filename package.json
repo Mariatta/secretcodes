@@ -9,6 +9,7 @@
   "devDependencies": {
     "@yaireo/tagify": "^4.38.0",
     "bootstrap": "5.3.8",
+    "chart.js": "4.4.7",
     "sortablejs": "1.15.7"
   }
 }
