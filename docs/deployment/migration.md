@@ -222,6 +222,11 @@ back (Heroku intact) and turn its maintenance off. Low TTL keeps this quick.
     "pause". Do this only after a few days of confidence, in stages from
     "keep rollback" to "$0".
 
+**0. Turn off Heroku's auto-deploy first.** If Heroku still auto-deploys from
+GitHub, every push to `main` rebuilds it (now redundant with `deploy.yml` →
+Azure) and burns build minutes/dynos you're trying to stop paying for. In the
+Heroku Dashboard → your app → **Deploy** tab → **Automatic deploys → Disable**.
+
 **1. Stop dyno (compute) charges — keeps the rollback DB live:**
 ```bash
 heroku ps:scale web=0 -a <heroku-app>      # plus worker=0 etc. if you have them
