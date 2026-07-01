@@ -6,7 +6,8 @@ description: The Secret Codes brand system: design tokens (--sc-* colours), typo
 # Secret Codes brand system
 
 Enforced by `secretcodes/static/brand/secret-codes.css` (loaded after Bootstrap).
-Human version: `docs/conventions/brand-guidelines.md`. Source kit: `handoff/`.
+Human version: `docs/conventions/brand-guidelines.md`. Live assets (CSS, logos,
+favicon) live in `secretcodes/static/brand/`.
 The look is a tribute to Darren Hayes's *Secret Codes & Battleships* (battleship
 grid, signal-flag accents, cipher/morse motifs): never explained, just felt.
 
