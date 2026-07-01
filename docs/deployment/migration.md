@@ -86,6 +86,14 @@ tofu -chdir=infra/terraform output -raw database_url
 `operator_ip` is only needed to restore from a **local laptop** (method B below).
 The recommended method A runs from *inside* Azure and needs no firewall change.
 
+!!! danger "Fill in *all* the `spaces_*` tfvars, or media-backed pages 500"
+    `spaces_bucket`, `spaces_endpoint`, and `TF_VAR_spaces_key` / `TF_VAR_spaces_secret`
+    feed `USE_SPACES=true` + the `AWS_*` app settings. They aren't needed for the
+    app to boot, so a blank `spaces_bucket`/`spaces_endpoint` slips through, then
+    **every media operation 500s** (asset thumbnails read `file.url`, QR generation
+    writes to the bucket) with a `file.url` error, while the rest of the site looks
+    fine. Set them, `tofu apply`, and `az webapp restart`.
+
 ### 5. Database cutover (supervised)
 
 Get both connection strings (these feed the methods below):
