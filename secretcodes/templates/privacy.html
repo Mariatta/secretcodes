@@ -7,7 +7,7 @@
         Privacy Policy
     </h1>
     <p class="text-muted">
-        Last updated: 2026-05-02
+        Last updated: 2026-06-30
     </p>
     <h2>
         What this site collects
@@ -28,39 +28,41 @@
         From people who generate QR codes
     </h3>
     <p>
-        Anyone can use the basic QR code generator. Short, named slugs (e.g.
-        <code>/qr/mytalk/</code>) can only be created by authenticated site
-        accounts — and since account sign-up is disabled, in practice only
-        Mariatta creates slug-style QR codes. No new accounts can be
-        self-registered through this site.
-    </p>
-    <p>
-        The QR code generator stores the following in the site's database so
-        that the codes continue to resolve and can be inspected later:
+        Anyone can turn a URL into a QR image without signing in. What the
+        generator keeps depends on how a code is made:
     </p>
     <ul>
         <li>
-            The <strong>URL</strong> you supplied, so the QR image can redirect
-            to it.
+            <strong>Anonymous codes.</strong> The code is generated for you to
+            preview and download, then discarded. The <strong>URL is not
+            stored</strong>, and nothing links the code to you: no account, no
+            IP address, no record of when you made it. The only thing kept is an
+            anonymous <strong>daily count</strong> of how many codes were
+            generated: one number per day, containing no URLs and traceable to
+            no one.
         </li>
         <li>
-            The short <strong>description</strong> you typed for the code.
+            <strong>Saved codes (signed in).</strong> If you are signed in, the
+            codes you generate are stored in your account so you can find and
+            re-download them, together with the URL, its description, and any
+            styling you chose. Because public sign-up is disabled, in practice
+            this applies only to Mariatta.
         </li>
         <li>
-            The <strong>slug</strong> (for slug-style codes).
-        </li>
-        <li>
-            An aggregate <strong>visit counter</strong> and the
+            <strong>Slug codes.</strong> Short, named slugs (e.g.
+            <code>/qr/mytalk/</code>), which only signed-in accounts can create,
+            store the slug-to-URL mapping so the redirect keeps working, plus an
+            aggregate <strong>visit counter</strong> and the
             <strong>timestamp of the most recent visit</strong>, incremented
-            each time the short URL is followed. This is a single integer and
-            timestamp per QR code — not a per-visitor log.
+            each time the short URL is followed. That is one integer and one
+            timestamp per code, not a per-visitor log.
         </li>
     </ul>
     <p>
-        <strong>Not stored</strong>: your IP address, your identity, which
-        account (if any) created which QR code, any per-visitor record of who
-        followed a short URL, or anything else that would link a QR code back
-        to a specific person.
+        <strong>Not stored for any QR code</strong>: your IP address, or a
+        per-visitor record of who followed a short URL. For anonymous codes, the
+        URL itself is not stored either, and nothing links the code to a
+        specific person.
     </p>
     <h3>
         From people who use the Expenses module

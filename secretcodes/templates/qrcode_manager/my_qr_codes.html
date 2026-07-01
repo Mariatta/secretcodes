@@ -1,0 +1,51 @@
+{% extends "../base.html" %}
+{% block head_title %}
+    Your QR codes · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            Your <em class="sc-italic">QR codes</em>
+        </h1>
+        <div class="d-flex gap-2">
+            {% if perms.qrcode_manager.create_slug_qrcode %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'qrcode_slug_generator' %}">+ Short-link code</a>
+            {% endif %}
+            <a class="btn btn-primary" href="{% url 'qrcode_generator' %}">+ New QR code</a>
+        </div>
+    </div>
+    {% if qr_codes %}
+        <div class="row g-3">
+            {% for qr in qr_codes %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card h-100">
+                        <img src="{{ qr.get_qr_image_url }}"
+                             class="card-img-top p-2"
+                             alt="QR code for {{ qr.description }}">
+                        <div class="card-body">
+                            <p class="fw-semibold mb-1">
+                                {{ qr.description }}
+                            </p>
+                            <a class="small d-block text-truncate" href="{{ qr.url }}">{{ qr.url }}</a>
+                            <div class="text-muted small">
+                                {{ qr.creation_date|date:"M j, Y" }}
+                                {% if qr.slug %}
+                                    · /qr/{{ qr.slug }}
+                                {% endif %}
+                            </div>
+                            <a class="btn btn-sm btn-outline-secondary mt-2"
+                               href="{{ qr.get_qr_image_url }}"
+                               download>Download</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            You haven't saved any QR codes yet.
+            <a href="{% url 'qrcode_generator' %}">Make one →</a>
+        </p>
+    {% endif %}
+{% endblock content %}

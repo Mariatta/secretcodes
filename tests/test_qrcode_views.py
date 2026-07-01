@@ -5,9 +5,10 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 
-from qrcode_manager.models import QRCode
+from qrcode_manager.models import DailyQRCount, QRCode
 
 
 @pytest.fixture
@@ -31,24 +32,94 @@ def test_qr_code_generator_get(client):
 
 
 @pytest.mark.django_db
-def test_qr_code_generator_post_creates(client):
+def test_qr_code_generator_anonymous_is_ephemeral(client):
+    """Anonymous generation persists nothing: it returns a downloadable
+    data-URI preview named after the description, and only bumps the
+    privacy-safe day tally."""
     response = client.post(
         reverse("qrcode_generator"),
-        {"url": "https://example.com", "description": "new"},
+        {"url": "https://example.com", "description": "My Talk"},
     )
     assert response.status_code == 200
-    assert QRCode.objects.filter(url="https://example.com").exists()
+    assert not QRCode.objects.exists()
+    assert b"data:image/png;base64," in response.content
+    assert b'download="my-talk.png"' in response.content
+    assert DailyQRCount.objects.get(date=timezone.now().date()).count == 1
 
 
 @pytest.mark.django_db
-def test_qr_code_generator_post_reuses_existing(client):
-    QRCode.objects.create(url="https://example.com", description="old")
+def test_qr_code_generator_download_name_falls_back(client):
+    """A description with no slug-safe characters falls back to qrcode.png."""
     response = client.post(
         reverse("qrcode_generator"),
-        {"url": "https://example.com", "description": "new"},
+        {"url": "https://example.com", "description": "!!!"},
+    )
+    assert b'download="qrcode.png"' in response.content
+
+
+def test_qr_code_generator_logged_in_saves_to_history(client, django_user_model):
+    """A logged-in user's generation is saved and tied to them, and still
+    counted."""
+    user = django_user_model.objects.create_user("owner", password="p")
+    client.force_login(user)
+    response = client.post(
+        reverse("qrcode_generator"),
+        {"url": "https://example.com", "description": "mine"},
     )
     assert response.status_code == 200
-    assert QRCode.objects.filter(url="https://example.com").count() == 1
+    qr = QRCode.objects.get(url="https://example.com")
+    assert qr.user == user
+    assert b"Saved to your codes" in response.content
+    assert reverse("my_qr_codes").encode() in response.content  # breadcrumb back-link
+    assert DailyQRCount.objects.get(date=timezone.now().date()).count == 1
+
+
+def test_my_qr_codes_requires_login(client):
+    response = client.get(reverse("my_qr_codes"))
+    assert response.status_code == 302
+    assert "accounts/login" in response.url
+
+
+def test_my_qr_codes_lists_only_own(client, django_user_model):
+    user = django_user_model.objects.create_user("u", password="p")
+    other = django_user_model.objects.create_user("o", password="p")
+    QRCode.objects.create(url="https://mine.example", description="mine", user=user)
+    QRCode.objects.create(url="https://theirs.example", description="x", user=other)
+    client.force_login(user)
+    response = client.get(reverse("my_qr_codes"))
+    assert response.status_code == 200
+    assert b"https://mine.example" in response.content
+    assert b"https://theirs.example" not in response.content
+
+
+def test_my_qr_codes_empty(client, django_user_model):
+    user = django_user_model.objects.create_user("u", password="p")
+    client.force_login(user)
+    response = client.get(reverse("my_qr_codes"))
+    assert response.status_code == 200
+    assert b"saved any QR codes" in response.content
+    assert b"New QR code" in response.content  # landing header has the create action
+
+
+def test_my_qr_codes_includes_slug_codes(client, django_user_model):
+    """Slug (short-link) codes owned by the user appear in their history too."""
+    user = django_user_model.objects.create_user("u", password="p")
+    QRCode.objects.create(
+        url="https://slug.example", description="s", slug="mine", user=user
+    )
+    client.force_login(user)
+    response = client.get(reverse("my_qr_codes"))
+    assert response.status_code == 200
+    assert b"/qr/mine" in response.content
+
+
+def test_slug_generator_counts_generation(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    client.post(
+        reverse("qrcode_slug_generator"),
+        {"url": "https://example.com", "description": "d", "slug": "abc"},
+    )
+    assert DailyQRCount.objects.get(date=timezone.now().date()).count == 1
 
 
 @pytest.mark.django_db
@@ -102,30 +173,26 @@ def test_slug_generator_post_creates(client, django_user_model, qr_slug_perm):
     assert qr.slug == "abc"
 
 
-def test_slug_generator_post_updates_missing_slug(
-    client, django_user_model, qr_slug_perm
-):
+def test_slug_generator_dedups_by_slug_not_url(client, django_user_model, qr_slug_perm):
+    """url is no longer unique, so the slug is the dedup key: two slugs can
+    point at the same url."""
     _login_with_slug_access(client, django_user_model, qr_slug_perm)
-    QRCode.objects.create(url="https://example.com", description="existing")
-    response = client.post(
-        reverse("qrcode_slug_generator"),
-        {"url": "https://example.com", "description": "x", "slug": "newslug"},
-    )
-    assert response.status_code == 200
-    assert QRCode.objects.get(url="https://example.com").slug == "newslug"
+    for slug in ("first", "second"):
+        client.post(
+            reverse("qrcode_slug_generator"),
+            {"url": "https://example.com", "description": "d", "slug": slug},
+        )
+    assert QRCode.objects.filter(url="https://example.com").count() == 2
+    assert set(QRCode.objects.values_list("slug", flat=True)) == {"first", "second"}
 
 
-def test_slug_generator_post_changes_existing_slug(
-    client, django_user_model, qr_slug_perm
-):
-    _login_with_slug_access(client, django_user_model, qr_slug_perm)
-    QRCode.objects.create(url="https://example.com", description="existing", slug="old")
-    response = client.post(
+def test_slug_generator_records_owner(client, django_user_model, qr_slug_perm):
+    user = _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    client.post(
         reverse("qrcode_slug_generator"),
-        {"url": "https://example.com", "description": "x", "slug": "new"},
+        {"url": "https://example.com", "description": "d", "slug": "abc"},
     )
-    assert response.status_code == 200
-    assert QRCode.objects.get(url="https://example.com").slug == "new"
+    assert QRCode.objects.get(slug="abc").user == user
 
 
 def test_slug_generator_post_same_slug_noop(client, django_user_model, qr_slug_perm):

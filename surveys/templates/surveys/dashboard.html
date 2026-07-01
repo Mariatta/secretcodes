@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load icons %}
 {% block head_title %}
-    My surveys
+    Your surveys
 {% endblock head_title %}
 {% block extra_head %}
     {{ block.super }}
@@ -12,7 +12,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h3 mb-0">
-                    My surveys
+                    Your <em class="sc-italic">surveys</em>
                 </h1>
                 {% if can_create_surveys %}
                     <div class="d-flex gap-2">

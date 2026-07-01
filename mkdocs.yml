@@ -36,6 +36,8 @@ nav:
   - Home: index.md
   - Architecture:
       - Overview: architecture/overview.md
+  - Conventions:
+      - UI patterns: conventions/ui-patterns.md
   - Deployment:
       - Azure (App Service + Postgres): deployment/azure.md
       - Infrastructure as Code (Terraform): deployment/terraform.md

@@ -5,20 +5,64 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
-    <form action="{% url post_url %}" method="post" class="form">
-        {% csrf_token %}
-        {% bootstrap_form qr_preview_form %}
-        {% bootstrap_button button_type="submit" content="Generate QR Code" %}
-        {% bootstrap_button button_type="reset" content="Reset" %}
-    </form>
-    <div>
-        {% if result_url %}
-            <a href="{{ result_url }}">{{ result_url }}</a>
-        {% endif %}
-    </div>
-    <div>
-        {% if qr_image_presigned %}
-            <img src="{{ qr_image_presigned }}" alt="QR Code" />
-        {% endif %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% if user.is_authenticated %}
+                <li class="breadcrumb-item">
+                    <a href="{% url 'my_qr_codes' %}">All QR codes</a>
+                </li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">
+                Create a QR code
+            </li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-3">
+        QR code generator
+    </h1>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <form action="{% url post_url %}" method="post" class="form">
+                {% csrf_token %}
+                {% bootstrap_form qr_preview_form %}
+                {% bootstrap_button button_type="submit" content="Generate QR Code" %}
+                {% bootstrap_button button_type="reset" content="Reset" %}
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="sc-qr-preview">
+                <p class="sc-mono small sc-qr-preview__label">
+                    Preview
+                </p>
+                {% if qr_data_uri %}
+                    <img src="{{ qr_data_uri }}" alt="QR Code">
+                    <p class="mt-2">
+                        <a class="btn btn-primary"
+                           href="{{ qr_data_uri }}"
+                           download="{{ download_name }}">Download PNG</a>
+                    </p>
+                    <p class="text-muted small">
+                        Download the image to keep a copy.
+                    </p>
+                {% elif qr_image_presigned %}
+                    <img src="{{ qr_image_presigned }}" alt="QR Code">
+                    <p class="mt-2">
+                        <a class="btn btn-primary" href="{{ qr_image_presigned }}" download>Download PNG</a>
+                        {% if saved %}
+                            <span class="badge bg-success ms-2">Saved to your codes</span>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="text-muted small">
+                        Fill in the URL and press "Generate QR Code" to see it here.
+                    </p>
+                {% endif %}
+                {% if result_url %}
+                    <p class="mb-0">
+                        <a href="{{ result_url }}">{{ result_url }}</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
     </div>
 {% endblock content %}

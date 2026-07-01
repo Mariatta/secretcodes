@@ -1,4 +1,5 @@
 import io
+import os
 from unittest.mock import patch
 
 import pytest
@@ -59,6 +60,15 @@ def test_generate_presigned_url(boto_session):
 def test_generate_url_composes_path(boto_session):
     wrapper = S3Wrapper()
     assert wrapper.generate_url("f.png") == "https://s3.example.com/bucket/f.png"
+
+
+@override_settings(**AWS_OVERRIDES)
+def test_delete_calls_delete_object(boto_session):
+    wrapper = S3Wrapper()
+    wrapper.delete("some/key.png")
+    wrapper.client.delete_object.assert_called_once_with(
+        Bucket="bucket", Key="some/key.png"
+    )
 
 
 @override_settings(**AWS_OVERRIDES)
@@ -137,3 +147,35 @@ def test_download_fileobj_returns_rewound_buffer(boto_session):
     wrapper.client.download_fileobj.side_effect = fake_download
     result = wrapper.download_fileobj("some/key")
     assert result.read() == b"bytes"
+
+
+def test_local_mode_when_no_s3_endpoint(settings, tmp_path):
+    """With no S3 endpoint (a dev machine without Spaces), the wrapper reads
+    and writes the local filesystem under MEDIA_ROOT."""
+    settings.AWS_S3_ENDPOINT_URL = ""
+    settings.MEDIA_ROOT = str(tmp_path)
+    settings.MEDIA_URL = "/media/"
+    wrapper = S3Wrapper()
+    assert wrapper.use_s3 is False
+
+    target = os.path.join(str(tmp_path), "qrcode", "f.png")
+    wrapper.upload_fileobj(io.BytesIO(b"PNGDATA"), target, "image/png")
+    assert os.path.exists(target)
+    assert wrapper.generate_url(target) == "/media/qrcode/f.png"
+    assert wrapper.generate_presigned_url(target) == "/media/qrcode/f.png"
+    assert wrapper.download_fileobj(target).read() == b"PNGDATA"
+
+    wrapper.delete(target)
+    assert not os.path.exists(target)
+    wrapper.delete(target)  # already gone: no error
+
+
+def test_local_mode_generate_qr_writes_file(settings, tmp_path):
+    settings.AWS_S3_ENDPOINT_URL = ""
+    settings.MEDIA_ROOT = str(tmp_path)
+    settings.MEDIA_URL = "/media/"
+    wrapper = S3Wrapper()
+    path = os.path.join(str(tmp_path), "qrcode") + os.sep
+    url = wrapper.generate_qr("https://example.com", "f.png", path=path)
+    assert os.path.exists(os.path.join(str(tmp_path), "qrcode", "f.png"))
+    assert url == "/media/qrcode/f.png"
