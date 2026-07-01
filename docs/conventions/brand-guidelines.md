@@ -84,7 +84,7 @@ classes and they inherit; reach for `.sc-*` utilities for the branded flourishes
 
 ## Logos
 
-Under `static/brand/` (and mirrored in `handoff/`). All SVGs use `currentColor`
+Under `secretcodes/static/brand/`. All SVGs use `currentColor`
 for the ink and `--sc-accent` for the red, so they recolour with CSS.
 
 | Asset | Use |
@@ -112,5 +112,6 @@ or a comma, whichever fits the sentence. (Same rule applies to these docs.)
 
 !!! tip "For Claude Code"
     These guidelines are also the `secret-codes-brand` skill in `.claude/skills/`,
-    so an agent building UI applies them automatically. The source brand kit
-    lives in `handoff/` (README, `secret-codes.css`, logos).
+    so an agent building UI applies them automatically. The live assets they
+    describe (`secret-codes.css`, logos, favicon) are in
+    `secretcodes/static/brand/`.
