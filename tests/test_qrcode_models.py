@@ -4,7 +4,23 @@ import pytest
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
-from qrcode_manager.models import QRCode
+from qrcode_manager.models import DailyQRCount, QRCode
+
+
+@pytest.mark.django_db
+def test_daily_qr_count_increment_is_per_day():
+    DailyQRCount.increment()
+    DailyQRCount.increment()
+    obj = DailyQRCount.objects.get()
+    assert obj.count == 2
+    assert str(obj) == f"{obj.date}: 2"
+
+
+@pytest.mark.django_db
+def test_qrcode_url_no_longer_unique():
+    QRCode.objects.create(url="https://example.com", description="one")
+    QRCode.objects.create(url="https://example.com", description="two")
+    assert QRCode.objects.filter(url="https://example.com").count() == 2
 
 
 @pytest.mark.django_db

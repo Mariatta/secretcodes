@@ -1,11 +1,16 @@
 {% load static %}
 <nav class="survey-subnav mb-3" aria-label="Survey sections">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="small text-muted text-truncate" style="min-width: 0;">
-            <a class="text-decoration-none" href="{% url 'surveys:dashboard' %}">← All surveys</a>
-            <span class="mx-1">·</span>
-            <span class="fw-semibold text-body">{{ survey.title }}</span>
-        </div>
+        <nav aria-label="breadcrumb" style="min-width: 0;">
+            <ol class="breadcrumb small mb-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'surveys:dashboard' %}">All surveys</a>
+                </li>
+                <li class="breadcrumb-item active text-truncate" aria-current="page">
+                    {{ survey.title }}
+                </li>
+            </ol>
+        </nav>
         <ul class="nav nav-pills small">
             <li class="nav-item">
                 <a class="nav-link py-1 px-2 {% if current == 'edit' %}active{% endif %}"

@@ -33,6 +33,17 @@
         <div class="col-12 col-lg-9">
             {% if not is_new %}
                 {% include "surveys/_subnav.html" with current="edit" %}
+            {% else %}
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'surveys:dashboard' %}">All surveys</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            New survey
+                        </li>
+                    </ol>
+                </nav>
             {% endif %}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h3 mb-0">
@@ -42,9 +53,6 @@
                         Edit survey
                     {% endif %}
                 </h1>
-                {% if is_new %}
-                    <a class="btn btn-link" href="{% url 'surveys:dashboard' %}">← All surveys</a>
-                {% endif %}
             </div>
             {% if not is_new %}
                 <div class="card mb-3 short-url-card">
@@ -58,7 +66,9 @@
                                      style="border-radius: 6px;
                                             flex-shrink: 0">
                                 <div class="flex-grow-1" style="min-width: 220px;">
-                                    <div class="small text-muted mb-1">Short link & QR</div>
+                                    <div class="small text-muted mb-1">
+                                        Short link & QR
+                                    </div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <a class="font-monospace small text-break copy-source"
                                            href="{% url 'url_reverse' slug=survey.short_url.slug %}"
@@ -110,7 +120,9 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Status</label>
+                        <label class="form-label small text-muted">
+                            Status
+                        </label>
                         <div class="btn-group status-btn-group"
                              role="group"
                              aria-label="Survey status">
@@ -152,8 +164,12 @@
                         {% for form in formset %}
                             <div class="card mb-3 question-row" data-existing="1">
                                 <div class="card-body">
-                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-                                    <div class="d-none">{{ form.DELETE }}</div>
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                    <div class="d-none">
+                                        {{ form.DELETE }}
+                                    </div>
                                     <div class="row g-2 align-items-start">
                                         <div class="col-auto d-flex align-items-center pt-2">
                                             <span class="drag-handle"
@@ -221,8 +237,12 @@
             <template id="question-template">
                 <div class="card mb-3 question-row" data-existing="0">
                     <div class="card-body">
-                        {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
-                        <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+                        {% for hidden in formset.empty_form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        <div class="d-none">
+                            {{ formset.empty_form.DELETE }}
+                        </div>
                         <div class="row g-2 align-items-start">
                             <div class="col-auto d-flex align-items-center pt-2">
                                 <span class="drag-handle"

@@ -48,6 +48,7 @@ urlpatterns = [
     path("terms/", views.terms, name="terms"),
     # path("qrcode_manager/", include("qrcode_manager.urls")),
     path("qrcode_generator/", qr_views.qr_code_generator, name="qrcode_generator"),
+    path("qrcode_generator/mine/", qr_views.my_qr_codes, name="my_qr_codes"),
     path(
         "qrcode_slug_generator/",
         qr_views.qrcode_slug_generator,

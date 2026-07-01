@@ -54,7 +54,9 @@
             </div>
             {% if asset.media_url %}
                 <div class="col-md-5">
-                    <div class="fw-semibold mb-1">Current file</div>
+                    <div class="fw-semibold mb-1">
+                        Current file
+                    </div>
                     {% if asset.is_image %}
                         <a href="{{ asset.media_url }}"
                            rel="noopener"
@@ -92,7 +94,9 @@
         {% bootstrap_field form.notes %}
         {% if form.posts.field.queryset %}
             <div class="mb-3">
-                <div class="fw-semibold mb-1">Attach to posts</div>
+                <div class="fw-semibold mb-1">
+                    Attach to posts
+                </div>
                 <div class="text-muted small mb-1">
                     Put this asset on any of the board's posts. Filter to narrow a long list.
                 </div>
@@ -102,13 +106,17 @@
                        oninput="scFilterAttachPosts(this)"
                        aria-label="Filter posts">
                 {% if form.posts.errors %}
-                    <div class="text-danger small mb-1">{{ form.posts.errors }}</div>
+                    <div class="text-danger small mb-1">
+                        {{ form.posts.errors }}
+                    </div>
                 {% endif %}
                 <div class="border rounded p-2" style="max-height: 22rem; overflow: auto">
                     {% regroup form.posts.field.queryset by campaign as campaign_groups %}
                     {% for group in campaign_groups %}
                         <div data-attach-group>
-                            <div class="fw-semibold small text-muted mt-2">{{ group.grouper.name }}</div>
+                            <div class="fw-semibold small text-muted mt-2">
+                                {{ group.grouper.name }}
+                            </div>
                             {% for post in group.list %}
                                 <div class="form-check"
                                      data-attach-row
@@ -122,7 +130,9 @@
                                     <label class="form-check-label" for="attach-post-{{ post.pk }}">
                                         {{ post.title }}
                                         <span class="text-muted">· {{ post.get_channel_display }}
-                                            {% if post.scheduled_at %} · {{ post.scheduled_at|date:"M j" }}{% endif %}
+                                            {% if post.scheduled_at %}
+                                                · {{ post.scheduled_at|date:"M j" }}
+                                            {% endif %}
                                         </span>
                                     </label>
                                 </div>

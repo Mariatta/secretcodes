@@ -32,7 +32,14 @@ class BaseModel(models.Model):
 class QRCode(BaseModel):
 
     description = models.CharField("description", max_length=30)
-    url = models.URLField("url", unique=True)
+    url = models.URLField("url")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="qr_codes",
+        null=True,
+        blank=True,
+    )
     filename = models.CharField("filename", max_length=100, default="")
     slug = models.CharField("slug", max_length=40, blank=True, null=True, unique=True)
     visit_count = models.IntegerField("visit_count", default=0)
@@ -125,3 +132,27 @@ class QRCode(BaseModel):
         save_path = settings.MEDIA_ROOT + "/qrcode/" + self.qr_filename
         s3_wrapper = S3Wrapper()
         return s3_wrapper.generate_url(save_path)
+
+
+class DailyQRCount(models.Model):
+    """Privacy-preserving tally of QR codes generated per day.
+
+    Only a date and a count, no URL / user / IP, so we can answer "how many QR
+    codes were made" (and per-day trends) without recording what anyone made or
+    exactly when.
+    """
+
+    date = models.DateField("date", unique=True)
+    count = models.PositiveIntegerField("count", default=0)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.date}: {self.count}"
+
+    @classmethod
+    def increment(cls):
+        """Bump today's tally atomically (one row per day)."""
+        obj, _ = cls.objects.get_or_create(date=now().date())
+        cls.objects.filter(pk=obj.pk).update(count=models.F("count") + 1)

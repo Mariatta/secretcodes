@@ -8,6 +8,21 @@
 {% block body %}
 {% endblock body %}
 {% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% if user.is_authenticated %}
+                <li class="breadcrumb-item">
+                    <a href="{% url 'my_qr_codes' %}">All QR codes</a>
+                </li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">
+                Create a short-link code
+            </li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-3">
+        QR code customizer
+    </h1>
     <div class="row g-4">
         <div class="col-md-6">
             <form id="qr-customizer-form"
