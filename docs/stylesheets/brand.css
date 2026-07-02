@@ -107,6 +107,9 @@
 
 .md-typeset h1 {
   font-weight: 700;
+  /* Material defaults h1 to --md-default-fg-color--light (~60% ink, greyed).
+     Use the full typeset ink so the page title matches the brand. */
+  color: var(--md-typeset-color);
 }
 
 /* ---- Branded touch: a thin decoded-gold rule under the header ---- */
