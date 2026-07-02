@@ -12,20 +12,6 @@
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_ui.html" %}
-    <style>
-        .question-row.removed { display: none; }
-        .drag-handle {
-            cursor: grab;
-            font-size: 1.4rem;
-            line-height: 1;
-            padding: 0.4rem 0.5rem;
-            color: #adb5bd;
-            user-select: none;
-        }
-        .drag-handle:hover { color: #495057; }
-        .question-row.sortable-ghost { opacity: 0.45; }
-        .question-row.sortable-chosen .drag-handle { cursor: grabbing; }
-    </style>
     <script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
 {% endblock extra_head %}
 {% block content %}

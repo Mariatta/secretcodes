@@ -44,7 +44,8 @@
         <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
         <link rel="stylesheet" href="{% static 'brand/secret-codes.css' %}">
     </head>
-    <body class="d-flex flex-column min-vh-100" style="background: #FAF9F5;">
+    <body class="d-flex flex-column min-vh-100"
+          style="background: var(--sc-bg)">
         <header class="container pt-3 pb-2 d-flex justify-content-end">
             <a class="small text-muted text-decoration-none"
                href="{% url 'about' %}"
