@@ -12,12 +12,6 @@
         <div class="col-12 col-lg-9">
             {% include "surveys/_subnav.html" with current="text_responses" %}
             <div class="text-responses-strip">
-                <a class="crumb text-decoration-none"
-                   href="{% url 'surveys:results' slug=survey.slug %}">
-                    {{ survey.title }}
-                </a>
-                <span class="text-responses-strip-sep">›</span>
-                <span class="crumb-current">Browse text responses</span>
                 <span class="text-responses-summary">
                     {% if scope_question %}
                         {{ total_responses }} response{{ total_responses|pluralize }} for this question

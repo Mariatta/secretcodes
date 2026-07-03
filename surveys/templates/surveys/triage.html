@@ -12,12 +12,6 @@
         <div class="col-12 col-lg-9">
             {% include "surveys/_subnav.html" with current="triage" %}
             <div class="triage-strip">
-                <a class="crumb text-decoration-none"
-                   href="{% url 'surveys:results' slug=survey.slug %}">
-                    {{ survey.title }}
-                </a>
-                <span style="color: var(--text-tertiary);">›</span>
-                <span class="crumb-current">Triage</span>
                 <a class="side-peek"
                    href="{% url 'surveys:actions' slug=survey.slug %}"
                    target="_blank"
