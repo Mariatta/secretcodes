@@ -1,13 +1,8 @@
 {% comment %}
-Surveys CSS is designed for light mode only — until dark variants land,
-force-light the page so neither prefers-color-scheme:dark nor an explicit
-site dark-mode toggle breaks legibility. We must REMOVE sc-dark (the toggle
-adds it earlier in <head>, and the brand stylesheet's .sc-dark rules apply on
-the class alone), not just add sc-light. data-bs-theme="light" pins
-Bootstrap 5.3+'s own theming.
+No-op. Surveys used to be light-only, so this shim force-removed sc-dark to
+pin them light. The survey UI is now theme-aware (styles live in the brand
+stylesheet's "Surveys" section on --sc-* tokens with dark variants), so pages
+follow the site theme like everywhere else. Kept as an empty include so the
+many templates that reference it don't need touching; safe to delete once the
+includes are removed.
 {% endcomment %}
-<script>
-    document.documentElement.classList.remove('sc-dark');
-    document.documentElement.classList.add('sc-light');
-    document.documentElement.setAttribute('data-bs-theme', 'light');
-</script>

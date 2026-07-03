@@ -37,6 +37,7 @@ nav:
   - Architecture:
       - Overview: architecture/overview.md
   - Conventions:
+      - Brand guidelines: conventions/brand-guidelines.md
       - UI patterns: conventions/ui-patterns.md
   - Deployment:
       - Azure (App Service + Postgres): deployment/azure.md

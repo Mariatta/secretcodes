@@ -149,7 +149,7 @@
                 <span class="badge rounded-pill text-bg-secondary">{{ tag }}</span>
             {% endfor %}
             {% if post.channel not in post.SOCIAL_CHANNELS %}
-                <span class="text-muted small">(not appended on copy — non-social channel)</span>
+                <span class="text-muted small">(not appended on copy, non-social channel)</span>
             {% endif %}
         </div>
     {% endif %}
@@ -168,7 +168,7 @@
             <small class="{% if post.is_missing_asset %}text-warning{% else %}text-success{% endif %}">
                 {{ post.attached_asset_count }} of {{ post.expected_asset_list|length }} attached
                 {% if post.is_missing_asset %}
-                    — some still needed
+                    , some still needed
                 {% endif %}
             </small>
         </div>

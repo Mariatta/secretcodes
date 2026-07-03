@@ -1,6 +1,6 @@
 {% extends "./base.html" %}
 {% block head_title %}
-    For agents — Mariatta's availability MCP server · {{ block.super }}
+    For agents, Mariatta's availability MCP server · {{ block.super }}
 {% endblock head_title %}
 {% block content %}
     <h1>
@@ -25,7 +25,7 @@ Content-Type: application/json</code></pre>
             Protocol version: <code>2024-11-05</code>
         </li>
         <li>
-            Authentication: <strong>none</strong> — public, read-only
+            Authentication: <strong>none</strong>, public, read-only
         </li>
         <li>
             Rate limit: <strong>60 requests/minute per IP</strong>. Exceeding
@@ -35,7 +35,7 @@ Content-Type: application/json</code></pre>
         <li>
             Maximum range: <strong>14 days</strong> for
             <code>list_free_slots</code> and <code>get_busy_shadow</code>.
-            Longer ranges will be available in a future paid tier — requests
+            Longer ranges will be available in a future paid tier, requests
             over the limit return JSON-RPC error code <code>-32602</code>.
         </li>
         <li>
@@ -102,7 +102,7 @@ Content-Type: application/json</code></pre>
     </p>
     <ul>
         <li>
-            <code>datetime</code> (string, required) — ISO 8601 with timezone
+            <code>datetime</code> (string, required), ISO 8601 with timezone
         </li>
         <li>
             <code>duration_minutes</code> (integer, default <code>30</code>)
@@ -124,14 +124,14 @@ Content-Type: application/json</code></pre>
     </p>
     <ul>
         <li>
-            <code>start</code>, <code>end</code> (strings, required) — ISO 8601
+            <code>start</code>, <code>end</code> (strings, required), ISO 8601
         </li>
         <li>
             <code>duration_minutes</code> (integer, default <code>30</code>)
         </li>
         <li>
             <code>include_extended</code> (boolean, default <code>false</code>)
-            — set <code>true</code> to also return early-morning / evening
+            , set <code>true</code> to also return early-morning / evening
             extended-hour slots
         </li>
     </ul>
@@ -147,7 +147,7 @@ Content-Type: application/json</code></pre>
         </h3>
         <p>
             "Raw busy blocks from Mariatta's calendars in a date range." Returns
-            only start/end timestamps — never event titles, attendees, locations,
+            only start/end timestamps, never event titles, attendees, locations,
             or descriptions.
         </p>
         <ul>
@@ -184,7 +184,7 @@ Content-Type: application/json</code></pre>
 }</code></pre>
         <p>
             The inner <code>text</code> field is a JSON string of the tool's
-            actual return value — parse it as JSON on your end. This matches the
+            actual return value, parse it as JSON on your end. This matches the
             MCP spec's <code>content</code> array convention.
         </p>
         <p>
@@ -209,7 +209,7 @@ Content-Type: application/json</code></pre>
             Privacy
         </h2>
         <p>
-            The endpoint only returns free/busy timestamps — no event titles,
+            The endpoint only returns free/busy timestamps, no event titles,
             attendees, descriptions, or other details. Full details in the
             <a href="{% url 'privacy' %}">Privacy Policy</a>.
         </p>

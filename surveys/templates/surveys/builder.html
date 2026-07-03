@@ -12,20 +12,6 @@
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_ui.html" %}
-    <style>
-        .question-row.removed { display: none; }
-        .drag-handle {
-            cursor: grab;
-            font-size: 1.4rem;
-            line-height: 1;
-            padding: 0.4rem 0.5rem;
-            color: #adb5bd;
-            user-select: none;
-        }
-        .drag-handle:hover { color: #495057; }
-        .question-row.sortable-ghost { opacity: 0.45; }
-        .question-row.sortable-chosen .drag-handle { cursor: grabbing; }
-    </style>
     <script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
 {% endblock extra_head %}
 {% block content %}
@@ -189,7 +175,7 @@
                                             <div class="form-check">
                                                 {{ form.required }}
                                                 <label class="form-check-label small" for="{{ form.required.id_for_label }}">
-                                                    Required — respondent must answer
+                                                    Required, respondent must answer
                                                 </label>
                                             </div>
                                             <button type="button" class="btn btn-link text-danger remove-question">
@@ -263,7 +249,7 @@
                                     {{ formset.empty_form.required }}
                                     <label class="form-check-label small"
                                            for="{{ formset.empty_form.required.id_for_label }}">
-                                        Required — respondent must answer
+                                        Required, respondent must answer
                                     </label>
                                 </div>
                                 <button type="button" class="btn btn-link text-danger remove-question">

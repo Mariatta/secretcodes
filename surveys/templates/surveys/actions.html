@@ -6,63 +6,6 @@
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_force_light.html" %}
-    <style>
-        .ai-card.resolved { opacity: 0.65; }
-        .ai-card.resolved .ai-name { text-decoration: line-through; }
-        .resolve-checkbox {
-            display: inline-flex;
-            cursor: pointer;
-            margin: 0; padding: 0;
-            user-select: none;
-        }
-        .resolve-checkbox input[type=checkbox] {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-            width: 0; height: 0;
-        }
-        .resolve-box {
-            display: inline-flex;
-            align-items: center; justify-content: center;
-            width: 22px; height: 22px;
-            border: 2px solid #ced4da;
-            border-radius: 4px;
-            background: #fff;
-            transition: background 0.15s, border-color 0.15s;
-            color: transparent;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .resolve-checkbox:hover .resolve-box {
-            border-color: #1d9e75;
-        }
-        .resolve-checkbox input:checked ~ .resolve-box {
-            background: #1d9e75;
-            border-color: #1d9e75;
-            color: #fff;
-        }
-        .resolve-checkbox input:focus-visible ~ .resolve-box {
-            outline: 2px solid #534AB7;
-            outline-offset: 2px;
-        }
-        .rep-quote {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 0.95rem;
-            color: #495057;
-            border-left: 3px solid #c89b3c;
-            padding: 0.4rem 0.75rem;
-            background: #fffaf0;
-            margin-top: 0.5rem;
-        }
-        .stat-pill {
-            padding: 0.15rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            background: #f1f3f5;
-            color: #495057;
-        }
-    </style>
 {% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">
@@ -160,7 +103,7 @@
             {% endif %}
             {% if drafts %}
                 <h2 class="h5 mt-5 mb-2 text-muted">
-                    Drafts — themes that don't have an action item yet
+                    Drafts, themes that don't have an action item yet
                 </h2>
                 <div class="list-group">
                     {% for theme in drafts %}

@@ -46,3 +46,5 @@ CLAUDE.md
 client_secret_*.json
 .env
 .env.*
+# Local design/handoff scratch, internal only
+handoff/

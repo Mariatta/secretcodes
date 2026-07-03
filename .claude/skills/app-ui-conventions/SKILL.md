@@ -1,6 +1,6 @@
 ---
 name: app-ui-conventions
-description: UI conventions for building or changing app pages in the secretcodes repo — the authenticated list/home header ("Your X" + "+ New" button), breadcrumb back-nav ("All X", no arrows), the public marketing landing hero, and the standard wording. Use whenever creating a new app or adding pages to an existing one so the apps stay visually consistent.
+description: UI conventions for building or changing app pages in the secretcodes repo: the authenticated list/home header ("Your X" + "+ New" button), breadcrumb back-nav ("All X", no arrows), the public marketing landing hero, and the standard wording. Use whenever creating a new app or adding pages to an existing one so the apps stay visually consistent.
 ---
 
 # App UI conventions (secretcodes)
@@ -26,14 +26,14 @@ the left, actions on the right. Heading is **"Your {things}"** as an `h1.h3`.
 </div>
 ```
 
-- Heading wording: **"Your X"** — "Your boards", "Your events", "Your surveys", "Your QR codes".
+- Heading wording: **"Your X"**: "Your boards", "Your events", "Your surveys", "Your QR codes".
 - The **noun** is wrapped in `<em class="sc-italic">…</em>`, the site-wide accent voice: display-font italic in the brand accent (theme-aware orange), as in the landing's "for myself" and the login's welcome "back". The leading word (e.g. "Your") stays default ink.
 - Heading element: **always `<h1 class="h3 mb-0">`** (never a bare `<h1>`; that renders full display size and looks inconsistent).
 - Primary action: `btn btn-primary`, labelled **"+ New {thing}"**, on the right.
 - Extra actions: `btn btn-outline-secondary`, to the left of the primary, inside a `d-flex gap-2`.
 - Gate the actions with `perms.app.codename` (see the has-perm convention), not group checks.
 
-## 2. Detail / sub pages — breadcrumb back-nav
+## 2. Detail / sub pages: breadcrumb back-nav
 
 Any page below the list (a single event, a board's tabs, a create form) starts
 with a Bootstrap breadcrumb. **No arrows.** Parent crumb is **"All {things}"**
@@ -52,7 +52,7 @@ linking to the list; the current page is the active crumb.
 </nav>
 ```
 
-- Back-link wording: **"All X"** — "All events", "All surveys", "All boards", "All QR codes".
+- Back-link wording: **"All X"**: "All events", "All surveys", "All boards", "All QR codes".
 - Never use a `←` arrow or a `btn btn-link` back-button; always the breadcrumb.
 - When a page has section **tabs** (surveys `_subnav.html`, content `_board_nav.html`),
   put the breadcrumb above/inline with the tabs; keep the tabs.
@@ -62,7 +62,7 @@ linking to the list; the current page is the active crumb.
 ## 3. Public / unauthenticated landing (marketing hero)
 
 The page an **anonymous or non-invited** visitor sees. Reuse the shared hero
-partial — do not hand-roll it:
+partial, don't hand-roll it:
 
 ```django
 {% include "_app_landing.html" with num="07" name="QR codes" title_lead="Short links," title_accent="scannable codes" lede="One or two sentences." status="open to all" show_signin=True %}
@@ -87,6 +87,7 @@ users. Don't put the hero on the authenticated list page.
 
 ## 5. Related conventions (already in the repo)
 
+- **Brand system:** colours, fonts, the accent-italic voice, dark mode, and tone live in the `secret-codes-brand` skill and `docs/conventions/brand-guidelines.md`. Follow it for anything visual.
 - **Permissions:** gate reads with `user.has_perm` / `perms.app.codename`; groups only grant the perm.
 - **CSS:** add to the external `secretcodes/static/brand/secret-codes.css`, never inline `<style>`.
 - **Theme:** brand `.sc-*` classes + CSS vars, dark/light aware. Bootstrap `list-group-item-action` uses the full text colour via `--bs-list-group-action-color` (already set) so clickable lists don't look greyed out.

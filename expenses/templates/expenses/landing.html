@@ -19,7 +19,7 @@
         <p class="sc-muted mb-4">
             <strong>Friends and family only, for now.</strong>
             {% if user.is_authenticated %}
-                You're signed in but don't have access yet — send a signal and I'll add you.
+                You're signed in but don't have access yet, send a signal and I'll add you.
             {% endif %}
         </p>
         {% if not user.is_authenticated %}

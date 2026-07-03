@@ -6,19 +6,6 @@
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_ui.html" %}
-    <style>
-        .response-quote {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 1.05rem;
-            line-height: 1.55;
-            white-space: pre-wrap;
-        }
-        .response-card.is-rep {
-            border-left: 4px solid #c89b3c;
-            background: #fffaf0;
-        }
-        .star-btn.starred { color: #c89b3c; }
-    </style>
 {% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">

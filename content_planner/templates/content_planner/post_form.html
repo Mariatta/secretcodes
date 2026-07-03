@@ -85,7 +85,7 @@
         </div>
         {% if not form.fields.schedule_mode %}
             <div class="form-text mb-2">
-                Date and time in the board's timezone — a date alone is fine for all-day posts; leave blank if unscheduled.
+                Date and time in the board's timezone, a date alone is fine for all-day posts; leave blank if unscheduled.
             </div>
         {% endif %}
         {% if is_create %}
@@ -140,7 +140,7 @@
                     </label>
                 {% empty %}
                     <p class="text-muted small mb-0">
-                        No assets in this board yet — upload one below.
+                        No assets in this board yet, upload one below.
                     </p>
                 {% endfor %}
             </div>
@@ -156,7 +156,7 @@
         </div>
     </form>
     {% comment %}
-      When "Is all day" is on, the schedule field only needs a date — swap the
+      When "Is all day" is on, the schedule field only needs a date, swap the
       native datetime-local control for a date control so the browser stops
       demanding a time.
     {% endcomment %}

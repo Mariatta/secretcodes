@@ -6,26 +6,6 @@
 {% block extra_head %}
     {{ block.super }}
     {% include "surveys/_ui.html" %}
-    <style>
-        .bar-row { margin-bottom: 0.6rem; font-size: 0.9rem; }
-        .bar-head { display: flex; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.2rem; color: #495057; }
-        .bar-head .bar-text { word-break: break-word; }
-        .bar-head .bar-count { color: #6c757d; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-        .bar-track { background: #f1f3f5; border-radius: 0.25rem; height: 0.75rem; overflow: hidden; }
-        .bar-fill  { height: 100%; background: #0d6efd; transition: width 0.2s; }
-        .split-track { display: flex; height: 1.5rem; border-radius: 0.25rem; overflow: hidden; background: #f1f3f5; }
-        .split-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.85rem; font-weight: 600; transition: width 0.2s; min-width: 0; }
-        .split-seg.role-yes { background: #1d9e75; }
-        .split-seg.role-no  { background: #b15a4f; }
-        .split-seg.role-detractor { background: #b15a4f; }
-        .split-seg.role-passive   { background: #c89b3c; }
-        .split-seg.role-promoter  { background: #1d9e75; }
-        .split-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; font-size: 0.85rem; color: #495057; }
-        .split-legend .legend-swatch { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: middle; }
-        .stat-card { padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; text-align: center; }
-        .stat-card .stat-num { font-size: 1.75rem; font-weight: 600; }
-        .stat-card .stat-label { font-size: 0.85rem; color: #6c757d; }
-    </style>
 {% endblock extra_head %}
 {% block content %}
     <div class="row justify-content-center">
@@ -67,7 +47,7 @@
                     <div class="stat-card">
                         <div class="stat-num">
                             {% if agg.answer_fill_rate is None %}
-                                —
+                                –
                             {% else %}
                                 {% widthratio agg.answer_fill_rate 1 100 %}%
                             {% endif %}
@@ -81,7 +61,7 @@
                     <div class="stat-card">
                         <div class="stat-num">
                             {% if agg.average_rating is None %}
-                                —
+                                –
                             {% else %}
                                 {{ agg.average_rating|floatformat:1 }}
                             {% endif %}
@@ -137,7 +117,8 @@
                                         {% else %}
                                             responses
                                         {% endif %}
-                                        — group into themes to extract action items.
+                                        ,
+                                        group into themes to extract action items.
                                     </span>
                                     <span class="spacer"></span>
                                     <a href="{% url 'surveys:text_responses' slug=survey.slug %}?question={{ s.question.id }}">Browse responses →</a>

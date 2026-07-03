@@ -44,7 +44,8 @@
         <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
         <link rel="stylesheet" href="{% static 'brand/secret-codes.css' %}">
     </head>
-    <body class="d-flex flex-column min-vh-100" style="background: #FAF9F5;">
+    <body class="d-flex flex-column min-vh-100"
+          style="background: var(--sc-bg)">
         <header class="container pt-3 pb-2 d-flex justify-content-end">
             <a class="small text-muted text-decoration-none"
                href="{% url 'about' %}"
@@ -61,7 +62,7 @@
                             <a class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center text-decoration-none"
                                href="{% url 'index' %}"
                                aria-label="Secret Codes Surveys, by Mariatta"
-                               style="color: var(--sc-ink, #1F1E1B)">
+                               style="color: var(--sc-fg)">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      viewBox="0 0 560 180"
                                      role="img"

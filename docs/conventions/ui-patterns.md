@@ -2,7 +2,8 @@
 
 Conventions every app on this site follows (expenses, surveys, content planner,
 QR codes) so a new app looks and reads like the existing ones. When adding an
-app or a page, match these.
+app or a page, match these. For the underlying visual system (colours, fonts,
+dark mode, tone), see the [Brand guidelines](brand-guidelines.md).
 
 There are three recurring page types: the **public landing** an anonymous
 visitor sees, the **authenticated list/home** page, and the **detail/sub pages**

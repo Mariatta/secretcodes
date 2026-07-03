@@ -47,7 +47,7 @@
                 <a href="{% url 'expenses:receipt_download' event_id=event.pk expense_id=expense.pk %}">
                     {{ expense.receipt_original_filename|default:"download" }}
                 </a>
-                — uploading a new file replaces it.
+                , uploading a new file replaces it.
             </p>
         {% endif %}
         {% bootstrap_form form %}
