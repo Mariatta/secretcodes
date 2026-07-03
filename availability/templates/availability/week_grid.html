@@ -4,17 +4,6 @@
     Mariatta's availability · {{ block.super }}
 {% endblock head_title %}
 {% block extra_head %}
-    <style>
-        .day-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        @media (min-width: 768px) {
-            .day-grid { grid-template-columns: repeat(4, 1fr); }
-        }
-    </style>
 {% endblock extra_head %}
 {% block content %}
     {% timezone profile.timezone %}
