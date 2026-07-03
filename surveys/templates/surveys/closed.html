@@ -27,12 +27,12 @@
         <p class="text-muted">
             Thanks for your interest.
         </p>
-        <img src="{% static 'brand/logo-monogram.svg' %}"
-             alt=""
+        <div class="mt-5 mx-auto"
+             style="width: 120px;
+                    color: var(--sc-fg)"
              aria-hidden="true"
-             width="120"
-             height="120"
-             class="mt-5"
              title="Don't give up, on secret codes.">
+            {% include "_logo_monogram.html" %}
+        </div>
     </div>
 {% endblock content %}
