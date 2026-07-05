@@ -1,7 +1,7 @@
 asgiref==3.11.1
 bleach==6.4.0
 Django==6.0.6
-django-allauth==65.17.0
+django-allauth==65.18.0
 markdown==3.10.2
 django-filter==25.2
 django-ratelimit==4.1.0
@@ -13,8 +13,8 @@ sqlparse==0.5.5
 django-bootstrap5==26.2
 whitenoise==6.12.0
 dj-database-url==3.1.2
-boto3==1.43.36
-cryptography==48.0.1
+boto3==1.43.40
+cryptography==49.0.0
 django-solo==2.5.1
 django-storages==1.14.6
 django-timezone-field==7.2.2
@@ -23,6 +23,6 @@ google-api-python-client==2.198.0
 google-auth==2.53.0
 google-auth-oauthlib==1.4.0
 jsonschema==4.26.0
-pillow==12.2.0
+pillow==12.3.0
 qrcode==8.2
 qrcode[pil]
