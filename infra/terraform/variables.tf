@@ -112,6 +112,28 @@ variable "spaces_endpoint" {
   type        = string
 }
 
+# --- Email (Mailgun SMTP) ------------------------------------------------------
+# Heroku's Mailgun addon supplied these implicitly; on Azure they must be set
+# or every email send (invites, booking notifications) 500s with
+# "OSError: [Errno 99] Cannot assign requested address" (SMTP to localhost).
+
+variable "mailgun_smtp_user" {
+  description = "Mailgun SMTP login, e.g. postmaster@mariatta.ca (dashboard: Sending → Domain settings → SMTP credentials)."
+  type        = string
+}
+
+variable "mailgun_smtp_password" {
+  description = "Mailgun SMTP password (NOT the API key). Pass via TF_VAR_mailgun_smtp_password."
+  type        = string
+  sensitive   = true
+}
+
+variable "default_from_email" {
+  description = "From address for outgoing mail."
+  type        = string
+  default     = "Mariatta <mariatta@mariatta.ca>"
+}
+
 # --- Migration convenience ---------------------------------------------------
 
 variable "operator_ip" {
