@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 icons %}
 {% block head_title %}
     Import survey
 {% endblock head_title %}
@@ -37,16 +37,23 @@
             </form>
             <div class="card">
                 <div class="card-body">
-                    <h2 class="h6 mb-3">
-                        Markdown format
-                    </h2>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h6 mb-0">
+                            Markdown format
+                        </h2>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                onclick="scCopy('sc-md-format', this)">
+                            {% icon "copy" class="me-1" %}<span data-copy-label>Copy example</span>
+                        </button>
+                    </div>
                     <p class="small text-muted mb-2">
                         One <code>#</code> heading for the survey title, then
                         survey metadata, then one <code>##</code> heading per
                         question with its properties as <code>- key: value</code>
                         lines.
                     </p>
-                    <pre class="bg-light p-3 small mb-0" style="border-radius: 6px; white-space: pre-wrap;"><code># Post-event feedback
+                    <pre class="border rounded p-3 small mb-0 sc-pre-wrap"><code id="sc-md-format"># Post-event feedback
 slug: post-event
 status: draft
 
