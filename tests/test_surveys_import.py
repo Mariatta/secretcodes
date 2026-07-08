@@ -273,6 +273,18 @@ def test_import_view_renders_form(client, owner):
 
 
 @pytest.mark.django_db
+def test_import_view_example_is_copyable_and_theme_aware(client, owner):
+    """The markdown example needs a copy button and must not hard-code a
+    light background that turns unreadable in dark mode."""
+    client.force_login(owner)
+    response = client.get(reverse("surveys:import"))
+    body = response.content.decode()
+    assert "scCopy('sc-md-format'" in body
+    assert 'id="sc-md-format"' in body
+    assert "bg-light" not in body
+
+
+@pytest.mark.django_db
 def test_import_view_creates_survey_from_upload(client, owner):
     client.force_login(owner)
     upload = SimpleUploadedFile(
