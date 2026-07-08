@@ -6,6 +6,7 @@
 #   export TF_VAR_django_secret_key='...'
 #   export TF_VAR_fernet_key='...'     # python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
 #   export TF_VAR_spaces_key='...' TF_VAR_spaces_secret='...'
+#   export TF_VAR_mailgun_smtp_password='...'  # SMTP password, NOT the API key
 #   export ARM_SUBSCRIPTION_ID='...'   # so you can leave subscription_id null
 
 location         = "canadacentral"
@@ -26,6 +27,11 @@ postgres_admin_user = "scadmin"
 
 spaces_bucket   = "your-space-name"
 spaces_endpoint = "https://nyc3.digitaloceanspaces.com"
+
+# Mailgun SMTP (dashboard: Sending → Domain settings → SMTP credentials).
+# Heroku's addon set this implicitly; on Azure email 500s without it.
+mailgun_smtp_user = "postmaster@your-domain"
+# default_from_email = "You <you@your-domain>"
 
 # Set to your public IP for the migration restore (then blank it out after):
 operator_ip = "" # e.g. "203.0.113.7"

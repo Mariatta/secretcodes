@@ -124,6 +124,16 @@ resource "azurerm_linux_web_app" "web" {
     GOOGLE_CLIENT_SECRET      = var.google_client_secret
     GOOGLE_OAUTH_REDIRECT_URI = "https://${local.public_host}/availability/oauth/callback/"
 
+    # Email (Mailgun SMTP). Heroku's addon provided this implicitly; without it
+    # settings.py falls back to localhost:25 and every email send (survey /
+    # expenses / content invites, booking notifications) 500s.
+    DJANGO_EMAIL_HOST          = "smtp.mailgun.org"
+    DJANGO_EMAIL_PORT          = "587"
+    DJANGO_EMAIL_HOST_USER     = var.mailgun_smtp_user
+    DJANGO_EMAIL_HOST_PASSWORD = var.mailgun_smtp_password
+    DJANGO_EMAIL_USE_TLS       = "true"
+    DJANGO_DEFAULT_FROM_EMAIL  = var.default_from_email
+
     # settings.py only wires up the S3/Spaces storage (and the AWS_* settings the
     # QR generator reads) when USE_SPACES == "true". Without it, QR creation 500s.
     USE_SPACES              = "true"

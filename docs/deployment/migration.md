@@ -206,6 +206,30 @@ because Azure's `FERNET_KEY` matches Heroku's. Then bind the apex and flip DNS:
     URI. (A missing host shows as a 500 here, not a 400, because the branded error
     page itself reads the host.)
 
+!!! danger "Heroku's Mailgun config does not migrate: set the SMTP vars in Terraform"
+    On Heroku the Mailgun addon supplied the SMTP config, so nothing in the
+    repo listed it as a required env var. Azure gets none of it, and
+    `settings.py` quietly falls back to `localhost:25`. The app then deploys
+    and serves fine, but **every email send 500s**: survey / expenses /
+    content invitations and booking notifications all die with
+    `OSError: [Errno 99] Cannot assign requested address` from
+    `django/core/mail/backends/smtp.py` (this bit prod on 2026-07-08, weeks
+    after cutover, because email is the only feature that needs it).
+
+    The fix lives in Terraform, since it owns the whole `app_settings` map
+    (anything set with `az webapp config appsettings set` is wiped on the
+    next `tofu apply`): set `mailgun_smtp_user` in `terraform.tfvars`,
+    export `TF_VAR_mailgun_smtp_password`, and `tofu apply`. The SMTP
+    credentials live in the Mailgun dashboard under Sending → Domain
+    settings → SMTP credentials; the SMTP password is **not** the API key.
+    The app restarts itself when settings change.
+
+    Verify by sending a survey invite; if it still fails, the traceback is
+    in the container console log:
+    `az webapp log tail -n secretcodes-web -g secretcodes-rg` live, or
+    `az webapp log download` and grep the
+    `LogFiles/<date>_*_containerStream.log` files for `Traceback`.
+
 **Keep Heroku intact for a few days** as rollback before deleting anything.
 
 ### 7. Automate ongoing deploys
