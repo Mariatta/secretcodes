@@ -1,6 +1,6 @@
 -r requirements.txt
 black==26.5.1
-coverage==7.14.1
+coverage==7.15.0
 django-debug-toolbar==7.0.0
 djlint==1.40.3
 flake8==7.3.0
