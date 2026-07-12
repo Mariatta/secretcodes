@@ -2,7 +2,7 @@
 black==26.5.1
 coverage==7.14.1
 django-debug-toolbar==7.0.0
-djlint==1.40.3
+djlint==1.40.4
 flake8==7.3.0
 isort==8.0.1
 pip-audit==2.10.0
