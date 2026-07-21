@@ -3,7 +3,7 @@ bleach==6.4.0
 Django==6.0.6
 django-allauth==65.18.0
 markdown==3.10.2
-django-filter==25.2
+django-filter==26.1
 django-ratelimit==4.1.0
 django-tables2==3.0.0
 gunicorn==26.0.0
