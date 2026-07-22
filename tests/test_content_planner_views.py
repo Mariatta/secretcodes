@@ -560,9 +560,7 @@ def test_post_mark_done_returns_to_next(auth_client, board, campaign):
     board_home = reverse(
         "content_planner:board_home", kwargs={"board_slug": board.slug}
     )
-    resp = auth_client.post(
-        _mark_done_url(board, campaign, post), {"next": board_home}
-    )
+    resp = auth_client.post(_mark_done_url(board, campaign, post), {"next": board_home})
     assert resp.status_code == 302
     assert resp["Location"] == board_home
 
