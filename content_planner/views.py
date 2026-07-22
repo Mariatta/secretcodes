@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import pluralize
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django_ratelimit.decorators import ratelimit
@@ -305,9 +306,14 @@ def campaign_bulk_update(request, board, slug):
     campaign = get_object_or_404(Campaign, board=board, slug=slug)
     posts = campaign.posts.filter(pk__in=request.POST.getlist("posts"))
     count = posts.count()
-    action = request.POST.get("action")
+    # A one-click shortcut button ("Mark done") wins over the action dropdown,
+    # which is always submitted alongside it.
+    action = request.POST.get("quick_action") or request.POST.get("action")
     if not count:
         messages.info(request, "No posts selected.")
+    elif action == "mark_done":
+        posts.update(status=Post.Status.PUBLISHED, modified_date=timezone.now())
+        messages.success(request, f"Marked {count} post{pluralize(count)} done.")
     elif action == "set_status":
         status = request.POST.get("status")
         if status in Post.Status.values:
@@ -395,6 +401,32 @@ def post_delete(request, board, slug, post_slug):
     title = post.title
     post.delete()
     messages.success(request, f"Deleted post '{title}'.")
+    return redirect(
+        "content_planner:campaign_detail",
+        board_slug=board.slug,
+        slug=campaign.slug,
+    )
+
+
+@board_required
+@require_http_methods(["POST"])
+def post_mark_done(request, board, slug, post_slug):
+    """Mark a single post published — the one-click row shortcut.
+
+    Rows appear on several pages, so the caller passes ``next`` to come back
+    to where the button was clicked; anything off-site falls back to the
+    campaign.
+    """
+    campaign = get_object_or_404(Campaign, board=board, slug=slug)
+    post = get_object_or_404(Post, campaign=campaign, slug=post_slug)
+    post.status = Post.Status.PUBLISHED
+    post.save(update_fields=["status"])
+    messages.success(request, f"Marked '{post.title}' done.")
+    next_url = request.POST.get("next", "")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(next_url)
     return redirect(
         "content_planner:campaign_detail",
         board_slug=board.slug,

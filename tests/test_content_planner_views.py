@@ -511,6 +511,74 @@ def test_bulk_unknown_action_rejected(auth_client, board, campaign):
     assert post.status == "drafting"
 
 
+def test_bulk_mark_done_wins_over_action_dropdown(auth_client, board, campaign):
+    p1 = Post.objects.create(campaign=campaign, title="A", channel="blog")
+    p2 = Post.objects.create(campaign=campaign, title="B", channel="blog")
+    resp = auth_client.post(
+        _bulk_url(board, campaign),
+        {
+            "posts": [p1.pk, p2.pk],
+            "quick_action": "mark_done",
+            "action": "set_status",
+            "status": "drafting",
+        },
+    )
+    assert resp.status_code == 302
+    p1.refresh_from_db()
+    p2.refresh_from_db()
+    assert p1.status == "published"
+    assert p2.status == "published"
+
+
+def _mark_done_url(board, campaign, post):
+    return reverse(
+        "content_planner:post_mark_done",
+        kwargs={
+            "board_slug": board.slug,
+            "slug": campaign.slug,
+            "post_slug": post.slug,
+        },
+    )
+
+
+def test_post_mark_done(auth_client, board, campaign):
+    post = Post.objects.create(
+        campaign=campaign, title="A", channel="blog", status="drafting"
+    )
+    resp = auth_client.post(_mark_done_url(board, campaign, post))
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse(
+        "content_planner:campaign_detail",
+        kwargs={"board_slug": board.slug, "slug": campaign.slug},
+    )
+    post.refresh_from_db()
+    assert post.status == "published"
+
+
+def test_post_mark_done_returns_to_next(auth_client, board, campaign):
+    post = Post.objects.create(campaign=campaign, title="A", channel="blog")
+    board_home = reverse(
+        "content_planner:board_home", kwargs={"board_slug": board.slug}
+    )
+    resp = auth_client.post(
+        _mark_done_url(board, campaign, post), {"next": board_home}
+    )
+    assert resp.status_code == 302
+    assert resp["Location"] == board_home
+
+
+def test_post_mark_done_rejects_offsite_next(auth_client, board, campaign):
+    post = Post.objects.create(campaign=campaign, title="A", channel="blog")
+    resp = auth_client.post(
+        _mark_done_url(board, campaign, post), {"next": "https://evil.example/"}
+    )
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse(
+        "content_planner:campaign_detail",
+        kwargs={"board_slug": board.slug, "slug": campaign.slug},
+    )
+
+
 def test_post_delete(auth_client, board, campaign):
     post = Post.objects.create(campaign=campaign, title="Doomed", channel="blog")
     resp = auth_client.post(

@@ -77,6 +77,11 @@ urlpatterns = [
         name="post_edit",
     ),
     path(
+        "<slug:board_slug>/c/<slug:slug>/p/<slug:post_slug>/mark-done/",
+        views.post_mark_done,
+        name="post_mark_done",
+    ),
+    path(
         "<slug:board_slug>/c/<slug:slug>/p/<slug:post_slug>/delete/",
         views.post_delete,
         name="post_delete",

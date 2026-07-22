@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block head_title %}
     {{ campaign.name }} · {{ board.name }} · {{ block.super }}
 {% endblock head_title %}
@@ -122,6 +123,12 @@
                     Select all
                 </label>
             </div>
+            <button type="submit"
+                    name="quick_action"
+                    value="mark_done"
+                    class="btn btn-sm btn-success">
+                {% icon "check" %} Mark selected done
+            </button>
             <select name="action"
                     class="form-select form-select-sm w-auto"
                     aria-label="Bulk action">

@@ -34,6 +34,17 @@ bulk-select checkbox (associated with the campaign's #bulk-form).{% endcomment %
             </small>
         {% endif %}
         {% include "content_planner/_status_badge.html" with value=post.status label=post.get_status_display %}
+        {% if post.status != "published" %}
+            <form method="post"
+                  class="d-inline"
+                  action="{% url 'content_planner:post_mark_done' board.slug post.campaign.slug post.slug %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit"
+                        class="btn btn-sm btn-outline-success"
+                        title="Mark done">{% icon "check" label="Mark done" %}</button>
+            </form>
+        {% endif %}
         <a class="btn btn-sm btn-outline-secondary"
            href="{% url 'content_planner:post_edit' board.slug post.campaign.slug post.slug %}"
            title="Edit">{% icon "pen-to-square" label="Edit" %}</a>
