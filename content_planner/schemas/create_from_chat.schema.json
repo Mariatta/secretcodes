@@ -65,6 +65,7 @@
             "enum": [
               "blog",
               "mastodon",
+              "bluesky",
               "linkedin",
               "x",
               "instagram",
