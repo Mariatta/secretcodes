@@ -58,6 +58,18 @@ def test_copy_text_appends_hashtags_on_social(board):
     assert post.copy_text == "Hello world\n\n#PyLadiesCon #python"
 
 
+def test_copy_text_appends_hashtags_on_bluesky(board):
+    campaign = Campaign.objects.create(board=board, name="C", hashtags="#PyLadiesCon")
+    post = Post.objects.create(
+        campaign=campaign,
+        title="P",
+        channel="bluesky",
+        body_snippet="Hello world",
+        hashtags="#python",
+    )
+    assert post.copy_text == "Hello world\n\n#PyLadiesCon #python"
+
+
 def test_copy_text_tags_only_when_no_body(board):
     campaign = Campaign.objects.create(board=board, name="C", hashtags="#a")
     post = Post.objects.create(campaign=campaign, title="P", channel="x")

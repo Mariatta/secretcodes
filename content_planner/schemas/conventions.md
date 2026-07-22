@@ -19,11 +19,11 @@ Top level needs `campaign` (object) and `posts` (array). A campaign needs a
 ## Channels
 
 `channel` must be one of (read from the model, so this list is authoritative in
-the schema's `enum`): `blog`, `mastodon`, `linkedin`, `x`, `instagram`,
-`newsletter`, `podcast`, `talk`, `other`.
+the schema's `enum`): `blog`, `mastodon`, `bluesky`, `linkedin`, `x`,
+`instagram`, `newsletter`, `podcast`, `talk`, `other`.
 
-Social channels (`mastodon`, `linkedin`, `x`, `instagram`) are where hashtags
-get appended when copying.
+Social channels (`mastodon`, `bluesky`, `linkedin`, `x`, `instagram`) are
+where hashtags get appended when copying.
 
 ## Status lifecycle (and why you don't set it)
 

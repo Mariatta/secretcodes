@@ -297,6 +297,7 @@ class Post(BaseModel):
     CHANNEL_CHOICES = [
         ("blog", "Blog"),
         ("mastodon", "Mastodon"),
+        ("bluesky", "Bluesky"),
         ("linkedin", "LinkedIn"),
         ("x", "X / Twitter"),
         ("instagram", "Instagram"),
@@ -307,7 +308,7 @@ class Post(BaseModel):
     ]
 
     # Channels where appending hashtags to the copy text makes sense.
-    SOCIAL_CHANNELS = {"mastodon", "linkedin", "x", "instagram"}
+    SOCIAL_CHANNELS = {"mastodon", "bluesky", "linkedin", "x", "instagram"}
 
     class Status(models.TextChoices):
         DRAFTING = "drafting", "Drafting"
