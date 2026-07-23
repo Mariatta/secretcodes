@@ -1,0 +1,62 @@
+name: Deploy to staging
+
+# Manual only: pick the branch to stage from the Actions tab ("Run workflow" →
+# choose the PR branch). Staging runs whatever you dispatch, so you can exercise
+# a PR before merging it. Nothing here touches prod.
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+  # Distinct tag so staging and prod never share an image reference.
+  TAG: staging
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lowercase the image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the staging image
+        run: |
+          # App Service is amd64; ubuntu runners are amd64, so this is native.
+          docker build --platform linux/amd64 -t "${IMAGE}:${TAG}" .
+          docker push "${IMAGE}:${TAG}"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      # One image, three roles. Each app pulls the same :staging tag; the role
+      # is fixed by its CONTAINER_ROLE app setting (set in Terraform), not here.
+      matrix:
+        app:
+          - secretcodes-staging-web
+          - secretcodes-staging-worker
+          - secretcodes-staging-beat
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          # A service principal with Contributor on secretcodes-staging-rg.
+          # Store it as its own secret so staging and prod creds stay separate.
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGING }}
+      - name: Lowercase the image name
+        # github.repository keeps owner case (Mariatta/…); Docker refs must be
+        # lowercase, so App Service can't pull the mixed-case tag as-is.
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - name: Deploy the staging image
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ matrix.app }}
+          images: ${{ env.IMAGE }}:${{ env.TAG }}

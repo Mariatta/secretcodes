@@ -42,6 +42,7 @@ nav:
   - Deployment:
       - Azure (App Service + Postgres): deployment/azure.md
       - Infrastructure as Code (Terraform): deployment/terraform.md
+      - Staging environment: deployment/staging.md
       - Heroku → Azure migration: deployment/migration.md
   - Runbooks: runbooks/index.md
   - Reference: reference/index.md
