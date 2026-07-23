@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -110,6 +111,7 @@ INSTALLED_APPS = [
     "qrcode_manager",
     "surveys",
     "content_planner",
+    "django_celery_beat",
     "solo",
     "timezone_field",
     "whitenoise",
@@ -356,6 +358,35 @@ GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
 GOOGLE_FREEBUSY_CACHE_SECONDS = int(
     os.environ.get("GOOGLE_FREEBUSY_CACHE_SECONDS", "300")
 )
+
+# --------------------------------------------------------------- Celery
+# Beat ticks the content_planner dispatcher every minute. The schedule below is
+# synced into django_celery_beat's tables by DatabaseScheduler on startup, so
+# it can be tuned or paused from the admin without a deploy.
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "") == "true"
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "dispatch-due-publications": {
+        "task": "content_planner.dispatch_due_publications",
+        "schedule": crontab(minute="*"),
+    },
+    "reap-stale-publication-claims": {
+        "task": "content_planner.reap_stale_claims",
+        "schedule": crontab(minute="*/5"),
+    },
+}
+
+# How long a publication may sit in `claimed` before the reaper assumes the
+# worker died and returns it to `pending`.
+PUBLICATION_CLAIM_TIMEOUT_MINUTES = int(
+    os.environ.get("PUBLICATION_CLAIM_TIMEOUT_MINUTES", "15")
+)
+# Platform -> Connector dotted path. Empty until a real connector lands (M2+);
+# a publication for an unmapped platform fails loudly rather than silently.
+CONTENT_PLANNER_CONNECTORS = {}
 
 # Public API rate limits. Override via env var for testing or tuning.
 MCP_RATE_LIMIT = os.environ.get("MCP_RATE_LIMIT", "60/m")
