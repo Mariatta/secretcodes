@@ -29,4 +29,5 @@ pillow==12.3.0
 qrcode==8.2
 qrcode[pil]
 redis==8.0.1
+requests==2.34.2
 regex==2026.6.28

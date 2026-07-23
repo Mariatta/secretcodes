@@ -24,6 +24,7 @@ RESERVED_BOARD_SLUGS = frozenset(
         "schedule",
         "assets",
         "campaigns",
+        "publishing",
         "c",
         "mcp",
         "admin",

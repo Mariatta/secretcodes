@@ -384,9 +384,19 @@ CELERY_BEAT_SCHEDULE = {
 PUBLICATION_CLAIM_TIMEOUT_MINUTES = int(
     os.environ.get("PUBLICATION_CLAIM_TIMEOUT_MINUTES", "15")
 )
-# Platform -> Connector dotted path. Empty until a real connector lands (M2+);
-# a publication for an unmapped platform fails loudly rather than silently.
-CONTENT_PLANNER_CONNECTORS = {}
+# Platform -> Connector dotted path. A publication for an unmapped platform
+# fails loudly rather than silently; platforms land one milestone at a time.
+CONTENT_PLANNER_CONNECTORS = {
+    "mastodon": "content_planner.connectors.mastodon.MastodonConnector",
+}
+
+# Where Mastodon sends the user back after they authorise. Must match exactly
+# what was registered with each instance (it is part of the app registration),
+# so changing it means re-registering: delete the MastodonApp rows.
+MASTODON_REDIRECT_URI = os.environ.get(
+    "MASTODON_REDIRECT_URI",
+    f"{DOMAIN_NAME.rstrip('/')}/content/publishing/connect/mastodon/callback/",
+)
 
 # Public API rate limits. Override via env var for testing or tuning.
 MCP_RATE_LIMIT = os.environ.get("MCP_RATE_LIMIT", "60/m")

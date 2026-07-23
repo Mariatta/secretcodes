@@ -5,14 +5,24 @@ import markdown
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import pluralize
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import (
+    require_GET,
+    require_http_methods,
+    require_POST,
+)
 from django_ratelimit.decorators import ratelimit
 
 from .billing import check_quota
@@ -21,9 +31,11 @@ from .chat_import import (
     create_campaign_from_payload,
     parse_chat_payload,
 )
+from .connectors import PublishError
+from .connectors.mastodon import MastodonConnector
 from .forms import AssetForm, BoardForm, CampaignForm, PostCreateForm, PostForm
 from .mcp import dispatch as mcp_dispatch
-from .models import Asset, Campaign, ContentBoard, Post
+from .models import Asset, Campaign, ContentBoard, Post, PublishingAccount
 from .permissions import can_access_board, is_content_user
 from .schemas import SCHEMA_DIR
 from .selectors import (
@@ -578,3 +590,93 @@ def content_mcp_endpoint(request):
     if response_payload is None:
         return HttpResponse(status=202)
     return JsonResponse(response_payload)
+
+
+# ------------------------------------------------------- publishing accounts
+
+
+@user_passes_test(is_content_user)
+@require_GET
+def publishing_accounts(request):
+    """The accounts this user can publish to, and their health."""
+    accounts = PublishingAccount.objects.filter(owner=request.user)
+    return render(
+        request,
+        "content_planner/publishing_accounts.html",
+        {"accounts": accounts, "needs_reauth": PublishingAccount.Status.NEEDS_REAUTH},
+    )
+
+
+@user_passes_test(is_content_user)
+@require_POST
+def mastodon_connect(request):
+    """Register with the given instance and send the user off to authorise."""
+    host = _mastodon_host(request.POST.get("instance", ""))
+    if not host:
+        messages.error(request, "Enter a Mastodon instance, e.g. fosstodon.org.")
+        return redirect("content_planner:publishing_accounts")
+    state = get_random_string(32)
+    request.session["mastodon_oauth_state"] = state
+    request.session["mastodon_oauth_host"] = host
+    try:
+        url = MastodonConnector().authorize_url(state, host=host)
+    except PublishError as exc:
+        messages.error(request, f"Could not reach {host}: {exc}")
+        return redirect("content_planner:publishing_accounts")
+    return redirect(url)
+
+
+@user_passes_test(is_content_user)
+@require_GET
+def mastodon_callback(request):
+    """Exchange the authorisation code and store the account."""
+    expected_state = request.session.pop("mastodon_oauth_state", None)
+    host = request.session.pop("mastodon_oauth_host", None)
+    if not expected_state or request.GET.get("state") != expected_state:
+        return HttpResponseBadRequest("Invalid OAuth state")
+    code = request.GET.get("code")
+    if not code:
+        return HttpResponseBadRequest("Missing authorization code")
+    try:
+        account = MastodonConnector().exchange(
+            code, expected_state, host=host, owner=request.user
+        )
+    except PublishError as exc:
+        messages.error(request, f"Could not connect to {host}: {exc}")
+    else:
+        messages.success(request, f"Connected {account.handle}.")
+    return redirect("content_planner:publishing_accounts")
+
+
+@user_passes_test(is_content_user)
+@require_POST
+def publishing_account_disconnect(request, pk):
+    """Forget an account.
+
+    PROTECT on Publication.account means an account with delivery history
+    cannot be deleted; it is marked revoked instead, so the history that
+    references it survives.
+    """
+    account = get_object_or_404(PublishingAccount, pk=pk, owner=request.user)
+    handle = account.handle
+    if account.publication_set.exists():
+        account.status = PublishingAccount.Status.REVOKED
+        account.access_token = ""
+        account.refresh_token = ""
+        account.save(update_fields=["status", "access_token", "refresh_token"])
+        messages.success(
+            request, f"Disconnected {handle}. Its delivery history is kept."
+        )
+    else:
+        account.delete()
+        messages.success(request, f"Disconnected {handle}.")
+    return redirect("content_planner:publishing_accounts")
+
+
+def _mastodon_host(raw):
+    """Accept "fosstodon.org", "@me@fosstodon.org", or a pasted URL."""
+    host = raw.strip().rstrip("/")
+    if "@" in host:
+        host = host.rsplit("@", 1)[-1]
+    host = host.removeprefix("https://").removeprefix("http://")
+    return host.split("/")[0]
