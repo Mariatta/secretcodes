@@ -1,4 +1,5 @@
 import os
+import uuid
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -6,6 +7,7 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from core.encryption import EncryptedTextField
 from core.models import AbstractInvitation, AbstractMembership, BaseModel
 
 from .hashtags import merge_hashtags
@@ -500,3 +502,160 @@ class Post(BaseModel):
             self.anchor_offset_days = (
                 local_date(self.scheduled_at, tz_name) - event_date
             ).days
+
+
+# --------------------------------------------------------------- publishing
+#
+# Delivery. A Post is content; a Publication is one attempt to deliver that
+# content to one account. The split is deliberate: a post approved once may go
+# to four platforms and succeed on three. See handoff/social-publishing.md.
+
+
+class Platform(models.TextChoices):
+    BLUESKY = "bluesky", "Bluesky"
+    MASTODON = "mastodon", "Mastodon"
+    INSTAGRAM = "instagram", "Instagram"
+    LINKEDIN = "linkedin", "LinkedIn"  # Phase 2, reserved
+
+
+class PublishingAccount(BaseModel):
+    """A connected account we can publish to.
+
+    Named for what it does rather than "social account": if allauth's
+    socialaccount app is ever enabled for login, its ``SocialAccount`` is a
+    login identity carrying login scopes, and confusing the two would be an
+    easy way to try publishing with a token that cannot.
+
+    Credentials are Fernet-encrypted at rest and never rendered: not in the
+    UI, not in logs, not in ``__str__``, and this model is deliberately not
+    registered in the admin.
+    """
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        NEEDS_REAUTH = "needs_reauth", "Needs reconnecting"
+        REVOKED = "revoked", "Revoked"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="publishing_accounts",
+    )
+    platform = models.CharField(max_length=32, choices=Platform.choices)
+
+    remote_id = models.CharField(
+        max_length=255,
+        help_text="Stable remote identity: did:plc:… / account id / ig-user-id.",
+    )
+    handle = models.CharField(
+        max_length=255, help_text="Display only. Handles change; remote_id does not."
+    )
+    instance_url = models.URLField(
+        blank=True, default="", help_text="Mastodon host, or Bluesky PDS."
+    )
+
+    access_token = EncryptedTextField(blank=True, default="")
+    refresh_token = EncryptedTextField(blank=True, default="")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    scopes = models.JSONField(default=list, blank=True)
+
+    status = models.CharField(
+        max_length=32, choices=Status.choices, default=Status.ACTIVE
+    )
+    last_verified_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Cached platform facts: instance char limit, IG page id, etc.",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "platform", "remote_id"],
+                name="uniq_publishing_account",
+            )
+        ]
+        ordering = ["platform", "handle"]
+
+    def __str__(self):
+        return f"{self.handle} ({self.get_platform_display()})"
+
+
+class MastodonApp(BaseModel):
+    """Per-instance client registration.
+
+    Mastodon requires registering the app with each instance separately, so
+    this is a table rather than a setting.
+    """
+
+    instance_host = models.CharField(max_length=255, unique=True)
+    client_id = models.CharField(max_length=255)
+    client_secret = EncryptedTextField()
+
+    class Meta:
+        ordering = ["instance_host"]
+
+    def __str__(self):
+        return self.instance_host
+
+
+class Publication(BaseModel):
+    """One post, one account, one delivery."""
+
+    class State(models.TextChoices):
+        PENDING = "pending", "Pending"
+        CLAIMED = "claimed", "Claimed"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+        BLOCKED = "blocked", "Blocked"
+        CANCELLED = "cancelled", "Cancelled"
+
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="publications"
+    )
+    account = models.ForeignKey(PublishingAccount, on_delete=models.PROTECT)
+
+    scheduled_for = models.DateTimeField(db_index=True, help_text="UTC.")
+    state = models.CharField(
+        max_length=16, choices=State.choices, default=State.PENDING, db_index=True
+    )
+
+    idempotency_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    remote_id = models.CharField(max_length=512, blank=True, default="")
+    remote_url = models.URLField(blank=True, default="")
+
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Set after a transient failure; the dispatcher skips the row until then.",
+    )
+    last_error = models.TextField(blank=True, default="")
+    blockers = models.JSONField(default=list, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Connector scratch space, e.g. an Instagram container id.",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["post", "account"],
+                condition=models.Q(state="sent"),
+                name="one_success_per_target",
+            )
+        ]
+        indexes = [models.Index(fields=["state", "scheduled_for"])]
+        ordering = ["scheduled_for"]
+
+    def __str__(self):
+        return f"{self.post.title} → {self.account.handle}"
+
+    @property
+    def blocker_messages(self):
+        """Human-readable blocker reasons, for the queue UI."""
+        return [b["message"] for b in self.blockers]

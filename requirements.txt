@@ -11,9 +11,11 @@ packaging==26.2
 psycopg2-binary==2.9.12
 sqlparse==0.5.5
 django-bootstrap5==26.2
+django-celery-beat==2.9.0
 whitenoise==6.12.0
 dj-database-url==3.1.2
 boto3==1.43.46
+celery==5.6.3
 cryptography==49.0.0
 django-solo==2.5.1
 django-storages==1.14.6
@@ -26,3 +28,5 @@ jsonschema==4.26.0
 pillow==12.3.0
 qrcode==8.2
 qrcode[pil]
+redis==8.0.1
+regex==2026.6.28

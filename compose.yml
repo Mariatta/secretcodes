@@ -38,7 +38,7 @@ services:
       - ./media:/code/media
     ports:
       - "${SECRETCODES_WEB_PORT:-8000}:8000"
-    environment:
+    environment: &django-env
       DEBUG: True
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,[::1]
       SECRET_KEY: verysecure
@@ -62,6 +62,39 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
       AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Publishing delivery. `worker` makes the platform calls; `beat` ticks the
+  # dispatcher every minute. Both are optional locally: nothing else in the app
+  # needs them, and `docker compose up web` still works on its own.
+  worker:
+    build:
+      target: dev
+    image: secretcodes-web:docker-compose
+    command: celery -A secretcodes worker -l info
+    volumes:
+      - .:/code
+      - ./media:/code/media
+    environment: *django-env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  beat:
+    build:
+      target: dev
+    image: secretcodes-web:docker-compose
+    command: celery -A secretcodes beat -l info
+    volumes:
+      - .:/code
+      - ./media:/code/media
+    environment: *django-env
     depends_on:
       redis:
         condition: service_healthy
