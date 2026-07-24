@@ -1,0 +1,51 @@
+# Staging environment. Copy to staging.tfvars (gitignored) and fill in.
+#
+# Staging is the SAME config as prod, driven into its own resource group and
+# state by a distinct name_prefix + a Terraform workspace. Run it with:
+#
+#   terraform workspace new staging        # once
+#   terraform workspace select staging
+#   terraform apply -var-file=staging.tfvars
+#
+# The workspace keeps staging state separate, so an apply here can never touch
+# the prod resources tracked in the default workspace.
+#
+# Secrets still come from TF_VAR_* env vars, NOT this file:
+#   export TF_VAR_postgres_admin_password='...'   # a NEW password, not prod's
+#   export TF_VAR_ghcr_pat='...'
+#   export TF_VAR_django_secret_key='...'
+#   export TF_VAR_fernet_key='...'   # MUST match prod's if you copy encrypted
+#                                    # rows over; a fresh env can use a new key
+#   export TF_VAR_spaces_key='...' TF_VAR_spaces_secret='...'
+#   export TF_VAR_mailgun_smtp_password='...'
+#   export ARM_SUBSCRIPTION_ID='...'
+
+# Distinct prefix => secretcodes-staging-{rg,web,worker,beat,pg,redis}, all
+# separate from prod. Its own Postgres server means its own database.
+name_prefix = "secretcodes-staging"
+
+location         = "canadacentral"
+postgres_version = "16"
+
+# Turns on the Redis broker + worker + beat apps.
+enable_publishing = true
+
+# Point staging at the branch image, not :latest, so you test a PR before
+# merging it. Build + push this tag from the PR branch (see the staging deploy
+# workflow or docs/deployment/staging.md).
+image     = "ghcr.io/mariatta/secretcodes:staging"
+ghcr_user = "mariatta"
+
+postgres_db_name    = "secretcodes"
+postgres_admin_user = "scadmin"
+
+# Serve on the azurewebsites.net hostname only; no custom domain for staging.
+custom_domain = ""
+
+spaces_bucket   = "your-space-name"
+spaces_endpoint = "https://nyc3.digitaloceanspaces.com"
+
+mailgun_smtp_user = "postmaster@your-domain"
+# default_from_email = "Staging <staging@your-domain>"
+
+operator_ip = "" # your public IP if you need psql access to staging's DB

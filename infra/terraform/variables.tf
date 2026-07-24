@@ -22,6 +22,14 @@ variable "custom_domain" {
   default     = ""
 }
 
+# --- Publishing (Celery worker/beat + Redis broker) --------------------------
+
+variable "enable_publishing" {
+  description = "Provision the social-publishing runtime: a Redis broker plus worker and beat App Service apps. Off by default so prod stays unchanged; turn on per environment (e.g. staging)."
+  type        = bool
+  default     = false
+}
+
 # --- PostgreSQL --------------------------------------------------------------
 
 variable "postgres_version" {
