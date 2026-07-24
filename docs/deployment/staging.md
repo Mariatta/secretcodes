@@ -10,7 +10,7 @@ separate Terraform **workspace**, so an apply here can never touch prod.
 
 ## What it provisions
 
-With `enable_publishing = true`, one `terraform apply` in the `staging` workspace
+With `enable_publishing = true`, one `tofu apply` in the `staging` workspace
 creates, all prefixed `secretcodes-staging-`:
 
 | Resource | Role |
@@ -58,13 +58,13 @@ App Service's startup probe passes on a container that otherwise binds no port.
 From `infra/terraform/`:
 
 ```bash
-terraform workspace new staging      # first time only
-terraform workspace select staging
-terraform apply -var-file=staging.tfvars
+tofu workspace new staging      # first time only
+tofu workspace select staging
+tofu apply -var-file=staging.tfvars
 ```
 
 !!! warning "Always check the workspace before applying"
-    `terraform workspace show` should print `staging`. The default workspace is
+    `tofu workspace show` should print `staging`. The default workspace is
     prod. The workspace is the only thing keeping the two states apart.
 
 ## Deploy a PR branch to staging
@@ -125,8 +125,8 @@ terraform apply -var-file=staging.tfvars
 Staging costs run while it exists. To stop paying between test sessions:
 
 ```bash
-terraform workspace select staging
-terraform destroy -var-file=staging.tfvars
+tofu workspace select staging
+tofu destroy -var-file=staging.tfvars
 ```
 
 The workspace and state remain, so a later `apply` rebuilds it. Leave the default
