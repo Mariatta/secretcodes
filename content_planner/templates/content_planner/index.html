@@ -7,8 +7,12 @@
         <h1 class="h3 mb-0">
             Your <em class="sc-italic">boards</em>
         </h1>
-        <a class="btn btn-primary"
-           href="{% url 'content_planner:board_create' %}">+ New board</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               href="{% url 'content_planner:publishing_accounts' %}">Publishing accounts</a>
+            <a class="btn btn-primary"
+               href="{% url 'content_planner:board_create' %}">+ New board</a>
+        </div>
     </div>
     {% if rows %}
         <div class="list-group">
