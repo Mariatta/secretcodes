@@ -23,10 +23,11 @@ locals {
   # the host goes in docker_registry_url. Strip "ghcr.io/" from the full ref.
   docker_image_name = replace(var.image, "ghcr.io/", "")
 
-  # Celery broker. Azure Cache for Redis only accepts TLS (port 6380); rediss://
-  # + ssl_cert_reqs is what redis-py needs to connect. Only created when
-  # publishing is enabled, so guard the reference behind the same flag.
-  broker_url = var.enable_publishing ? "rediss://:${urlencode(azurerm_redis_cache.redis[0].primary_access_key)}@${azurerm_redis_cache.redis[0].hostname}:6380/0?ssl_cert_reqs=required" : ""
+  # Celery broker. Managed Redis speaks TLS (client_protocol Encrypted); rediss://
+  # + ssl_cert_reqs is what redis-py needs. hostname is top-level; port and the
+  # access key live on the default_database block. Guarded by the publishing flag
+  # since the resource only exists then.
+  broker_url = var.enable_publishing ? "rediss://:${urlencode(azurerm_managed_redis.redis[0].default_database[0].primary_access_key)}@${azurerm_managed_redis.redis[0].hostname}:${azurerm_managed_redis.redis[0].default_database[0].port}/0?ssl_cert_reqs=required" : ""
 
   # Publishing-only settings, empty until the flag is on, so a non-publishing
   # env (prod today) sees no new app settings and its apply stays a no-op.
@@ -121,19 +122,29 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "operator" {
 }
 
 # --- Redis: the Celery broker (publishing only) ------------------------------
-# Basic C0 (250 MB, no SLA) is plenty for a job queue that holds at most a
-# minute of work. Only the broker lives here; delivery state is in Postgres.
+# Azure Managed Redis. The classic "Azure Cache for Redis" (azurerm_redis_cache)
+# is retired for new creates — Azure rejects it with a 400 pointing here.
+# Balanced_B0 is the entry SKU, plenty for a queue holding at most a minute of
+# work; only the broker lives here, delivery state is in Postgres.
+#
+# NoCluster so kombu/Celery see a plain standalone endpoint (Celery doesn't
+# drive Redis Cluster as a broker). Access-key auth so the worker connects with
+# a password in the URL; the alternative is Entra-only, which Celery can't use.
+# HA off — staging doesn't need the standby replica, and it halves the cost.
 
-resource "azurerm_redis_cache" "redis" {
-  count                = var.enable_publishing ? 1 : 0
-  name                 = local.redis_name
-  resource_group_name  = azurerm_resource_group.rg.name
-  location             = azurerm_resource_group.rg.location
-  capacity             = 0
-  family               = "C"
-  sku_name             = "Basic"
-  non_ssl_port_enabled = false
-  minimum_tls_version  = "1.2"
+resource "azurerm_managed_redis" "redis" {
+  count                     = var.enable_publishing ? 1 : 0
+  name                      = local.redis_name
+  resource_group_name       = azurerm_resource_group.rg.name
+  location                  = azurerm_resource_group.rg.location
+  sku_name                  = "Balanced_B0"
+  high_availability_enabled = false
+
+  default_database {
+    client_protocol                    = "Encrypted"
+    clustering_policy                  = "NoCluster"
+    access_keys_authentication_enabled = true
+  }
 }
 
 # --- Compute: App Service plan + container apps ------------------------------
