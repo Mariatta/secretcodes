@@ -26,8 +26,9 @@ media/
 # Build state
 .state/
 
-# Terraform — never commit state or filled-in vars (the *.example IS committed)
-infra/terraform/terraform.tfvars
+# Terraform — never commit state or filled-in vars (the *.example IS committed;
+# *.tfvars matches staging.tfvars / terraform.tfvars but not *.tfvars.example)
+infra/terraform/*.tfvars
 *.tfstate
 *.tfstate.*
 .terraform/

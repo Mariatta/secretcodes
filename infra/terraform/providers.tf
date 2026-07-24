@@ -9,7 +9,7 @@ terraform {
   }
 
   # Remote state keeps the source of truth off your laptop. Commented out so the
-  # first `terraform init` works locally with zero setup. When ready, create a
+  # first `tofu init` works locally with zero setup. When ready, create a
   # state container and uncomment. The backend is itself a portability choice:
   # azurerm below ties state to Azure; if you'd rather keep state vendor-neutral
   # you can use an S3-compatible backend pointed at DigitalOcean Spaces instead.

@@ -4,6 +4,10 @@ The Azure side is provisioned with Terraform, in `infra/terraform/`. This is the
 declarative successor to the earlier `provision-azure.sh` script, same
 resources, but reproducible, reviewable, and diffable.
 
+The CLI here is **OpenTofu** (`tofu`), the drop-in fork: the `.tf` config,
+`TF_VAR_*` env vars, and every subcommand are identical to Terraform's, only the
+command name differs. Substitute `terraform` if that's what you have installed.
+
 ## What it creates
 
 | Resource | Terraform resource | Notes |
@@ -37,12 +41,12 @@ export TF_VAR_spaces_key='...' TF_VAR_spaces_secret='...'
 
 cp terraform.tfvars.example terraform.tfvars   # edit non-secret values
 
-terraform init
-terraform plan      # review what will change
-terraform apply
+tofu init
+tofu plan      # review what will change
+tofu apply
 
 # The restore target for the DB migration:
-terraform output -raw database_url
+tofu output -raw database_url
 ```
 
 ## Gotchas worth knowing

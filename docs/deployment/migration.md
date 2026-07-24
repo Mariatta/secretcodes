@@ -8,7 +8,7 @@ the day of leaving Azure.
 | Piece | Automated? | How |
 |---|---|---|
 | Build + ship the app | Fully | `deploy.yml` on push to `main` |
-| Provision infra | Fully | `terraform apply` |
+| Provision infra | Fully | `tofu apply` |
 | Database cutover | Scripted but **human-supervised** | the steps below |
 
 The DB cutover stays manual on purpose: it's a maintenance window with a point
