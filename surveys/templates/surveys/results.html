@@ -131,9 +131,7 @@
                             {% endif %}
                         {% elif s.question.type == 'yes_no' or s.question.type == 'nps' %}
                             {% if s.segments %}
-                                <div class="split-track"
-                                     role="img"
-                                     aria-label="{% for seg in s.segments %}{{ seg.label }} {{ seg.pct }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                <div class="split-track" role="img" aria-label="{% for seg in s.segments %}{{ seg.label }} {{ seg.pct }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
                                     {% for seg in s.segments %}
                                         {% if seg.count %}
                                             <div class="split-seg role-{{ seg.role }}"
