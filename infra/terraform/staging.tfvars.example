@@ -3,9 +3,9 @@
 # Staging is the SAME config as prod, driven into its own resource group and
 # state by a distinct name_prefix + a Terraform workspace. Run it with:
 #
-#   terraform workspace new staging        # once
-#   terraform workspace select staging
-#   terraform apply -var-file=staging.tfvars
+#   tofu workspace new staging        # once
+#   tofu workspace select staging
+#   tofu apply -var-file=staging.tfvars
 #
 # The workspace keeps staging state separate, so an apply here can never touch
 # the prod resources tracked in the default workspace.

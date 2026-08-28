@@ -26,7 +26,7 @@ output "beat_app_name" {
 }
 
 output "database_url" {
-  description = "Restore target for the migration. Sensitive — contains the password. View with: terraform output -raw database_url"
+  description = "Restore target for the migration. Sensitive — contains the password. View with: tofu output -raw database_url"
   value       = local.database_url
   sensitive   = true
 }
