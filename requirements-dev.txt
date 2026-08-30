@@ -6,6 +6,6 @@ djlint==1.42.3
 flake8==7.3.0
 isort==8.0.1
 pip-audit==2.10.1
-pytest-django==4.12.0
+pytest-django==4.14.0
 pytest==9.1.1
 pytest-cov==7.1.0
