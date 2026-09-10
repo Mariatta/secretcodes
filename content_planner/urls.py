@@ -7,6 +7,28 @@ app_name = "content_planner"
 urlpatterns = [
     path("", views.index, name="index"),
     path("new/", views.board_create, name="board_create"),
+    # Publishing accounts are per-user, not per-board, so these sit above the
+    # <board_slug> patterns — otherwise "publishing" reads as a board slug.
+    path(
+        "publishing/accounts/",
+        views.publishing_accounts,
+        name="publishing_accounts",
+    ),
+    path(
+        "publishing/connect/mastodon/",
+        views.mastodon_connect,
+        name="mastodon_connect",
+    ),
+    path(
+        "publishing/connect/mastodon/callback/",
+        views.mastodon_callback,
+        name="mastodon_callback",
+    ),
+    path(
+        "publishing/accounts/<int:pk>/disconnect/",
+        views.publishing_account_disconnect,
+        name="publishing_account_disconnect",
+    ),
     path("<slug:board_slug>/", views.board_home, name="board_home"),
     path("<slug:board_slug>/schedule/", views.schedule, name="schedule"),
     path("<slug:board_slug>/assets/", views.asset_list, name="asset_list"),

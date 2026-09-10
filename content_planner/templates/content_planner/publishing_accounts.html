@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block head_title %}
+    Your publishing accounts · Content · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content_planner:index' %}">All boards</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Publishing accounts
+            </li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            Your <em class="sc-italic">publishing accounts</em>
+        </h1>
+    </div>
+    {% if accounts %}
+        <div class="list-group mb-4">
+            {% for account in accounts %}
+                <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
+                    <span>
+                        <span class="fw-semibold">{{ account.handle }}</span>
+                        <br>
+                        <small class="text-muted">
+                            {{ account.get_platform_display }}
+                            {% if account.instance_url %}· {{ account.instance_url }}{% endif %}
+                        </small>
+                    </span>
+                    <span class="text-end d-flex align-items-center gap-2">
+                        {% if account.status == needs_reauth %}
+                            <span class="badge bg-warning text-dark">Needs reconnecting</span>
+                        {% elif account.status == "revoked" %}
+                            <span class="badge bg-secondary">Disconnected</span>
+                        {% else %}
+                            <span class="badge bg-success">Active</span>
+                        {% endif %}
+                        <form method="post"
+                              action="{% url 'content_planner:publishing_account_disconnect' account.pk %}"
+                              onsubmit="return confirm('Disconnect this account? Scheduled posts to it will stop.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Disconnect</button>
+                        </form>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            No accounts connected yet. Connect one to schedule posts to it.
+        </p>
+    {% endif %}
+    <h2 class="h5">
+        Connect Mastodon
+    </h2>
+    <p class="text-muted small">
+        Enter your instance, for example <code>fosstodon.org</code>. You will be
+        sent there to authorise, and sent back here afterwards.
+    </p>
+    <form method="post"
+          action="{% url 'content_planner:mastodon_connect' %}"
+          class="d-flex flex-wrap gap-2 align-items-center">
+        {% csrf_token %}
+        <input type="text"
+               name="instance"
+               class="form-control w-auto"
+               placeholder="fosstodon.org"
+               aria-label="Mastodon instance"
+               required>
+        <button type="submit" class="btn btn-primary">Connect</button>
+    </form>
+{% endblock content %}

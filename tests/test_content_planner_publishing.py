@@ -32,7 +32,7 @@ from content_planner.models import (
     Publication,
     PublishingAccount,
 )
-from content_planner.payloads import build_payload, mime_for
+from content_planner.payloads import absolute_url, build_payload, mime_for
 from content_planner.preflight import Blocker, grapheme_len, preflight
 
 User = get_user_model()
@@ -329,6 +329,21 @@ def test_build_payload_renders_text_and_assets(publication, board):
     assert payload.assets[0].byte_size == 1
 
 
+def test_asset_urls_are_made_absolute_for_connectors(publication, board, settings):
+    """A connector fetches over HTTP; "/media/…" is not fetchable."""
+    settings.DOMAIN_NAME = "https://secretcodes.dev"
+    publication.post.assets.add(image(board=board))
+    assert (
+        build_payload(publication)
+        .assets[0]
+        .url.startswith("https://secretcodes.dev/media/")
+    )
+
+
+def test_absolute_url_leaves_remote_storage_alone():
+    assert absolute_url("https://spaces.test/a.jpg") == "https://spaces.test/a.jpg"
+
+
 def test_build_payload_carries_published_link(publication):
     publication.post.published_url = "https://example.test/post"
     publication.post.save()
@@ -468,6 +483,35 @@ def test_publish_one_fails_without_a_connector(publication, settings):
     assert tasks.publish_one(claim(publication).pk) == Publication.State.FAILED
     publication.refresh_from_db()
     assert "No connector" in publication.last_error
+
+
+def test_publish_one_flags_the_account_when_the_token_is_rejected(
+    publication, monkeypatch
+):
+    """A 401 is the credential's problem, not the post's: stop and ask."""
+    monkeypatch.setattr(
+        "content_planner.tasks.connector_for",
+        lambda account: FakeConnector(
+            raises=PermanentPublishError("revoked", status_code=401)
+        ),
+    )
+    assert tasks.publish_one(claim(publication).pk) == Publication.State.FAILED
+    publication.account.refresh_from_db()
+    assert publication.account.status == PublishingAccount.Status.NEEDS_REAUTH
+
+
+def test_publish_one_leaves_the_account_alone_on_a_content_rejection(
+    publication, monkeypatch
+):
+    monkeypatch.setattr(
+        "content_planner.tasks.connector_for",
+        lambda account: FakeConnector(
+            raises=PermanentPublishError("too long", status_code=422)
+        ),
+    )
+    tasks.publish_one(claim(publication).pk)
+    publication.account.refresh_from_db()
+    assert publication.account.status == PublishingAccount.Status.ACTIVE
 
 
 def test_publish_one_does_not_retry_permanent_errors(publication, monkeypatch):

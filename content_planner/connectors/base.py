@@ -50,7 +50,16 @@ class PlatformLimits(NamedTuple):
 
 
 class PublishError(Exception):
-    """Base for delivery failures."""
+    """Base for delivery failures.
+
+    ``status_code`` is carried so callers can react to specific rejections
+    (a 401 means the account needs reconnecting, not that the post is bad)
+    without re-parsing the message.
+    """
+
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class TransientPublishError(PublishError):

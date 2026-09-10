@@ -16,7 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .connectors import PermanentPublishError, TransientPublishError, connector_for
-from .models import Publication
+from .models import Publication, PublishingAccount
 from .payloads import build_payload
 from .preflight import preflight
 
@@ -30,6 +30,8 @@ RETRY_BACKOFF = [
     timedelta(hours=4),
 ]
 CLAIM_BATCH_SIZE = 50
+# Platform responses that mean "this credential is done", not "this post is bad".
+REAUTH_STATUSES = frozenset({401, 403})
 
 
 @shared_task(name="content_planner.dispatch_due_publications")
@@ -152,7 +154,20 @@ def _fail(publication, exc):
     publication.last_error = str(exc)
     publication.save(update_fields=["state", "attempts", "last_error"])
     logger.warning("publication %s failed: %s", publication.pk, exc)
+    if getattr(exc, "status_code", None) in REAUTH_STATUSES:
+        _flag_for_reauth(publication.account)
     return publication.state
+
+
+def _flag_for_reauth(account):
+    """The token was rejected: stop trying and ask for a reconnect.
+
+    Every other publication for this account preflights as blocked from here
+    on, which is the visible-failure half of "nothing is skipped silently".
+    """
+    account.status = PublishingAccount.Status.NEEDS_REAUTH
+    account.save(update_fields=["status"])
+    logger.warning("account %s needs reconnecting", account.pk)
 
 
 def _retry_later(publication, exc):
