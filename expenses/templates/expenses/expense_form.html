@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 static %}
 {% block head_title %}
     {% if mode == 'edit' %}
         Edit
@@ -38,8 +38,8 @@
     </p>
     <form method="post"
           enctype="multipart/form-data"
-          class="mt-4"
-          style="max-width: 640px">
+          class="mt-4 sc-form-narrow"
+          data-expense-form>
         {% csrf_token %}
         {% if mode == 'edit' and expense.receipt %}
             <p class="small text-muted mb-2">
@@ -50,7 +50,97 @@
                 , uploading a new file replaces it.
             </p>
         {% endif %}
-        {% bootstrap_form form %}
+        {% bootstrap_form_errors form type="non_fields" %}
+        {% bootstrap_field form.description %}
+        <div class="row g-3">
+            <div class="col-sm-6">
+                {% bootstrap_field form.category %}
+            </div>
+            <div class="col-sm-6">
+                {% bootstrap_field form.paid_at %}
+            </div>
+        </div>
+        {% bootstrap_field form.payer %}
+        {% bootstrap_field form.split_mode %}
+        <div class="row g-3">
+            <div class="col-8" data-split-show="equal">
+                {% bootstrap_field form.original_amount %}
+            </div>
+            <div class="col-4">
+                {% bootstrap_field form.original_currency %}
+            </div>
+        </div>
+        <div class="row g-3" data-split-show="itemized">
+            <div class="col-sm-6">
+                {% bootstrap_field form.shared_amount %}
+            </div>
+            <div class="col-sm-6">
+                {% bootstrap_field form.table_charge %}
+            </div>
+            <div class="col-4">
+                {% bootstrap_field form.surcharge_percent %}
+            </div>
+            <div class="col-4">
+                {% bootstrap_field form.tax_percent %}
+            </div>
+            <div class="col-4">
+                {% bootstrap_field form.tip_percent %}
+            </div>
+        </div>
+        <table class="table align-middle mt-2">
+            <thead>
+                <tr>
+                    <th scope="col">
+                        Shared by
+                    </th>
+                    <th scope="col" data-split-show="itemized">
+                        Had
+                    </th>
+                    <th scope="col" class="text-end">
+                        Owes
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant, checkbox, item in form.participant_rows %}
+                    <tr data-participant>
+                        <td>
+                            <div class="form-check mb-0">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                            </div>
+                        </td>
+                        <td data-split-show="itemized">
+                            {% bootstrap_field item show_label=False wrapper_class="mb-0" %}
+                        </td>
+                        <td class="text-end font-monospace" data-owes>
+                            –
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row">
+                        Total
+                    </th>
+                    <td data-split-show="itemized">
+                    </td>
+                    <td class="text-end font-monospace" data-split-total>
+                        –
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        {% if form.shared_by.errors %}
+            <div class="text-danger small mb-3">
+                {{ form.shared_by.errors|join:" " }}
+            </div>
+        {% endif %}
+        <p class="form-text" data-split-show="itemized">
+            Owes is a preview; cents may shift by one when saved, so the shares add up to the total.
+        </p>
+        {% bootstrap_field form.receipt %}
         <div class="d-flex justify-content-between">
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
@@ -65,4 +155,5 @@
             {% endif %}
         </div>
     </form>
+    <script src="{% static 'brand/expenses-split.js' %}" defer></script>
 {% endblock content %}

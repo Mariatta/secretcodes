@@ -239,3 +239,73 @@ def test_settle_up_requires_event_membership(client, setup):
         )
     )
     assert response.status_code == 404
+
+
+def test_settle_up_nets_shares_in_both_directions(client, setup):
+    """Bob owes Alice 50; Alice owes Bob 20 on Bob's expense, so Bob pays 30."""
+    client.login(username="owner", password="pw")
+    bob_owes = _make(setup, payer=setup["alice"], debtor=setup["bob"], amount="50")
+    alice_owes = _make(setup, payer=setup["bob"], debtor=setup["alice"], amount="20")
+    url = reverse(
+        "expenses:settle_up",
+        kwargs={
+            "event_id": setup["event"].pk,
+            "debtor_id": setup["bob"].pk,
+            "creditor_id": setup["alice"].pk,
+        },
+    )
+    response = client.get(url)
+    assert response.context["total"] == Decimal("30")
+    assert sorted(row["amount"] for row in response.context["rows"]) == [
+        Decimal("-20"),
+        Decimal("50"),
+    ]
+
+    client.post(url)
+    bob_owes.refresh_from_db()
+    alice_owes.refresh_from_db()
+    assert bob_owes.reimbursed is True
+    assert alice_owes.reimbursed is True
+
+
+def test_settle_up_includes_refund_shares(client, setup):
+    """Alice received a 60 refund she shares with Bob: Bob's -30 share means
+    Alice owes him 30, which settles under Alice -> Bob, not Bob -> Alice."""
+    client.login(username="owner", password="pw")
+    refund = _make(setup, payer=setup["alice"], debtor=setup["bob"], amount="-30")
+    url = reverse(
+        "expenses:settle_up",
+        kwargs={
+            "event_id": setup["event"].pk,
+            "debtor_id": setup["alice"].pk,
+            "creditor_id": setup["bob"].pk,
+        },
+    )
+    response = client.get(url)
+    assert response.context["total"] == Decimal("30")
+    client.post(url)
+    refund.refresh_from_db()
+    assert refund.reimbursed is True
+
+
+def test_settle_up_does_nothing_when_pair_nets_the_other_way(client, setup):
+    """Bob owes Alice 10 but Alice owes Bob 40: nothing to mark for Bob -> Alice."""
+    client.login(username="owner", password="pw")
+    bob_owes = _make(setup, payer=setup["alice"], debtor=setup["bob"], amount="10")
+    alice_owes = _make(setup, payer=setup["bob"], debtor=setup["alice"], amount="40")
+    url = reverse(
+        "expenses:settle_up",
+        kwargs={
+            "event_id": setup["event"].pk,
+            "debtor_id": setup["bob"].pk,
+            "creditor_id": setup["alice"].pk,
+        },
+    )
+    response = client.get(url)
+    assert response.context["rows"] == []
+    assert "Nothing to settle here." in response.content.decode()
+    client.post(url)
+    bob_owes.refresh_from_db()
+    alice_owes.refresh_from_db()
+    assert bob_owes.reimbursed is False
+    assert alice_owes.reimbursed is False

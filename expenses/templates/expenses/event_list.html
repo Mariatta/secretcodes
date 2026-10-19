@@ -8,12 +8,17 @@
         <h1 class="h3 mb-0">
             Your <em class="sc-italic">events</em>
         </h1>
-        {% if show_archived %}
-            <a class="btn btn-sm btn-outline-secondary"
-               href="{% url 'expenses:event_list' %}">Hide archived</a>
-        {% else %}
-            <a class="btn btn-sm btn-outline-secondary" href="?archived=1">Show archived</a>
-        {% endif %}
+        <div class="d-flex gap-2">
+            {% if show_archived %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:event_list' %}">Hide archived</a>
+            {% else %}
+                <a class="btn btn-outline-secondary" href="?archived=1">Show archived</a>
+            {% endif %}
+            {% if can_create_events %}
+                <a class="btn btn-primary" href="{% url 'expenses:event_create' %}">+ New event</a>
+            {% endif %}
+        </div>
     </div>
     {% if events %}
         <div class="row g-3">
@@ -63,7 +68,11 @@
         </div>
     {% else %}
         <p class="text-muted">
-            No events yet. Ask an admin to add you to one.
+            {% if can_create_events %}
+                No events yet. Create one to start splitting costs.
+            {% else %}
+                No events yet. Ask an admin to add you to one.
+            {% endif %}
         </p>
     {% endif %}
 {% endblock content %}

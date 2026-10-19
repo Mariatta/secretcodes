@@ -1,0 +1,12 @@
+<tr data-bulk-row>
+    {% for field in row.visible_fields %}
+        <td{% if field.name == "invite" %} class="text-center"{% endif %}>
+            {{ field }}
+            {% for error in field.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </td>
+    {% endfor %}
+</tr>

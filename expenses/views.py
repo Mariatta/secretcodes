@@ -3,14 +3,26 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.views import redirect_to_login
-from django.db.models import Sum
+from django.db import transaction
+from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from .forms import AcceptInviteSignupForm, ExpenseForm, InvitationForm
+from .forms import (
+    AcceptInviteSignupForm,
+    BulkExpenseFormSet,
+    EventForm,
+    ExpenseForm,
+    ParticipantInviteForm,
+    PeopleFormSet,
+    participant_label,
+)
 from .models import (
     Category,
     Event,
@@ -22,6 +34,7 @@ from .models import (
 from .permissions import (
     ACCESS_EXPENSES_CODENAME,
     EXPENSES_USER_GROUP,
+    can_create_events,
     event_participant_required,
     is_expenses_user,
 )
@@ -52,16 +65,80 @@ def event_list(request):
     show_archived = request.GET.get("archived") == "1"
     if not show_archived:
         events = events.filter(is_archived=False)
-    events = list(events)
-    for event in events:
-        event.participant_count = event.participants.count()
-        event.total_spent = event.expenses.aggregate(total=Sum("base_amount"))[
-            "total"
-        ] or Decimal("0")
+    events = events.annotate(
+        participant_count=Coalesce(
+            Subquery(
+                Participant.objects.filter(event=OuterRef("pk"))
+                .values("event")
+                .annotate(n=Count("pk"))
+                .values("n")
+            ),
+            0,
+        ),
+        total_spent=Coalesce(
+            Subquery(
+                Expense.objects.filter(event=OuterRef("pk"))
+                .values("event")
+                .annotate(total=Sum("base_amount"))
+                .values("total")
+            ),
+            Value(Decimal("0")),
+            output_field=DecimalField(),
+        ),
+    )
     return render(
         request,
         "expenses/event_list.html",
-        {"events": events, "show_archived": show_archived},
+        {
+            "events": events,
+            "show_archived": show_archived,
+            "can_create_events": can_create_events(request.user),
+        },
+    )
+
+
+@user_passes_test(can_create_events)
+def event_create(request):
+    """Start a new event; the creator becomes its owner and first participant."""
+    if request.method == "POST":
+        form = EventForm(request.POST, owner=request.user)
+        if form.is_valid():
+            event = form.save()
+            messages.success(
+                request, "Event created. Invite people to start splitting."
+            )
+            return redirect("expenses:event_overview", event_id=event.pk)
+    else:
+        form = EventForm(owner=request.user)
+    return render(
+        request,
+        "expenses/event_form.html",
+        {"form": form, "fx_formset": form.fx_formset, "mode": "create"},
+    )
+
+
+@event_participant_required
+def event_edit(request, event):
+    """Owner-only edit of an event's details, FX rates and archive flag."""
+    if request.user != event.owner and not request.user.is_superuser:
+        return HttpResponseForbidden("Only the event owner can edit this event.")
+    if request.method == "POST":
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Event updated.")
+            return redirect("expenses:event_overview", event_id=event.pk)
+    else:
+        form = EventForm(instance=event)
+    return render(
+        request,
+        "expenses/event_form.html",
+        {
+            "event": event,
+            "form": form,
+            "fx_formset": form.fx_formset,
+            "mode": "edit",
+        },
     )
 
 
@@ -171,7 +248,7 @@ def event_ledger(request, event):
 
 @event_participant_required
 def expense_create(request, event):
-    """Create a new expense with equal-split among selected participants."""
+    """Log one expense, split equally or by item among selected participants."""
     if request.method == "POST":
         form = ExpenseForm(request.POST, request.FILES, event=event, user=request.user)
         if form.is_valid():
@@ -184,6 +261,52 @@ def expense_create(request, event):
         request,
         "expenses/expense_form.html",
         {"event": event, "form": form, "mode": "create"},
+    )
+
+
+@event_participant_required
+def expense_bulk(request, event):
+    """Log several equally split expenses at once, in a spreadsheet-like grid.
+
+    Blank rows are skipped. Nothing is saved unless every filled row is
+    valid, and then all rows are saved in one transaction.
+    """
+    participants = list(event.participants.all())
+    people = [(p.pk, participant_label(p)) for p in participants]
+    blank = [("", "---------")]
+    choices = {
+        "payer": blank + people,
+        "shared_by": people,
+        "category": blank + [(c.pk, c.name) for c in Category.objects.all()],
+        "currency": [
+            (code, code) for code in [event.base_currency, *sorted(event.fx_rates)]
+        ],
+    }
+    form_kwargs = {
+        "event": event,
+        "user": request.user,
+        "participants": participants,
+        "choices": choices,
+    }
+    if request.method == "POST":
+        formset = BulkExpenseFormSet(
+            request.POST, prefix="rows", form_kwargs=form_kwargs
+        )
+        if formset.is_valid():
+            with transaction.atomic():
+                rows = formset.filled_forms()
+                for form in rows:
+                    form.save()
+            messages.success(
+                request, f"Logged {len(rows)} expense{'s' if len(rows) != 1 else ''}."
+            )
+            return redirect("expenses:event_ledger", event_id=event.pk)
+    else:
+        formset = BulkExpenseFormSet(prefix="rows", form_kwargs=form_kwargs)
+    return render(
+        request,
+        "expenses/expense_bulk.html",
+        {"event": event, "formset": formset, "participants": participants},
     )
 
 
@@ -293,23 +416,43 @@ def event_export_csv(request, event):
 
 @event_participant_required
 def settle_up(request, event, debtor_id, creditor_id):
-    """Mark every unreimbursed share from `debtor` to `creditor` as paid.
+    """Mark every unreimbursed share between `debtor` and `creditor` as paid.
 
-    GET renders a confirmation page showing the shares about to be
-    flipped and the total. POST flips them.
+    Both directions count: shares the debtor owes on the creditor's
+    expenses, and shares the creditor owes on the debtor's. The total is
+    the net the debtor pays. Netting matters for refunds, whose negative
+    shares run the other way. GET renders a confirmation page showing the
+    shares about to be flipped and the total. POST flips them.
     """
     debtor = get_object_or_404(Participant, pk=debtor_id, event=event)
     creditor = get_object_or_404(Participant, pk=creditor_id, event=event)
-    shares = ExpenseShare.objects.filter(
-        expense__event=event,
-        expense__payer=creditor,
-        participant=debtor,
-        reimbursed=False,
-    ).select_related("expense")
-    total = sum((s.share_amount for s in shares), Decimal("0"))
+    shares = (
+        ExpenseShare.objects.filter(expense__event=event, reimbursed=False)
+        .filter(
+            Q(expense__payer=creditor, participant=debtor)
+            | Q(expense__payer=debtor, participant=creditor)
+        )
+        .select_related("expense")
+    )
+    rows = [
+        {
+            "share": share,
+            "amount": (
+                share.share_amount
+                if share.participant_id == debtor.pk
+                else -share.share_amount
+            ),
+        }
+        for share in shares
+    ]
+    total = sum((row["amount"] for row in rows), Decimal("0"))
+    if total <= 0:
+        # The debtor owes the creditor nothing net, so there is nothing to
+        # mark paid in this direction.
+        rows, total = [], Decimal("0")
 
     if request.method == "POST":
-        count = shares.update(reimbursed=True)
+        count = shares.update(reimbursed=True) if rows else 0
         messages.success(
             request,
             f"Marked {count} share{'s' if count != 1 else ''} reimbursed "
@@ -323,7 +466,7 @@ def settle_up(request, event, debtor_id, creditor_id):
             "event": event,
             "debtor": debtor,
             "creditor": creditor,
-            "shares": shares,
+            "rows": rows,
             "total": total,
         },
     )
@@ -379,28 +522,119 @@ def _summary_for_viewer(event, user, totals, balances):
     }
 
 
-@event_participant_required
-def invite_create(request, event):
-    """Owner-only form to invite someone to the event by email."""
+def _owner_only(request, event, action):
+    """403 unless the user owns the event (or is a superuser), else None."""
     if request.user != event.owner and not request.user.is_superuser:
-        return HttpResponseForbidden("Only the event owner can send invitations.")
-    if request.method == "POST":
-        form = InvitationForm(request.POST, event=event, inviter=request.user)
-        if form.is_valid():
-            invitation = form.save()
-            send_invitation_email(invitation, request)
-            messages.success(request, f"Invitation sent to {invitation.email}.")
-            return redirect("expenses:event_overview", event_id=event.pk)
-    else:
-        form = InvitationForm(event=event, inviter=request.user)
-    pending = event.invitations.filter(accepted_at__isnull=True).order_by(
-        "-creation_date"
+        return HttpResponseForbidden(f"Only the event owner can {action}.")
+    return None
+
+
+def _render_people(request, event, people_formset=None, invite_failed=None):
+    """The owner's People page: everyone in the event, the Add people grid,
+    and an Invite box for each person added without an invitation."""
+    if people_formset is None:
+        people_formset = PeopleFormSet(prefix="people", form_kwargs={"event": event})
+    pending = list(
+        event.invitations.filter(accepted_at__isnull=True).order_by("-creation_date")
     )
+    pending_emails = {invite.email.lower() for invite in pending}
+    people = []
+    for participant in event.participants.select_related("user"):
+        row = {"participant": participant, "status": "joined", "invite_form": None}
+        if participant.user_id is None:
+            if participant.invited_email.lower() in pending_emails:
+                row["status"] = "invited"
+            else:
+                row["status"] = "not invited"
+                row["invite_form"] = (
+                    invite_failed
+                    if invite_failed is not None
+                    and invite_failed.participant.pk == participant.pk
+                    else ParticipantInviteForm(
+                        event=event,
+                        inviter=request.user,
+                        participant=participant,
+                        prefix=f"p{participant.pk}",
+                    )
+                )
+        people.append(row)
     return render(
         request,
         "expenses/invite_create.html",
-        {"event": event, "form": form, "pending": pending},
+        {
+            "event": event,
+            "people": people,
+            "pending": pending,
+            "people_formset": people_formset,
+        },
     )
+
+
+@event_participant_required
+def invite_create(request, event):
+    """Owner-only People page; POST adds several people, inviting those ticked."""
+    if forbidden := _owner_only(request, event, "add or invite people"):
+        return forbidden
+    if request.method == "POST":
+        formset = PeopleFormSet(
+            request.POST, prefix="people", form_kwargs={"event": event}
+        )
+        if formset.is_valid():
+            added = len(formset.filled_forms())
+            invitations = formset.save(inviter=request.user)
+            for invitation in invitations:
+                send_invitation_email(invitation, request)
+            sent = len(invitations)
+            messages.success(
+                request,
+                f"Added {added} {'person' if added == 1 else 'people'}"
+                + (
+                    f", sent {sent} invitation{'s' if sent != 1 else ''}."
+                    if sent
+                    else "."
+                ),
+            )
+            return redirect("expenses:invite_create", event_id=event.pk)
+        return _render_people(request, event, people_formset=formset)
+    return _render_people(request, event)
+
+
+@require_POST
+@event_participant_required
+def participant_invite(request, event, participant_id):
+    """Owner-only: invite a person who was added by name, keeping their row."""
+    if forbidden := _owner_only(request, event, "send invitations"):
+        return forbidden
+    participant = get_object_or_404(
+        Participant, pk=participant_id, event=event, user__isnull=True
+    )
+    already_invited = (
+        participant.invited_email
+        and event.invitations.filter(
+            email__iexact=participant.invited_email, accepted_at__isnull=True
+        ).exists()
+    )
+    if already_invited:
+        # A second invite would leave the first one valid, and accepting
+        # it would no longer find this row (matched on invited_email).
+        messages.error(
+            request,
+            f"{participant_label(participant)} already has a pending invitation.",
+        )
+        return redirect("expenses:invite_create", event_id=event.pk)
+    form = ParticipantInviteForm(
+        request.POST,
+        event=event,
+        inviter=request.user,
+        participant=participant,
+        prefix=f"p{participant.pk}",
+    )
+    if form.is_valid():
+        invitation = form.save()
+        send_invitation_email(invitation, request)
+        messages.success(request, f"Invitation sent to {invitation.email}.")
+        return redirect("expenses:invite_create", event_id=event.pk)
+    return _render_people(request, event, invite_failed=form)
 
 
 def accept_invite(request, key):

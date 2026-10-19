@@ -32,10 +32,14 @@
         <div>
             {% if user == event.owner or user.is_superuser %}
                 <a class="btn btn-outline-secondary"
-                   href="{% url 'expenses:invite_create' event_id=event.pk %}">Invite</a>
+                   href="{% url 'expenses:event_edit' event_id=event.pk %}">Edit event</a>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:invite_create' event_id=event.pk %}">People</a>
             {% endif %}
             <a class="btn btn-outline-secondary"
                href="{% url 'expenses:event_ledger' event_id=event.pk %}">Ledger</a>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:expense_bulk' event_id=event.pk %}">Add several</a>
             <a class="btn btn-primary"
                href="{% url 'expenses:expense_create' event_id=event.pk %}">Log expense</a>
         </div>

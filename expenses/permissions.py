@@ -4,6 +4,11 @@ App-level: user must hold the `expenses.access_expenses` permission
 (custom Meta permission on `Event`). Gated via Django's
 `user_passes_test` against `is_expenses_user`.
 
+Creating events additionally needs Django's built-in `expenses.add_event`
+permission, granted through the `Expense Manager` group. Invited
+participants only get `access_expenses`, so they see the events they
+were invited to but cannot start their own.
+
 Event-level: user must have a `Participant` row for the event. The
 `event_participant_required` decorator stacks the app-level check on
 top of the row-level one and 404s for non-participants.
@@ -23,11 +28,19 @@ from .models import Event
 ACCESS_EXPENSES_CODENAME = "access_expenses"
 ACCESS_EXPENSES_PERM = f"expenses.{ACCESS_EXPENSES_CODENAME}"
 EXPENSES_USER_GROUP = "Expenses User"
+ADD_EVENT_CODENAME = "add_event"
+ADD_EVENT_PERM = f"expenses.{ADD_EVENT_CODENAME}"
+EXPENSE_MANAGER_GROUP = "Expense Manager"
 
 
 def is_expenses_user(user):
     """True if `user` is authenticated and may use the expenses app."""
     return user.is_authenticated and user.has_perm(ACCESS_EXPENSES_PERM)
+
+
+def can_create_events(user):
+    """True if `user` may use the expenses app and start a new event."""
+    return is_expenses_user(user) and user.has_perm(ADD_EVENT_PERM)
 
 
 def event_participant_required(view_func):
