@@ -1,8 +1,13 @@
+from pathlib import Path
+
+import cairosvg
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 
+from .frame_shapes import DEFAULT_FRAME_SHAPE, frame_shape_choices
 from .qr_image import (
     DEFAULT_BACK_COLOR,
     DEFAULT_COLOR_MASK_STYLE,
@@ -125,6 +130,45 @@ class QRCodePreviewForm(forms.Form):
     description = forms.CharField(label="Description", max_length=30, required=True)
 
 
+# Width, in pixels, an SVG logo is rasterized to. The logo covers about a
+# quarter of a code a few hundred pixels wide, so this leaves headroom
+# without letting a tiny SVG ask for a huge bitmap.
+LOGO_RASTER_WIDTH = 512
+
+
+def _is_svg(upload):
+    return (
+        upload.name.lower().endswith(".svg")
+        or getattr(upload, "content_type", "") == "image/svg+xml"
+    )
+
+
+class LogoField(forms.ImageField):
+    """An image upload that also takes SVG logos.
+
+    Pillow can't open SVG, so an SVG upload is rasterized to PNG first and
+    then validated like any other image. cairosvg's default safe mode is
+    kept on purpose: no XML entities and no external files or URLs, so an
+    uploaded SVG can't make the server read or fetch anything.
+    """
+
+    def to_python(self, data):
+        if data and _is_svg(data):
+            data = self._rasterize(data)
+        return super().to_python(data)
+
+    def _rasterize(self, upload):
+        try:
+            png = cairosvg.svg2png(
+                bytestring=upload.read(), output_width=LOGO_RASTER_WIDTH
+            )
+        except Exception as exc:
+            raise ValidationError(
+                self.error_messages["invalid_image"], code="invalid_image"
+            ) from exc
+        return SimpleUploadedFile(Path(upload.name).stem + ".png", png, "image/png")
+
+
 class QRCodeWithSlugPreviewForm(forms.Form):
 
     url = forms.URLField(label="URL", assume_scheme="https")
@@ -142,6 +186,9 @@ class QRCodeWithSlugPreviewForm(forms.Form):
             validate_slug_not_reserved,
         ],
     )
+    frame_shape = _style_field(
+        "Image shape", frame_shape_choices(), DEFAULT_FRAME_SHAPE
+    )
     module_style = _style_field(
         "Module shape", module_style_choices(), DEFAULT_MODULE_STYLE
     )
@@ -151,7 +198,7 @@ class QRCodeWithSlugPreviewForm(forms.Form):
     fill_color = _color_field("Fill color", DEFAULT_FILL_COLOR)
     gradient_color = _color_field("Gradient color", DEFAULT_GRADIENT_COLOR)
     back_color = _color_field("Background color", DEFAULT_BACK_COLOR)
-    logo = forms.ImageField(label="Logo (optional)", required=False)
+    logo = LogoField(label="Logo (optional)", required=False)
 
 
 class QRCodeStylePreviewForm(forms.Form):
@@ -164,6 +211,9 @@ class QRCodeStylePreviewForm(forms.Form):
 
     url = forms.URLField(label="URL", assume_scheme="https")
     slug = forms.CharField(label="Slug", max_length=30, required=False)
+    frame_shape = _style_field(
+        "Image shape", frame_shape_choices(), DEFAULT_FRAME_SHAPE
+    )
     module_style = _style_field(
         "Module shape", module_style_choices(), DEFAULT_MODULE_STYLE
     )
@@ -173,4 +223,4 @@ class QRCodeStylePreviewForm(forms.Form):
     fill_color = _color_field("Fill color", DEFAULT_FILL_COLOR)
     gradient_color = _color_field("Gradient color", DEFAULT_GRADIENT_COLOR)
     back_color = _color_field("Background color", DEFAULT_BACK_COLOR)
-    logo = forms.ImageField(label="Logo", required=False)
+    logo = LogoField(label="Logo", required=False)

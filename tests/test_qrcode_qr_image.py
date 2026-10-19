@@ -17,17 +17,13 @@ from qrcode_manager.qr_image import (
 
 
 def test_default_colors_black_on_white():
-    img = build_qr_image("https://example.com").get_image().convert("RGB")
+    img = build_qr_image("https://example.com").convert("RGB")
     colors = {color for _, color in img.getcolors()}
     assert colors == {(0, 0, 0), (255, 255, 255)}
 
 
 def test_custom_colors_applied():
-    img = (
-        build_qr_image("https://example.com", "#112233", "#ffeedd")
-        .get_image()
-        .convert("RGB")
-    )
+    img = build_qr_image("https://example.com", "#112233", "#ffeedd").convert("RGB")
     colors = {color for _, color in img.getcolors()}
     assert (17, 34, 51) in colors
     assert (255, 238, 221) in colors
@@ -35,7 +31,7 @@ def test_custom_colors_applied():
 
 def test_logo_is_embedded_in_center():
     logo = Image.new("RGBA", (50, 50), (255, 0, 0, 255))
-    img = build_qr_image("https://example.com", logo=logo).get_image().convert("RGB")
+    img = build_qr_image("https://example.com", logo=logo).convert("RGB")
     center = img.getpixel((img.width // 2, img.height // 2))
     assert center == (255, 0, 0)
 
@@ -76,21 +72,17 @@ def test_unknown_module_style_falls_back_to_square():
     img = build_qr_image(
         "https://example.com", module_style="bogus", color_mask_style=""
     )
-    assert img.get_image().convert("RGB").getpixel((0, 0))
+    assert img.convert("RGB").getpixel((0, 0))
 
 
 def test_gradient_mask_blends_fill_into_gradient_color():
-    img = (
-        build_qr_image(
-            "https://example.com",
-            fill_color="#ff0000",
-            back_color="#ffffff",
-            gradient_color="#0000ff",
-            color_mask_style="horizontal_gradient",
-        )
-        .get_image()
-        .convert("RGB")
-    )
+    img = build_qr_image(
+        "https://example.com",
+        fill_color="#ff0000",
+        back_color="#ffffff",
+        gradient_color="#0000ff",
+        color_mask_style="horizontal_gradient",
+    ).convert("RGB")
     colors = {color for _, color in img.getcolors(maxcolors=100000)}
     reds = [c for c in colors if c[0] > 150 and c[2] < 80]
     blues = [c for c in colors if c[2] > 150 and c[0] < 80]
@@ -99,17 +91,13 @@ def test_gradient_mask_blends_fill_into_gradient_color():
 
 def test_solid_mask_ignores_gradient_color():
     """With the solid style, the gradient color must not appear."""
-    img = (
-        build_qr_image(
-            "https://example.com",
-            fill_color="#ff0000",
-            back_color="#ffffff",
-            gradient_color="#0000ff",
-            color_mask_style="solid",
-        )
-        .get_image()
-        .convert("RGB")
-    )
+    img = build_qr_image(
+        "https://example.com",
+        fill_color="#ff0000",
+        back_color="#ffffff",
+        gradient_color="#0000ff",
+        color_mask_style="solid",
+    ).convert("RGB")
     colors = {color for _, color in img.getcolors()}
     assert (0, 0, 255) not in colors
 

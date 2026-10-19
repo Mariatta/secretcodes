@@ -105,6 +105,7 @@ class S3Wrapper:
         gradient_color=None,
         module_style=None,
         color_mask_style=None,
+        frame_shape=None,
         logo_key=None,
     ):
         if not path:
@@ -122,6 +123,7 @@ class S3Wrapper:
             gradient_color=gradient_color,
             module_style=module_style,
             color_mask_style=color_mask_style,
+            frame_shape=frame_shape,
             logo=logo,
         )
         self.upload_fileobj(buffer, save_path, "image/png")

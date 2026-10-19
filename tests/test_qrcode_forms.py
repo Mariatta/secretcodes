@@ -1,10 +1,19 @@
+from unittest import mock
+
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from qrcode_manager.forms import (
+    LOGO_RASTER_WIDTH,
     RESERVED_SLUGS,
     QRCodePreviewForm,
     QRCodeStylePreviewForm,
     QRCodeWithSlugPreviewForm,
+)
+
+SVG_LOGO = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">'
+    b'<rect width="10" height="10" fill="red"/></svg>'
 )
 
 
@@ -144,6 +153,32 @@ def test_slug_form_rejects_unknown_color_mask():
     assert "color_mask_style" in form.errors
 
 
+def test_slug_form_accepts_frame_shape():
+    form = QRCodeWithSlugPreviewForm(
+        data={
+            "url": "https://example.com",
+            "description": "ok",
+            "slug": "abc",
+            "frame_shape": "hexagon",
+        }
+    )
+    assert form.is_valid()
+    assert form.cleaned_data["frame_shape"] == "hexagon"
+
+
+def test_slug_form_rejects_unknown_frame_shape():
+    form = QRCodeWithSlugPreviewForm(
+        data={
+            "url": "https://example.com",
+            "description": "ok",
+            "slug": "abc",
+            "frame_shape": "trapezoid",
+        }
+    )
+    assert not form.is_valid()
+    assert "frame_shape" in form.errors
+
+
 def test_style_preview_form_accepts_styles():
     form = QRCodeStylePreviewForm(
         data={
@@ -191,3 +226,58 @@ def test_color_field_rejects_malformed_typed_hex():
     )
     assert not form.is_valid()
     assert "fill_color" in form.errors
+
+
+def _preview_with_logo(upload):
+    return QRCodeStylePreviewForm(
+        data={"url": "https://example.com"}, files={"logo": upload}
+    )
+
+
+def test_svg_logo_is_rasterized_to_png():
+    form = _preview_with_logo(
+        SimpleUploadedFile("brand.svg", SVG_LOGO, content_type="image/svg+xml")
+    )
+    assert form.is_valid(), form.errors
+    logo = form.cleaned_data["logo"]
+    assert logo.name == "brand.png"
+    assert logo.image.format == "PNG"
+    assert logo.image.width == LOGO_RASTER_WIDTH
+
+
+def test_svg_logo_is_recognised_by_content_type_alone():
+    form = _preview_with_logo(
+        SimpleUploadedFile("brand", SVG_LOGO, content_type="image/svg+xml")
+    )
+    assert form.is_valid(), form.errors
+
+
+def test_malformed_svg_logo_is_rejected():
+    form = _preview_with_logo(
+        SimpleUploadedFile("brand.svg", b"<svg", content_type="image/svg+xml")
+    )
+    assert not form.is_valid()
+    assert form.errors.as_data()["logo"][0].code == "invalid_image"
+
+
+def test_svg_logo_cannot_make_the_server_fetch_anything():
+    """An uploaded SVG pointing at a URL or a local file must not be
+    followed: cairosvg's safe mode swaps it for an empty image."""
+    svg = (
+        b'<svg xmlns="http://www.w3.org/2000/svg" '
+        b'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
+        b'<image xlink:href="http://169.254.169.254/latest" width="5" height="5"/>'
+        b'<image xlink:href="file:///etc/passwd" width="5" height="5"/></svg>'
+    )
+    # cairosvg's parser holds its own reference to `fetch`, so both have to
+    # be patched to see every fetch it might make.
+    with (
+        mock.patch("cairosvg.url.fetch", return_value=b"") as url_fetch,
+        mock.patch("cairosvg.parser.fetch", return_value=b"") as parser_fetch,
+    ):
+        form = _preview_with_logo(
+            SimpleUploadedFile("brand.svg", svg, content_type="image/svg+xml")
+        )
+        assert form.is_valid(), form.errors
+    url_fetch.assert_not_called()
+    parser_fetch.assert_not_called()

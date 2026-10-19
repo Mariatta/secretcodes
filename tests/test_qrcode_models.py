@@ -148,7 +148,17 @@ def test_generate_qr_passes_module_and_mask_styles(mock_s3_wrapper):
 
 
 @pytest.mark.django_db
+def test_generate_qr_passes_frame_shape(mock_s3_wrapper):
+    QRCode.objects.create(
+        url="https://example.com", description="starry", frame_shape="star"
+    )
+    _, kwargs = mock_s3_wrapper.generate_qr.call_args
+    assert kwargs["frame_shape"] == "star"
+
+
+@pytest.mark.django_db
 def test_style_defaults_on_plain_create(mock_s3_wrapper):
     qr = QRCode.objects.create(url="https://example.com", description="plain")
     assert qr.module_style == "square"
     assert qr.color_mask_style == "solid"
+    assert qr.frame_shape == "none"

@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.timezone import now
 
 from .forms import validate_slug_not_reserved
+from .frame_shapes import DEFAULT_FRAME_SHAPE
 from .qr_image import (
     DEFAULT_BACK_COLOR,
     DEFAULT_COLOR_MASK_STYLE,
@@ -58,6 +59,9 @@ class QRCode(BaseModel):
     )
     color_mask_style = models.CharField(
         "color_mask_style", max_length=20, default=DEFAULT_COLOR_MASK_STYLE
+    )
+    frame_shape = models.CharField(
+        "frame_shape", max_length=20, default=DEFAULT_FRAME_SHAPE
     )
     logo_filename = models.CharField(
         "logo_filename", max_length=120, blank=True, default=""
@@ -119,6 +123,7 @@ class QRCode(BaseModel):
             gradient_color=self.gradient_color,
             module_style=self.module_style,
             color_mask_style=self.color_mask_style,
+            frame_shape=self.frame_shape,
             logo_key=self.logo_key,
         )
 

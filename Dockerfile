@@ -11,7 +11,7 @@ COPY requirements.txt /code/
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
-RUN apt-get update && apt-get install -y gettext
+RUN apt-get update && apt-get install -y gettext libcairo2
 
 
 ###############################################################################

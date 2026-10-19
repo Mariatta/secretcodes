@@ -1,5 +1,5 @@
 """Build QR code images, optionally styled with custom colors, module
-shapes, color masks, and a logo.
+shapes, color masks, an outline, and a logo.
 
 This module is storage-agnostic: it only turns data into PIL images /
 PNG bytes. Uploading the result lives in `s3_wrapper`, and the live
@@ -9,6 +9,9 @@ The `MODULE_DRAWERS` and `COLOR_MASKS` registries are the single source
 of truth for the available styles: forms build their dropdown choices
 from the keys here, and `build_qr_image` resolves a key back to the
 qrcode library class. Adding a style is a one-line change here.
+
+The outline that decides the silhouette of the finished PNG is a
+separate concern and lives in `frame_shapes`.
 """
 
 import io
@@ -30,6 +33,14 @@ from qrcode.image.styles.moduledrawers.pil import (
     RoundedModuleDrawer,
     SquareModuleDrawer,
     VerticalBarsDrawer,
+)
+
+from .frame_shapes import (
+    QUIET_MODULES,
+    apply_frame,
+    decoration_matrix,
+    frame_width,
+    is_framed,
 )
 
 DEFAULT_FILL_COLOR = "#000000"
@@ -105,6 +116,23 @@ def color_mask_choices():
     return [(key, label) for key, (label, _) in COLOR_MASKS.items()]
 
 
+class _FixedMatrix(qrcode.QRCode):
+    """A QRCode whose module matrix is handed in rather than encoded.
+
+    Lets the library's own module drawers and color masks paint the
+    decorative modules around a framed code, so they match the code's
+    style exactly.
+    """
+
+    def __init__(self, modules, box_size):
+        super().__init__(box_size=box_size, border=0)
+        self.modules = modules
+        self.modules_count = len(modules)
+
+    def make(self, fit=True):
+        """Nothing to encode: the matrix was set in `__init__`."""
+
+
 def build_qr_image(
     data,
     fill_color=None,
@@ -113,15 +141,21 @@ def build_qr_image(
     module_style=None,
     color_mask_style=None,
     logo=None,
+    frame_shape=None,
 ):
     """Return a PIL image of the QR code for `data`.
 
     `fill_color`/`back_color`/`gradient_color` are CSS-style hex strings;
     `module_style`/`color_mask_style` are keys into `MODULE_DRAWERS` /
-    `COLOR_MASKS` (unknown or empty keys fall back to the defaults).
-    `logo` is an optional PIL image embedded in the center; with a logo
-    we bump error correction to H so the code still scans with ~30% of it
-    covered.
+    `COLOR_MASKS`, and `frame_shape` a key into `FRAME_SHAPES` (unknown
+    or empty keys fall back to the defaults). `logo` is an optional PIL
+    image embedded in the center; with a logo we bump error correction to
+    H so the code still scans with ~30% of it covered.
+
+    A `frame_shape` other than `none` insets the square code into that
+    outline, fills the rest of the shape with random modules in the same
+    style, and makes everything outside it transparent, so the returned
+    image is wider than the code itself.
     """
     fill = ImageColor.getrgb(fill_color or DEFAULT_FILL_COLOR)
     back = ImageColor.getrgb(back_color or DEFAULT_BACK_COLOR)
@@ -137,15 +171,38 @@ def build_qr_image(
     error_correction = (
         qrcode.constants.ERROR_CORRECT_H if logo else qrcode.constants.ERROR_CORRECT_M
     )
-    qr = qrcode.QRCode(error_correction=error_correction)
+    framed = is_framed(frame_shape)
+    qr = qrcode.QRCode(
+        error_correction=error_correction,
+        border=QUIET_MODULES if framed else 4,
+    )
     qr.add_data(data)
     qr.make(fit=True)
-    return qr.make_image(
+    code = qr.make_image(
         image_factory=StyledPilImage,
         module_drawer=drawer_class(),
         color_mask=mask_builder(fill, back, gradient),
         embedded_image=logo,
+    ).get_image()
+    if not framed:
+        return code
+
+    code_width = qr.modules_count + 2 * qr.border
+    grid_width = frame_width(frame_shape, code_width)
+    modules = decoration_matrix(
+        frame_shape, grid_width, code_width, qr.box_size, seed=data
     )
+    decoration = (
+        _FixedMatrix(modules, qr.box_size)
+        .make_image(
+            image_factory=StyledPilImage,
+            module_drawer=drawer_class(),
+            eye_drawer=drawer_class(),
+            color_mask=mask_builder(fill, back, gradient),
+        )
+        .get_image()
+    )
+    return apply_frame(code, frame_shape, back, decoration)
 
 
 def build_qr_png(
@@ -156,6 +213,7 @@ def build_qr_png(
     module_style=None,
     color_mask_style=None,
     logo=None,
+    frame_shape=None,
 ):
     """Return the styled QR code as a PNG `io.BytesIO`, rewound."""
     buffer = io.BytesIO()
@@ -167,7 +225,8 @@ def build_qr_png(
         module_style=module_style,
         color_mask_style=color_mask_style,
         logo=logo,
+        frame_shape=frame_shape,
     )
-    img.save(buffer)
+    img.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
