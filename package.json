@@ -7,7 +7,7 @@
     "vendor:copy": "bash scripts/vendor-refresh.sh"
   },
   "devDependencies": {
-    "@yaireo/tagify": "^4.38.0",
+    "@yaireo/tagify": "^4.39.0",
     "bootstrap": "5.3.8",
     "chart.js": "4.5.1",
     "sortablejs": "1.15.7"
