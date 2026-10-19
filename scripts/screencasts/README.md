@@ -5,7 +5,7 @@ and Platform1902 screencast scripts.
 
 | Video | What it shows | Script |
 |---|---|---|
-| `expenses-restaurant-bill-desktop.mp4` | Six friends split a restaurant bill: create the event, add five people by name, log the dinner split by item with shared appetizers, tax and a tip after tax, then the ledger and who owes the payer | `rec-restaurant-bill.js` |
+| `expenses-restaurant-bill-desktop.mp4` | Six friends split a restaurant bill: starting on the newly created event (sign-in and creating it are cut), add five people by name, log the dinner split by item with shared appetizers, tax and a tip after tax, then the ledger and who owes the payer | `rec-restaurant-bill.js` |
 
 The scripts drive the real site in a headless browser (Playwright) against a
 throwaway database, and draw a cursor, click ripples and a caption for each

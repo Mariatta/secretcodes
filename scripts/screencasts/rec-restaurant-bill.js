@@ -6,6 +6,11 @@
 // account), logs the dinner split by item with shared appetizers, tax and a
 // tip on the total after tax, and ends on the overview showing who owes her.
 // MOBILE=1 records at phone width.
+//
+// Signing in and creating the event are recorded but cut: the script writes
+// the moment the new event's page has loaded to <out dir>/trim.txt, and
+// run.sh starts the finished video there.
+const fs = require("fs");
 const L = require("./lib");
 const S = L.CONFIG.base;
 const OUT = process.argv[2] || "video-restaurant-bill";
@@ -24,20 +29,23 @@ const MEALS = {
   const launched = await L.launch({ record: OUT });
   const { page } = launched;
   const cap = (t) => L.caption(page, t);
+  const started = Date.now();
 
   try {
     await L.login(page);
     await page.goto(S + "/expenses/");
     await L.sleep(500);
-    await cap("Six friends had dinner. Maya paid the bill.");
-    await L.sleep(2200);
 
-    // The event
-    await cap("Start an event for the dinner");
+    // The event (cut from the finished video)
     await L.click(page, 'a:has-text("+ New event")');
     await L.type(page, 'input[name="name"]', "Lena's birthday dinner");
-    await L.click(page, '#id_start_date ~ .sc-today-button', { pause: 400 });
-    await L.click(page, 'button:has-text("Create event")', { pause: 1200 });
+    await L.click(page, "#id_start_date ~ .sc-today-button", { pause: 400 });
+    await L.click(page, 'button:has-text("Create event")', { pause: 600 });
+    await page.locator('h1:has-text("Lena")').waitFor();
+    await L.sleep(300);
+    fs.writeFileSync(L.path.join(OUT, "trim.txt"), String((Date.now() - started) / 1000));
+    await cap("Six friends had dinner and Maya paid. She made an event for it.");
+    await L.sleep(2600);
 
     // The people
     await cap("Add the other five. A name is enough: nobody needs an account.");
