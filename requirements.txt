@@ -28,5 +28,6 @@ jsonschema==4.26.0
 pillow==12.3.0
 qrcode==8.2
 qrcode[pil]
+cairosvg==2.9.1
 redis==8.0.1
 regex==2026.7.19

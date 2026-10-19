@@ -42,6 +42,7 @@ def qrcode_slug_generator(request):
                 "back_color",
                 "module_style",
                 "color_mask_style",
+                "frame_shape",
             ):
                 if qr_form.cleaned_data.get(field):
                     setattr(qr_obj, field, qr_form.cleaned_data[field])
@@ -83,6 +84,7 @@ def qrcode_style_preview(request):
         gradient_color=form.cleaned_data.get("gradient_color"),
         module_style=form.cleaned_data.get("module_style"),
         color_mask_style=form.cleaned_data.get("color_mask_style"),
+        frame_shape=form.cleaned_data.get("frame_shape"),
         logo=logo,
     )
     return HttpResponse(buffer.getvalue(), content_type="image/png")

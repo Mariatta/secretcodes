@@ -294,6 +294,22 @@ def test_style_preview_with_logo(client, django_user_model, qr_slug_perm):
     assert response["Content-Type"] == "image/png"
 
 
+def test_style_preview_with_svg_logo(client, django_user_model, qr_slug_perm):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    svg = SimpleUploadedFile(
+        "logo.svg",
+        b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">'
+        b'<rect width="10" height="10" fill="#00ff00"/></svg>',
+        content_type="image/svg+xml",
+    )
+    response = client.post(
+        reverse("qrcode_preview"), {"url": "https://example.com", "logo": svg}
+    )
+    assert response.status_code == 200
+    image = Image.open(io.BytesIO(response.content)).convert("RGB")
+    assert image.getpixel((image.width // 2, image.height // 2)) == (0, 255, 0)
+
+
 def test_style_preview_invalid_returns_400(client, django_user_model, qr_slug_perm):
     _login_with_slug_access(client, django_user_model, qr_slug_perm)
     response = client.post(reverse("qrcode_preview"), {"url": "not-a-url"})
@@ -385,3 +401,45 @@ def test_slug_generator_saves_module_and_mask(
     assert qr.module_style == "circle"
     assert qr.color_mask_style == "square_gradient"
     assert qr.gradient_color == "#445566"
+
+
+def test_style_preview_with_frame_shape_is_transparent_outside(
+    client, django_user_model, qr_slug_perm
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {"url": "https://example.com", "frame_shape": "circle"},
+    )
+    assert response.status_code == 200
+    image = Image.open(io.BytesIO(response.content)).convert("RGBA")
+    assert image.getpixel((0, 0))[3] == 0
+
+
+def test_style_preview_rejects_unknown_frame_shape(
+    client, django_user_model, qr_slug_perm
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    response = client.post(
+        reverse("qrcode_preview"),
+        {"url": "https://example.com", "frame_shape": "trapezoid"},
+    )
+    assert response.status_code == 400
+    assert "frame_shape" in response.json()["errors"]
+
+
+def test_slug_generator_saves_frame_shape(
+    client, django_user_model, qr_slug_perm, mock_s3_wrapper
+):
+    _login_with_slug_access(client, django_user_model, qr_slug_perm)
+    client.post(
+        reverse("qrcode_slug_generator"),
+        {
+            "url": "https://example.com",
+            "description": "shaped",
+            "slug": "abc",
+            "frame_shape": "diamond",
+        },
+    )
+    qr = QRCode.objects.get(url="https://example.com")
+    assert qr.frame_shape == "diamond"

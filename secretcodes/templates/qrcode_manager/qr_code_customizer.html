@@ -47,6 +47,7 @@
                     and logo until it looks right, nothing is saved until you
                     press "Save QR Code".
                 </p>
+                <p id="qr-preview-error" class="text-danger small" hidden></p>
                 <a id="qr-preview-download"
                    class="btn btn-outline-secondary btn-sm mt-2"
                    download="qr-code.png"
@@ -71,6 +72,7 @@
             const image = document.getElementById("qr-preview-image");
             const placeholder = document.getElementById("qr-preview-placeholder");
             const download = document.getElementById("qr-preview-download");
+            const error = document.getElementById("qr-preview-error");
             const previewUrl = "{% url 'qrcode_preview' %}";
             let timer = null;
             let blobUrl = null;
@@ -82,16 +84,34 @@
                 image.src = blobUrl;
                 image.hidden = false;
                 placeholder.hidden = true;
+                error.hidden = true;
                 download.href = blobUrl;
                 const description = form.elements["description"].value.trim();
                 download.download = (description || "qr-code") + ".png";
                 download.hidden = false;
             }
 
-            function hidePreview() {
+            function hidePreview(messages) {
                 image.hidden = true;
                 download.hidden = true;
-                placeholder.hidden = false;
+                error.textContent = (messages || []).join(" ");
+                error.hidden = !error.textContent;
+                placeholder.hidden = !error.hidden;
+            }
+
+            // The preview endpoint answers a 400 with the form errors as
+            // {"errors": {field: ["message", ...]}}. Show them, so a bad
+            // logo says why instead of the preview just disappearing. A
+            // missing or half-typed URL is left to the placeholder text,
+            // so nobody sees a red error before they've typed anything.
+            async function errorMessages(response) {
+                try {
+                    const errors = (await response.json()).errors || {};
+                    delete errors.url;
+                    return Object.values(errors).flat();
+                } catch (err) {
+                    return [];
+                }
             }
 
             async function refreshPreview() {
@@ -104,7 +124,7 @@
                         signal: inFlight.signal,
                     });
                     if (!response.ok) {
-                        hidePreview();
+                        hidePreview(await errorMessages(response));
                         return;
                     }
                     showPreview(await response.blob());
