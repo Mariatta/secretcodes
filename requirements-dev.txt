@@ -4,7 +4,7 @@ coverage==7.15.2
 django-debug-toolbar==7.0.0
 djlint==1.42.3
 flake8==7.3.0
-isort==8.0.1
+isort==9.0.0
 pip-audit==2.10.1
 pytest-django==4.12.0
 pytest==9.1.1
