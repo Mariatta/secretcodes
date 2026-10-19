@@ -86,7 +86,13 @@ def test_invite_create_view_owner_can_invite(client, event, owner):
     with patch("expenses.views.send_invitation_email") as mock_send:
         response = client.post(
             reverse("expenses:invite_create", kwargs={"event_id": event.pk}),
-            {"email": "guest@example.com", "display_name": "Guest"},
+            {
+                "people-TOTAL_FORMS": "1",
+                "people-INITIAL_FORMS": "0",
+                "people-0-display_name": "Guest",
+                "people-0-email": "guest@example.com",
+                "people-0-invite": "on",
+            },
         )
     assert response.status_code == 302
     assert ExpenseInvitation.objects.filter(email="guest@example.com").exists()
@@ -222,7 +228,13 @@ def test_send_invitation_email_dispatches_and_marks_sent(
     client.login(username="owner", password="pw")
     response = client.post(
         reverse("expenses:invite_create", kwargs={"event_id": event.pk}),
-        {"email": "send_test@example.com", "display_name": "Send Test"},
+        {
+            "people-TOTAL_FORMS": "1",
+            "people-INITIAL_FORMS": "0",
+            "people-0-display_name": "Send Test",
+            "people-0-email": "send_test@example.com",
+            "people-0-invite": "on",
+        },
     )
     assert response.status_code == 302
     assert len(mailoutbox) == 1

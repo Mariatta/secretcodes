@@ -128,8 +128,6 @@ without breaking the rest of the site.
   share in the event. Useful at the end of a trip.
 - **Per-participant ledger view** — "show me only the expenses I paid for"
   or "expenses where I owe Alice."
-- **Event archive UX** — currently `is_archived` is admin-only. An "Archive
-  this event" button on the overview page would let owners self-serve.
 - **Recurring expenses** — for monthly shared rent / utilities. Low priority
   for trip use case.
 - **Notifications** — email / Signal poke when someone logs a new expense

@@ -182,6 +182,10 @@ enough; payment receipts are out of band.
 
 **App-level**
 - `GET  /expenses/`                       — list of events the user can see
+- `GET/POST /expenses/events/new/`: create an event (needs `expenses.add_event`)
+- `GET/POST /expenses/events/<id>/edit/`: owner-only edit: details, FX rates, archive
+- `GET/POST /expenses/events/<id>/expenses/bulk/`: "Add several", a grid of equally split expenses
+- `POST /expenses/events/<id>/people/<pid>/invite/`: owner-only, invite a participant added by name
 - `GET  /accept/<token>/`                 — invitation acceptance (django-invitations)
 
 **Admin** (Django admin, login-gated)
@@ -353,6 +357,45 @@ Things that ended up different from the early sections of this doc:
 - **Event cards with stats** — the event list renders cards (not a list-group),
   each showing participant count and total-spent prominently.
 - **`created_by` field on Expense** — added to support creator-only edit/delete.
+- **Event create/edit in the app.** Creating an event needs both
+  `expenses.access_expenses` and Django's built-in `expenses.add_event`
+  (`expenses.permissions.can_create_events`). `add_event` is granted by the
+  `Expense Manager` group (seeded by migration 0007), which deliberately
+  does not include `access_expenses`; managers are also put in Expenses
+  User. Invited participants never get `add_event`. The creator becomes the
+  owner and gets an owner `Participant` row in the same transaction.
+  FX rates are edited as currency/rate rows rather than JSON; a rate whose
+  currency an expense already uses is read-only in the form (changing it
+  would desync existing shares; admin override only).
+- **Negative expenses** are allowed and mean a refund or credit. They split
+  like any other expense, into negative shares. Settle-up between two
+  people nets shares in both directions, so a refund's negative shares
+  (which run from the payer back to the others) settle with the pair.
+- **Split by item.** Besides equal-only splitting, an expense can be split
+  by item (`Expense.split_mode`). Each person enters what they had, and per
+  person, in this order: + an equal part of the shared items, + surcharge %
+  of that food, + an equal part of the flat table charge, + tax % of all
+  that, + tip % of the total after tax (the US convention). The math is
+  `expenses/services/splitting.py`; `brand/expenses-split.js` mirrors it
+  for the live preview. Unlike the original "resolved amounts only" plan,
+  the inputs are stored (`shared_amount`, `table_charge`, the three
+  percents, and `ExpenseShare.item_amount`) so an itemized expense can be
+  edited. Shares are still rounded to the cent with the payer (or the
+  first person, if the payer isn't in the split) absorbing the remainder.
+- **Add several.** A grid page logs many equally split expenses at once:
+  one row each, with a checkbox column per participant. Blank rows are
+  skipped; nothing saves unless every filled row is valid. Currencies are
+  limited to the base and the event's FX rates. Receipts and split by item
+  stay on the single-expense form.
+- **People page.** The owner's invite page (`/invite/`) lists everyone
+  with their status (joined, invited, not invited) and has an "Add people"
+  grid: one row per person with a name, an optional email and an Invite
+  box. A name alone adds someone who never logs in; with an email and
+  Invite ticked, an invitation goes out too. All rows save together or
+  none do. Anyone not invited can be invited later from their row; the
+  invitation reuses their participant row, so expenses already logged for
+  them carry over on accept. A participant with a pending invitation can't
+  be invited again (accepting the first one would miss their row).
 - **Estimates not implemented** — `estimated_amount`, planned-state expenses,
   and Budget vs Actual view are deferred. Tracked in `expenses-ideas.md`.
 

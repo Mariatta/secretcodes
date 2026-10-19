@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head_title %}
+    {% if mode == 'edit' %}
+        Edit {{ event.name }}
+    {% else %}
+        New event
+    {% endif %}
+    · Expenses · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">All events</a>
+            </li>
+            {% if mode == 'edit' %}
+                <li class="breadcrumb-item">
+                    <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Edit
+                </li>
+            {% else %}
+                <li class="breadcrumb-item active" aria-current="page">
+                    New event
+                </li>
+            {% endif %}
+        </ol>
+    </nav>
+    <h1 class="h3">
+        {% if mode == 'edit' %}
+            Edit <em class="sc-italic">event</em>
+        {% else %}
+            New <em class="sc-italic">event</em>
+        {% endif %}
+    </h1>
+    <form method="post" class="mt-4 sc-form-narrow">
+        {% csrf_token %}
+        {% bootstrap_form form exclude="is_archived" %}
+        <fieldset class="mb-3">
+            <legend class="form-label fs-6">
+                Exchange rates
+            </legend>
+            <p class="form-text mt-0">
+                For expenses paid in another currency: what one unit is worth in the base currency, e.g. 1 JPY = 0.0067 USD.
+                Clear a row to remove a rate.
+            </p>
+            {{ fx_formset.management_form }}
+            {% bootstrap_formset_errors fx_formset %}
+            {% for fx_form in fx_formset %}
+                <div class="row g-2">
+                    <div class="col-4">
+                        {% bootstrap_field fx_form.currency show_label=False %}
+                    </div>
+                    <div class="col-8">
+                        {% bootstrap_field fx_form.rate show_label=False %}
+                    </div>
+                    {% if fx_form.locked %}
+                        <p class="form-text col-12 mt-0 mb-3">
+                            Used by existing expenses, so this rate can't be changed here. Ask an admin.
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </fieldset>
+        {% if form.is_archived %}
+            {% bootstrap_field form.is_archived %}
+        {% endif %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                {% if mode == 'edit' %}
+                    Save
+                {% else %}
+                    Create event
+                {% endif %}
+            </button>
+            {% if mode == 'edit' %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:event_overview' event_id=event.pk %}">Cancel</a>
+            {% else %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:event_list' %}">Cancel</a>
+            {% endif %}
+        </div>
+    </form>
+{% endblock content %}

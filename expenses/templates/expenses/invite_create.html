@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load django_bootstrap5 %}
+{% load django_bootstrap5 static %}
 {% block head_title %}
-    Invite to {{ event.name }} · {{ block.super }}
+    People · {{ event.name }} · {{ block.super }}
 {% endblock head_title %}
 {% block content %}
     <nav aria-label="breadcrumb">
@@ -12,43 +12,118 @@
             <li class="breadcrumb-item">
                 <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
             </li>
-            <li class="breadcrumb-item active">
-                Invite
+            <li class="breadcrumb-item active" aria-current="page">
+                People
             </li>
         </ol>
     </nav>
-    <h1>
-        Invite to {{ event.name }}
+    <h1 class="h3">
+        People in <em class="sc-italic">{{ event.name }}</em>
     </h1>
-    <form method="post" class="mt-4" style="max-width: 480px;">
-        {% csrf_token %}
-        {% bootstrap_form form %}
-        <button type="submit" class="btn btn-primary">
-            Send invite
-        </button>
-        <a class="btn btn-outline-secondary"
-           href="{% url 'expenses:event_overview' event_id=event.pk %}">Cancel</a>
-    </form>
-    {% if pending %}
-        <h2 class="h5 mt-5">
-            Pending invitations
-        </h2>
-        <ul class="list-group" style="max-width: 480px;">
-            {% for invite in pending %}
-                <li class="list-group-item d-flex justify-content-between">
-                    <div>
+    <div class="sc-form-narrow">
+        <ul class="list-group mt-4">
+            {% for row in people %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
                         <div>
-                            {{ invite.email }}
+                            <div>
+                                {{ row.participant.display_name|default:row.participant.invited_email }}
+                            </div>
+                            {% if row.participant.invited_email and row.participant.display_name %}
+                                <small class="text-muted">{{ row.participant.invited_email }}</small>
+                            {% endif %}
                         </div>
-                        {% if invite.display_name %}
-                            <small class="text-muted">{{ invite.display_name }}</small>
+                        {% if row.status == "joined" %}
+                            <span class="badge text-bg-success">joined</span>
+                        {% elif row.status == "invited" %}
+                            <span class="badge text-bg-secondary">invited</span>
+                        {% else %}
+                            <span class="badge text-bg-light border">not invited</span>
                         {% endif %}
                     </div>
-                    <small class="text-muted align-self-center">
-                        sent {{ invite.sent_at|date:"M j"|default:"–" }}
-                    </small>
+                    {% if row.invite_form %}
+                        <form method="post"
+                              action="{% url 'expenses:participant_invite' event_id=event.pk participant_id=row.participant.pk %}"
+                              class="d-flex gap-2 align-items-start mt-2">
+                            {% csrf_token %}
+                            <div class="flex-grow-1">
+                                {% bootstrap_field row.invite_form.email show_label=False placeholder="Email to invite" %}
+                            </div>
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Invite
+                            </button>
+                        </form>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
-    {% endif %}
+        <h2 class="h5 mt-5">
+            Add people
+        </h2>
+        <p class="text-muted">
+            A name is enough for someone who doesn't need to log in: they can pay for and share expenses straight away.
+            With an email and Invite ticked, they also get an invitation. Without it, you can invite them later from the list above.
+        </p>
+        <form method="post" data-bulk-form>
+            {% csrf_token %}
+            {{ people_formset.management_form }}
+            {% bootstrap_formset_errors people_formset %}
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            Name
+                        </th>
+                        <th scope="col">
+                            Email
+                        </th>
+                        <th scope="col" class="text-center">
+                            Invite
+                        </th>
+                    </tr>
+                </thead>
+                <tbody data-bulk-rows>
+                    {% for row in people_formset %}
+                        {% include "expenses/_person_row.html" %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            <template data-bulk-template>
+                {% include "expenses/_person_row.html" with row=people_formset.empty_form %}
+            </template>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-add-row>
+                    + Add row
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Add people
+                </button>
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'expenses:event_overview' event_id=event.pk %}">Cancel</a>
+            </div>
+        </form>
+        {% if pending %}
+            <h2 class="h5 mt-5">
+                Pending invitations
+            </h2>
+            <ul class="list-group">
+                {% for invite in pending %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <div>
+                            <div>
+                                {{ invite.email }}
+                            </div>
+                            {% if invite.display_name %}
+                                <small class="text-muted">{{ invite.display_name }}</small>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted align-self-center">
+                            sent {{ invite.sent_at|date:"M j"|default:"–" }}
+                        </small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <script src="{% static 'brand/expenses-bulk.js' %}" defer></script>
 {% endblock content %}

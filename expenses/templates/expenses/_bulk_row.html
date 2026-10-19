@@ -1,0 +1,27 @@
+<tr data-bulk-row>
+    {% for field in row.visible_fields %}
+        {% if field.name != "shared_by" %}
+            <td class="sc-bulk-{{ field.name }}">
+                {{ field }}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </td>
+        {% endif %}
+    {% endfor %}
+    {% for participant, checkbox, item in row.participant_rows %}
+        <td class="text-center">
+            {{ checkbox.tag }}
+            <label class="visually-hidden" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+        </td>
+    {% endfor %}
+</tr>
+{% if row.non_field_errors or row.shared_by.errors %}
+    <tr>
+        <td colspan="{{ columns }}" class="text-danger small border-0 pt-0">
+            {{ row.non_field_errors|join:" " }} {{ row.shared_by.errors|join:" " }}
+        </td>
+    </tr>
+{% endif %}

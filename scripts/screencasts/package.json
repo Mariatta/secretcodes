@@ -1,0 +1,8 @@
+{
+  "name": "secretcodes-screencasts",
+  "private": true,
+  "description": "Records walkthrough videos of Secret Codes with Playwright.",
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

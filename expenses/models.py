@@ -4,6 +4,7 @@ from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from core.models import AbstractInvitation, BaseModel, mint_invitation_key
@@ -13,6 +14,7 @@ from .storage import EncryptedFileSystemStorage
 CURRENCY_CODE_LENGTH = 3
 MONEY_DECIMAL_PLACES = 2
 MONEY_MAX_DIGITS = 12
+PERCENT_VALIDATORS = [MinValueValidator(0), MaxValueValidator(100)]
 RECEIPT_MAX_BYTES = 10 * 1024 * 1024
 RECEIPT_ALLOWED_EXTENSIONS = ("jpg", "jpeg", "png", "heic", "pdf")
 RECEIPT_ALLOWED_CONTENT_TYPES = (
@@ -148,13 +150,44 @@ class Participant(BaseModel):
         super().save(*args, **kwargs)
 
 
+def _percent_field(name, help_text):
+    """Optional 0 to 100 percent, to three decimal places (e.g. 8.875% tax)."""
+    return models.DecimalField(
+        name,
+        max_digits=6,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        validators=PERCENT_VALIDATORS,
+        help_text=help_text,
+    )
+
+
+def _money_field(name, help_text):
+    """Optional money amount with the app's usual digits and places."""
+    return models.DecimalField(
+        name,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
+        null=True,
+        blank=True,
+        help_text=help_text,
+    )
+
+
 class Expense(BaseModel):
     """A single expense in an event.
 
-    Phase 1 scope: paid-only expenses. The estimated_amount and receipt
-    fields ship in Phase 2; the three-state model (planned / quoted+paid /
-    paid-only) is documented in expenses-design.md.
+    Paid-only expenses (no estimates). An expense is split equally, or by
+    item: each person's items plus their part of a shared amount, a
+    surcharge, a table charge, tax and tip (see `services.splitting`). The
+    itemized inputs are kept so the expense can be edited later; the
+    resolved amounts live on `ExpenseShare` either way.
     """
+
+    EQUAL = "equal"
+    ITEMIZED = "itemized"
+    SPLIT_CHOICES = [(EQUAL, "Split equally"), (ITEMIZED, "Split by item")]
 
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="expenses")
     description = models.CharField("description", max_length=200)
@@ -194,6 +227,22 @@ class Expense(BaseModel):
     )
     receipt_content_type = models.CharField(
         "receipt_content_type", max_length=64, blank=True, default=""
+    )
+    split_mode = models.CharField(
+        "split_mode", max_length=10, choices=SPLIT_CHOICES, default=EQUAL
+    )
+    shared_amount = _money_field(
+        "shared_amount", "Itemized only: split equally before the extras."
+    )
+    table_charge = _money_field(
+        "table_charge", "Itemized only: flat charge split equally, taxed."
+    )
+    surcharge_percent = _percent_field(
+        "surcharge_percent", "Itemized only: percent of the food, before tax."
+    )
+    tax_percent = _percent_field("tax_percent", "Itemized only.")
+    tip_percent = _percent_field(
+        "tip_percent", "Itemized only: on the total after tax."
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -268,6 +317,15 @@ class ExpenseShare(BaseModel):
         decimal_places=MONEY_DECIMAL_PLACES,
     )
     reimbursed = models.BooleanField("reimbursed", default=False)
+    item_amount = models.DecimalField(
+        "item_amount",
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
+        null=True,
+        blank=True,
+        help_text="Itemized expenses only: what this person had, in the "
+        "expense's currency, before the extras.",
+    )
 
     class Meta:
         unique_together = [("expense", "participant")]

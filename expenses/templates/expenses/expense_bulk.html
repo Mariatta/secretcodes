@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 static %}
+{% block head_title %}
+    Add several · {{ event.name }} · {{ block.super }}
+{% endblock head_title %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_list' %}">All events</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'expenses:event_overview' event_id=event.pk %}">{{ event.name }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Add several
+            </li>
+        </ol>
+    </nav>
+    <h1 class="h3">
+        Add several <em class="sc-italic">expenses</em>
+    </h1>
+    <p class="text-muted">
+        One row per expense, split equally between the ticked people. Empty rows are skipped,
+        and nothing is saved until every filled row is valid. For a split by item or a receipt,
+        use Log expense.
+    </p>
+    <form method="post" data-bulk-form>
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% bootstrap_formset_errors formset %}
+        <div class="table-responsive">
+            <table class="table table-sm align-middle sc-bulk-table">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            Date
+                        </th>
+                        <th scope="col">
+                            Description
+                        </th>
+                        <th scope="col">
+                            Category
+                        </th>
+                        <th scope="col">
+                            Amount
+                        </th>
+                        <th scope="col">
+                            Currency
+                        </th>
+                        <th scope="col">
+                            Paid by
+                        </th>
+                        {% for participant in participants %}
+                            <th scope="col" class="text-center">
+                                {{ participant.display_name|default:participant.invited_email }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody data-bulk-rows>
+                    {% with columns=participants|length|add:6 %}
+                        {% for row in formset %}
+                            {% include "expenses/_bulk_row.html" %}
+                        {% endfor %}
+                    {% endwith %}
+                </tbody>
+            </table>
+        </div>
+        <template data-bulk-template>
+            {% with row=formset.empty_form columns=participants|length|add:6 %}
+                {% include "expenses/_bulk_row.html" %}
+            {% endwith %}
+        </template>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-add-row>
+                + Add row
+            </button>
+            <button type="submit" class="btn btn-primary">
+                Save all
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:event_ledger' event_id=event.pk %}">Cancel</a>
+        </div>
+    </form>
+    <script src="{% static 'brand/expenses-bulk.js' %}" defer></script>
+{% endblock content %}

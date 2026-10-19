@@ -24,6 +24,8 @@
         <div class="d-flex gap-2">
             <a class="btn btn-outline-secondary"
                href="{% url 'expenses:event_export_csv' event_id=event.pk %}">Export CSV</a>
+            <a class="btn btn-outline-secondary"
+               href="{% url 'expenses:expense_bulk' event_id=event.pk %}">Add several</a>
             <a class="btn btn-primary"
                href="{% url 'expenses:expense_create' event_id=event.pk %}">Log expense</a>
         </div>
