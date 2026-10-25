@@ -23,7 +23,7 @@ django-timezone-field==7.2.2
 django-widget-tweaks==1.5.1
 google-api-python-client==2.199.0
 google-auth==2.56.2
-google-auth-oauthlib==1.4.0
+google-auth-oauthlib==1.5.0
 jsonschema==4.26.0
 pillow==12.3.0
 qrcode==8.2
