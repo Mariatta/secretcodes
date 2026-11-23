@@ -408,7 +408,7 @@ def test_week_grid_accepts_city_alias(client):
 def test_week_grid_unknown_timezone_falls_back_with_notice(client):
     response = client.get(reverse("availability:week_grid") + "?tz=Atlantis")
     assert response.context["display_tz"] == AvailabilityProfile.get_solo().timezone
-    assert b"No timezone called" in response.content
+    assert b"a timezone this page knows" in response.content
     assert b"Atlantis" in response.content
 
 

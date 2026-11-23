@@ -27,7 +27,7 @@
             </p>
             {% if unknown_tz %}
                 <div class="alert alert-warning">
-                    No timezone called "{{ unknown_tz }}" here, so these are Mariatta's own times.
+                    "{{ unknown_tz }}" isn't a timezone this page knows, so these are Mariatta's own times.
                     Try a city, like Lisbon or Tokyo.
                 </div>
             {% endif %}
@@ -40,7 +40,7 @@
                 {% if include_extended %}
                     <input type="hidden" name="include_extended" value="true">
                 {% endif %}
-                <label class="sc-eyebrow" for="tz-input">
+                <label class="sc-eyebrow" id="tz-label" for="tz-input">
                     Times shown in
                 </label>
                 <div class="sc-tz-picker__field">

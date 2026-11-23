@@ -137,8 +137,11 @@ the check-a-time endpoint, and the MCP tools.
   lives only in the URL: no cookie, no storage, and the link is shareable.
   "Back to my timezone" returns to the browser's own
 - `tz` accepts an IANA name in any letter case, the city part of one
-  (`lisbon`) when only one zone has it, or a city alias such as `seattle` (`CITY_ALIASES` in `availability/services/timezones.py`, because
-  IANA names leave out many cities). Unknown values fall back to Mariatta's
+  (`lisbon`) when every zone with that city keeps the same time, or a city
+  alias such as `seattle` (`CITY_ALIASES` in
+  `availability/services/timezones.py`, because IANA names leave out many
+  cities). The `Etc/` zones only resolve by their full name, since their
+  signs are inverted. Unknown values fall back to Mariatta's
   timezone with a notice
 - Without JavaScript the field is a plain text input with a Show button, and
   the page defaults to Mariatta's timezone
@@ -157,6 +160,12 @@ the check-a-time endpoint, and the MCP tools.
 - The page is rate limited per IP with `AVAILABILITY_API_RATE_LIMIT`, the
   same limit as the JSON endpoints, because each timezone offset fetches its
   own 14-day range from Google
+- Rate limits read the visitor's address from the last `X-Forwarded-For`
+  entry (`secretcodes/ratelimit.py`), because behind Azure's proxy
+  `REMOTE_ADDR` is the same for everyone
+- Rate-limit counters live in the Django cache. Set `CACHE_REDIS_URL` to
+  share them across gunicorn workers; without it each worker counts on its
+  own, so the real limit is up to three times the setting
 
 ### Day-level recommendations (summary view)
 

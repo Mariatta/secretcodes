@@ -138,6 +138,9 @@
     });
     var submit = form.querySelector("[data-tz-submit]");
     if (submit) submit.hidden = true;
+    /* Tagify swaps the input for its own text box: carry the label over. */
+    var label = form.querySelector("label[for='" + input.id + "']");
+    if (label && label.id) tagify.DOM.input.setAttribute("aria-labelledby", label.id);
 
     function goToChosen() {
       var chosen = tagify.value.length ? tagify.value[0].value : "";

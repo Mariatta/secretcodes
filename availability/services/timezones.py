@@ -4,7 +4,7 @@ The page is rendered in the viewer's timezone, which arrives as a ``tz``
 query parameter: either an IANA zone name or one of the city aliases below.
 """
 
-from datetime import datetime, tzinfo
+from datetime import UTC, datetime, tzinfo
 from functools import lru_cache
 from zoneinfo import ZoneInfo, available_timezones
 
@@ -67,17 +67,34 @@ def _zone_names_by_lowercase() -> dict[str, str]:
     return {name.lower(): name for name in available_timezones()}
 
 
+def _offsets_through_a_year(name: str) -> tuple:
+    """A zone's UTC offset in January and July, to tell two zones apart."""
+    zone = ZoneInfo(name)
+    return tuple(
+        datetime(2026, month, 1, tzinfo=UTC).astimezone(zone).utcoffset()
+        for month in (1, 7)
+    )
+
+
 @lru_cache(maxsize=1)
 def _zone_names_by_city() -> dict[str, str]:
     """Zone names keyed by their city part ("lisbon" for Europe/Lisbon).
 
-    A city that names more than one zone is left out, because picking one
-    for the visitor would be a guess.
+    Several names for the same clock count as one city: Europe/Istanbul and
+    Asia/Istanbul both answer to "istanbul". A city whose zones keep
+    different time is left out, because picking one for the visitor would be
+    a guess. The Etc/ zones are left out too: their signs are inverted, so
+    "GMT+5" would land five hours behind UTC, not ahead.
     """
     by_city: dict[str, list[str]] = {}
     for lowered, name in _zone_names_by_lowercase().items():
-        by_city.setdefault(lowered.rsplit("/", 1)[-1], []).append(name)
-    return {city: names[0] for city, names in by_city.items() if len(names) == 1}
+        if not name.startswith("Etc/"):
+            by_city.setdefault(lowered.rsplit("/", 1)[-1], []).append(name)
+    return {
+        city: max(names, key=lambda name: (len(name), name))
+        for city, names in by_city.items()
+        if len({_offsets_through_a_year(name) for name in names}) == 1
+    }
 
 
 def resolve_timezone(value: str) -> ZoneInfo | None:
