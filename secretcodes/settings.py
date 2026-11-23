@@ -391,3 +391,21 @@ CONTENT_PLANNER_CONNECTORS = {}
 # Public API rate limits. Override via env var for testing or tuning.
 MCP_RATE_LIMIT = os.environ.get("MCP_RATE_LIMIT", "60/m")
 AVAILABILITY_API_RATE_LIMIT = os.environ.get("AVAILABILITY_API_RATE_LIMIT", "120/m")
+# Rate limits key on the visitor's address, not the reverse proxy's.
+RATELIMIT_IP_META_KEY = "secretcodes.ratelimit.client_ip"
+
+# Cache: Redis when CACHE_REDIS_URL is set, so rate-limit counters and cached
+# calendar lookups are shared by every gunicorn worker. Without it each
+# worker keeps its own in-memory cache, which is fine for local development.
+CACHE_REDIS_URL = os.environ.get("CACHE_REDIS_URL", "")
+CACHES = {
+    "default": {
+        "BACKEND": (
+            "django.core.cache.backends.redis.RedisCache"
+            if CACHE_REDIS_URL
+            else "django.core.cache.backends.locmem.LocMemCache"
+        ),
+        "LOCATION": CACHE_REDIS_URL,
+        "KEY_PREFIX": "cache",
+    }
+}
