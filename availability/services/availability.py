@@ -1,7 +1,8 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import UTC
 from datetime import date as date_type
-from datetime import UTC, datetime, time, timedelta, tzinfo
+from datetime import datetime, time, timedelta, tzinfo
 from enum import StrEnum
 from typing import Optional
 
@@ -359,9 +360,7 @@ def recommend_week(
     cursor = start_date
     while cursor < end_date:
         days.append(
-            score_day(
-                cursor, slots_by_date[cursor], busy_by_date[cursor], profile, tz
-            )
+            score_day(cursor, slots_by_date[cursor], busy_by_date[cursor], profile, tz)
         )
         cursor += timedelta(days=1)
 

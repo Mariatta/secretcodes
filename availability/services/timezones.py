@@ -67,18 +67,31 @@ def _zone_names_by_lowercase() -> dict[str, str]:
     return {name.lower(): name for name in available_timezones()}
 
 
+@lru_cache(maxsize=1)
+def _zone_names_by_city() -> dict[str, str]:
+    """Zone names keyed by their city part ("lisbon" for Europe/Lisbon).
+
+    A city that names more than one zone is left out, because picking one
+    for the visitor would be a guess.
+    """
+    by_city: dict[str, list[str]] = {}
+    for lowered, name in _zone_names_by_lowercase().items():
+        by_city.setdefault(lowered.rsplit("/", 1)[-1], []).append(name)
+    return {city: names[0] for city, names in by_city.items() if len(names) == 1}
+
+
 def resolve_timezone(value: str) -> ZoneInfo | None:
     """Turn what a visitor typed into a timezone, or None when it is unknown.
 
     Accepts an IANA name in any letter case ("europe/lisbon"), with spaces
-    in place of underscores ("America/New York"), or a city alias
-    ("seattle").
+    in place of underscores ("America/New York"), a city alias ("seattle"),
+    or just the city part of a zone name ("lisbon").
     """
     wanted = " ".join(value.lower().split())
     if not wanted:
         return None
     wanted = CITY_ALIASES.get(wanted, wanted).lower().replace(" ", "_")
-    name = _zone_names_by_lowercase().get(wanted)
+    name = _zone_names_by_lowercase().get(wanted) or _zone_names_by_city().get(wanted)
     return ZoneInfo(name) if name else None
 
 

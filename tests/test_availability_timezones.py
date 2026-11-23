@@ -23,6 +23,9 @@ NOVEMBER = datetime(2026, 11, 23, 12, 0, tzinfo=UTC)
         ("UTC", "UTC"),
         ("seattle", "America/Los_Angeles"),
         ("San  Francisco", "America/Los_Angeles"),
+        ("Lisbon", "Europe/Lisbon"),
+        ("tokyo", "Asia/Tokyo"),
+        ("los angeles", "America/Los_Angeles"),
     ],
 )
 def test_resolve_timezone_accepts_zone_names_and_cities(typed, expected):
@@ -32,6 +35,12 @@ def test_resolve_timezone_accepts_zone_names_and_cities(typed, expected):
 @pytest.mark.parametrize("typed", ["", "   ", "Atlantis", "../etc/passwd"])
 def test_resolve_timezone_returns_none_for_unknown(typed):
     assert resolve_timezone(typed) is None
+
+
+def test_resolve_timezone_does_not_guess_between_zones_sharing_a_city():
+    """Buenos Aires names both America/Buenos_Aires and the Argentina/ zone."""
+    assert resolve_timezone("Buenos Aires") is None
+    assert resolve_timezone("America/Argentina/Buenos_Aires") is not None
 
 
 def test_every_city_alias_points_at_a_real_timezone():

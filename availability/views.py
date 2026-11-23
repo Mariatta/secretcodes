@@ -56,6 +56,7 @@ def _buffer_for(profile):
 
 
 @require_GET
+@ratelimit(key="ip", rate=_api_rate, block=False)
 def week_grid(request):
     """Show the next 14 days of availability in the viewer's timezone.
 
@@ -63,7 +64,16 @@ def week_grid(request):
     fills it in from the browser on a first visit, and the type-in field
     changes it. Without it, or when it is not a timezone we know, the page
     falls back to the profile's own timezone.
+
+    Rate limited like the JSON endpoints, because each timezone offset
+    asks Google for its own 14-day range.
     """
+    if _rate_limited(request):
+        return HttpResponse(
+            "Too many requests. Please try again in a minute.",
+            status=429,
+            content_type="text/plain",
+        )
     profile = AvailabilityProfile.get_solo()
     requested_tz = request.GET.get("tz", "")
     viewer_tz = resolve_timezone(requested_tz)

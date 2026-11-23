@@ -174,6 +174,17 @@ def test_check_endpoint_rate_limits(client, settings):
 
 
 @pytest.mark.django_db
+def test_week_grid_rate_limits(client, settings):
+    settings.AVAILABILITY_API_RATE_LIMIT = "2/m"
+    url = reverse("availability:week_grid")
+    assert client.get(url).status_code == 200
+    assert client.get(url, {"tz": "Asia/Tokyo"}).status_code == 200
+    response = client.get(url, {"tz": "Europe/Lisbon"})
+    assert response.status_code == 429
+    assert b"Too many requests" in response.content
+
+
+@pytest.mark.django_db
 def test_week_grid_defaults_to_summary_view(client):
     response = client.get(reverse("availability:week_grid"))
     assert b"Recommended" in response.content or b"Wide open" in response.content
@@ -361,9 +372,8 @@ def test_check_endpoint_reports_busy(client):
     assert data["reason"] == "Busy"
 
 
-@pytest.mark.django_db
 def test_display_range_starts_today_in_the_given_timezone():
-    """10:00 UTC on Wednesday is already 23:00 Wednesday in Auckland (NZST)."""
+    """20:00 UTC on Wednesday is already 08:00 Thursday in Auckland (NZST)."""
     wednesday = datetime(2026, 4, 22, 20, 0, tzinfo=timezone.utc)
     with patch("availability.views.timezone.now", return_value=wednesday):
         start, _ = _display_range(ZoneInfo("Pacific/Auckland"))
@@ -398,7 +408,7 @@ def test_week_grid_accepts_city_alias(client):
 def test_week_grid_unknown_timezone_falls_back_with_notice(client):
     response = client.get(reverse("availability:week_grid") + "?tz=Atlantis")
     assert response.context["display_tz"] == AvailabilityProfile.get_solo().timezone
-    assert b"know a timezone called" in response.content
+    assert b"No timezone called" in response.content
     assert b"Atlantis" in response.content
 
 
@@ -425,10 +435,10 @@ def test_week_grid_links_keep_the_timezone(client):
     )
     content = response.content.decode()
     assert "tz=Europe/Lisbon" in content or "tz=Europe%2FLisbon" in content
-    summary_link = content.split(">Detail</a>")[0].rsplit('href="', 1)[1]
-    assert "view=detail" in summary_link
-    assert "Lisbon" in summary_link
-    assert "include_extended=true" in summary_link
+    detail_link = content.split(">Detail</a>")[0].rsplit('href="', 1)[1]
+    assert "view=detail" in detail_link
+    assert "Lisbon" in detail_link
+    assert "include_extended=true" in detail_link
 
 
 @pytest.mark.django_db
@@ -437,3 +447,15 @@ def test_week_grid_offers_city_aliases_to_the_type_in_field(client):
     assert "Seattle" in response.context["city_aliases"]["America/Los_Angeles"]
     assert b'id="tz-city-aliases"' in response.content
     assert b"brand/availability-timezone.js" in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_renders_clock_times_in_the_viewer_timezone(client):
+    """Monday 09:00-17:00 in Vancouver (PDT) reads 01:00-09:00 in Tokyo."""
+    monday = datetime(2026, 5, 4, 3, 0, tzinfo=timezone.utc)
+    with patch("availability.views.timezone.now", return_value=monday):
+        response = client.get(
+            reverse("availability:week_grid") + "?view=detail&tz=Asia/Tokyo"
+        )
+    assert b">01:00</time>" in response.content
+    assert b">16:30</time>" not in response.content

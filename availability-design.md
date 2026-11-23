@@ -136,8 +136,8 @@ the check-a-time endpoint, and the MCP tools.
   example to see slots in the timezone of an upcoming trip. The override
   lives only in the URL: no cookie, no storage, and the link is shareable.
   "Back to my timezone" returns to the browser's own
-- `tz` accepts an IANA name in any letter case, or a city alias such as
-  `seattle` (`CITY_ALIASES` in `availability/services/timezones.py`, because
+- `tz` accepts an IANA name in any letter case, the city part of one
+  (`lisbon`) when only one zone has it, or a city alias such as `seattle` (`CITY_ALIASES` in `availability/services/timezones.py`, because
   IANA names leave out many cities). Unknown values fall back to Mariatta's
   timezone with a notice
 - Without JavaScript the field is a plain text input with a Show button, and
@@ -154,14 +154,17 @@ the check-a-time endpoint, and the MCP tools.
   viewer's timezone is from it ("9 hours ahead of Mariatta")
 - The JSON and MCP endpoints are unchanged: they return ISO 8601 datetimes
   with offsets
+- The page is rate limited per IP with `AVAILABILITY_API_RATE_LIMIT`, the
+  same limit as the JSON endpoints, because each timezone offset fetches its
+  own 14-day range from Google
 
 ### Day-level recommendations (summary view)
 
 A second pure function alongside `compute_availability`:
 
 ```python
-def score_day(day, slots_for_day, busy_for_day, profile) -> DayRecommendation: ...
-def recommend_week(result, busy_blocks, profile, start, end) -> {"days": [...], "best": ...}
+def score_day(day, slots_for_day, busy_for_day, profile, display_tz=None) -> DayRecommendation: ...
+def recommend_week(result, busy_blocks, profile, start, end, display_tz=None) -> {"days": [...], "best": ...}
 ```
 
 Each day gets a qualitative label from the business-hours free-ratio:
