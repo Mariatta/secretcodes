@@ -127,10 +127,33 @@ the check-a-time endpoint, and the MCP tools.
 ### Timezone handling
 
 - Store everything in UTC
-- Detect viewer TZ in the browser (`Intl.DateTimeFormat().resolvedOptions().timeZone`)
-- Render grid cells in viewer TZ
-- **Classify** cells (business / extended / sacred) in Mariatta's TZ
-- Always display a `Mariatta is in Vancouver (PDT)` label
+- The page renders server-side in the **viewer's timezone**, named by the
+  `tz` query parameter (`/availability/?tz=Europe/Lisbon`)
+- First visit: the page script reads the browser's timezone
+  (`Intl.DateTimeFormat().resolvedOptions().timeZone`) and, when it differs
+  from what was rendered, reloads with `tz` filled in
+- Viewers can override it with the type-in field ("Times shown in"), for
+  example to see slots in the timezone of an upcoming trip. The override
+  lives only in the URL: no cookie, no storage, and the link is shareable.
+  "Back to my timezone" returns to the browser's own
+- `tz` accepts an IANA name in any letter case, or a city alias such as
+  `seattle` (`CITY_ALIASES` in `availability/services/timezones.py`, because
+  IANA names leave out many cities). Unknown values fall back to Mariatta's
+  timezone with a notice
+- Without JavaScript the field is a plain text input with a Show button, and
+  the page defaults to Mariatta's timezone
+- **Day cards are the viewer's calendar days.** Slots, appointments and the
+  day label are grouped by date in the viewer's timezone
+  (`recommend_week(..., display_tz)`). A viewer's day can hold parts of two
+  of Mariatta's working days, so a day's business minutes are measured over
+  that day's actual 24 hours
+- **Classify** slots (business / extended / sacred) in Mariatta's TZ. The
+  viewer's timezone never changes which slots exist, only how they are
+  grouped and displayed
+- Always display a `Mariatta is in America/Vancouver` label, plus how far the
+  viewer's timezone is from it ("9 hours ahead of Mariatta")
+- The JSON and MCP endpoints are unchanged: they return ISO 8601 datetimes
+  with offsets
 
 ### Day-level recommendations (summary view)
 

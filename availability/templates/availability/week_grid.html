@@ -6,7 +6,7 @@
 {% block extra_head %}
 {% endblock extra_head %}
 {% block content %}
-    {% timezone profile.timezone %}
+    {% timezone display_tz %}
         <h1>
             Mariatta's <em class="sc-italic">availability</em>
         </h1>
@@ -23,14 +23,54 @@
         {% else %}
             <p class="text-muted">
                 Mariatta is in <strong>{{ profile.timezone }}</strong>.
-                <span id="viewer-tz-label"></span>
                 Next 14 days starting {{ range_start|date:"l, Y-m-d" }}.
             </p>
+            {% if unknown_tz %}
+                <div class="alert alert-warning">
+                    I don't know a timezone called "{{ unknown_tz }}", so these are Mariatta's own times.
+                    Try a city, like Lisbon or Tokyo.
+                </div>
+            {% endif %}
+            <form method="get"
+                  class="sc-tz-picker"
+                  data-tz-picker
+                  data-display-tz="{{ display_tz }}"
+                  data-host-tz="{{ profile.timezone }}">
+                <input type="hidden" name="view" value="{{ view_mode }}">
+                {% if include_extended %}
+                    <input type="hidden" name="include_extended" value="true">
+                {% endif %}
+                <label class="sc-eyebrow" for="tz-input">
+                    Times shown in
+                </label>
+                <div class="sc-tz-picker__field">
+                    <input id="tz-input"
+                           name="tz"
+                           type="text"
+                           class="form-control"
+                           value="{{ display_tz }}"
+                           autocomplete="off"
+                           spellcheck="false"
+                           placeholder="Type a city or timezone">
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-primary" data-tz-submit>
+                    Show
+                </button>
+                <p class="sc-tz-picker__status" aria-live="polite">
+                    {% if tz_offset %}
+                        {{ tz_offset }} Mariatta.
+                    {% else %}
+                        Same time as Mariatta.
+                    {% endif %}
+                    <span data-tz-device-note></span>
+                </p>
+            </form>
+            {{ city_aliases|json_script:"tz-city-aliases" }}
             <p>
                 <a class="btn btn-sm {% if view_mode == 'summary' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   href="?view=summary{% if include_extended %}&include_extended=true{% endif %}">Summary</a>
+                   href="{% querystring view='summary' %}">Summary</a>
                 <a class="btn btn-sm {% if view_mode == 'detail' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   href="?view=detail{% if include_extended %}&include_extended=true{% endif %}">Detail</a>
+                   href="{% querystring view='detail' %}">Detail</a>
             </p>
             {% if view_mode == "summary" %}
                 {% if week_summary.best %}
@@ -111,25 +151,10 @@
                 {% endif %}
                 {% if exhausted and not include_extended %}
                     <a class="btn btn-outline-primary"
-                       href="?view=detail&include_extended=true">Need a different time?</a>
+                       href="{% querystring view='detail' include_extended='true' %}">Need a different time?</a>
                 {% endif %}
             {% endif %}
         {% endif %}
     {% endtimezone %}
-    <script>
-        (function () {
-            const viewerTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const label = document.getElementById("viewer-tz-label");
-            if (label) {
-                label.textContent = "Times shown in your timezone (" + viewerTz + ").";
-            }
-            document.querySelectorAll("time[datetime]").forEach(function (el) {
-                const d = new Date(el.getAttribute("datetime"));
-                if (isNaN(d)) { return; }
-                el.textContent = d.toLocaleTimeString([], {
-                    hour: "2-digit", minute: "2-digit", hour12: false
-                });
-            });
-        })();
-    </script>
+    <script src="{% static 'brand/availability-timezone.js' %}" defer></script>
 {% endblock content %}
