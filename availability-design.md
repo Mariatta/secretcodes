@@ -127,18 +127,53 @@ the check-a-time endpoint, and the MCP tools.
 ### Timezone handling
 
 - Store everything in UTC
-- Detect viewer TZ in the browser (`Intl.DateTimeFormat().resolvedOptions().timeZone`)
-- Render grid cells in viewer TZ
-- **Classify** cells (business / extended / sacred) in Mariatta's TZ
-- Always display a `Mariatta is in Vancouver (PDT)` label
+- The page renders server-side in the **viewer's timezone**, named by the
+  `tz` query parameter (`/availability/?tz=Europe/Lisbon`)
+- First visit: the page script reads the browser's timezone
+  (`Intl.DateTimeFormat().resolvedOptions().timeZone`) and, when it differs
+  from what was rendered, reloads with `tz` filled in
+- Viewers can override it with the type-in field ("Times shown in"), for
+  example to see slots in the timezone of an upcoming trip. The override
+  lives only in the URL: no cookie, no storage, and the link is shareable.
+  "Back to my timezone" returns to the browser's own
+- `tz` accepts an IANA name in any letter case, the city part of one
+  (`lisbon`) when every zone with that city keeps the same time, or a city
+  alias such as `seattle` (`CITY_ALIASES` in
+  `availability/services/timezones.py`, because IANA names leave out many
+  cities). The `Etc/` zones only resolve by their full name, since their
+  signs are inverted. Unknown values fall back to Mariatta's
+  timezone with a notice
+- Without JavaScript the field is a plain text input with a Show button, and
+  the page defaults to Mariatta's timezone
+- **Day cards are the viewer's calendar days.** Slots, appointments and the
+  day label are grouped by date in the viewer's timezone
+  (`recommend_week(..., display_tz)`). A viewer's day can hold parts of two
+  of Mariatta's working days, so a day's business minutes are measured over
+  that day's actual 24 hours
+- **Classify** slots (business / extended / sacred) in Mariatta's TZ. The
+  viewer's timezone never changes which slots exist, only how they are
+  grouped and displayed
+- Always display a `Mariatta is in America/Vancouver` label, plus how far the
+  viewer's timezone is from it ("9 hours ahead of Mariatta")
+- The JSON and MCP endpoints are unchanged: they return ISO 8601 datetimes
+  with offsets
+- The page is rate limited per IP with `AVAILABILITY_API_RATE_LIMIT`, the
+  same limit as the JSON endpoints, because each timezone offset fetches its
+  own 14-day range from Google
+- Rate limits read the visitor's address from the last `X-Forwarded-For`
+  entry (`secretcodes/ratelimit.py`), because behind Azure's proxy
+  `REMOTE_ADDR` is the same for everyone
+- Rate-limit counters live in the Django cache. Set `CACHE_REDIS_URL` to
+  share them across gunicorn workers; without it each worker counts on its
+  own, so the real limit is up to three times the setting
 
 ### Day-level recommendations (summary view)
 
 A second pure function alongside `compute_availability`:
 
 ```python
-def score_day(day, slots_for_day, busy_for_day, profile) -> DayRecommendation: ...
-def recommend_week(result, busy_blocks, profile, start, end) -> {"days": [...], "best": ...}
+def score_day(day, slots_for_day, busy_for_day, profile, display_tz=None) -> DayRecommendation: ...
+def recommend_week(result, busy_blocks, profile, start, end, display_tz=None) -> {"days": [...], "best": ...}
 ```
 
 Each day gets a qualitative label from the business-hours free-ratio:

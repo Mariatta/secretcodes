@@ -345,6 +345,49 @@ def test_recommend_week_groups_busy_blocks_by_date():
     assert tuesday.meeting_count == 1
 
 
+# ---------- days seen from another timezone ----------
+
+TOKYO = ZoneInfo("Asia/Tokyo")
+LONDON = ZoneInfo("Europe/London")
+
+
+def test_score_day_counts_business_minutes_inside_the_viewer_day():
+    """Friday 09:00-17:00 PDT is 17:00 Friday to 01:00 Saturday in London."""
+    saturday = _pt(2026, 5, 9).date()
+    friday = _pt(2026, 5, 8).date()
+    assert score_day(saturday, [], [], FakeProfile(), LONDON).business_minutes == 60
+    assert score_day(friday, [], [], FakeProfile(), LONDON).business_minutes == 480
+    assert score_day(saturday, [], [], FakeProfile()).business_minutes == 0
+
+
+def test_recommend_week_regroups_days_for_the_viewer():
+    """Monday's Vancouver working day falls entirely on Tuesday in Tokyo."""
+    start = datetime(2026, 5, 4, tzinfo=TOKYO)
+    end = datetime(2026, 5, 9, tzinfo=TOKYO)
+    result = compute_availability(start, end, [], FakeProfile())
+    week = recommend_week(result, [], FakeProfile(), start, end, TOKYO)
+    by_date = {d.date.isoformat(): d for d in week.days}
+    assert list(by_date) == [f"2026-05-0{n}" for n in range(4, 9)]
+    assert by_date["2026-05-04"].label == "off_hours"
+    assert by_date["2026-05-05"].label == "wide_open"
+    assert by_date["2026-05-05"].free_minutes == 480
+    start_of_window, end_of_window = by_date["2026-05-05"].best_window
+    assert start_of_window.astimezone(TOKYO).hour == 1
+    assert end_of_window.astimezone(TOKYO).hour == 9
+
+
+def test_recommend_week_groups_busy_blocks_by_viewer_date():
+    """A Monday 10:00 Vancouver meeting is a Tuesday meeting in Tokyo."""
+    start = datetime(2026, 5, 4, tzinfo=TOKYO)
+    end = datetime(2026, 5, 9, tzinfo=TOKYO)
+    busy = [BusyBlock(_pt(2026, 5, 4, 10), _pt(2026, 5, 4, 11))]
+    result = compute_availability(start, end, busy, FakeProfile())
+    week = recommend_week(result, busy, FakeProfile(), start, end, TOKYO)
+    tuesday = next(d for d in week.days if d.date.isoformat() == "2026-05-05")
+    assert tuesday.meeting_count == 1
+    assert tuesday.free_minutes == 420
+
+
 # ---------- meeting buffer ----------
 
 

@@ -1,7 +1,8 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import UTC
 from datetime import date as date_type
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, tzinfo
 from enum import StrEnum
 from typing import Optional
 
@@ -235,13 +236,26 @@ def classify_candidate(
     return False, None, "Outside business/extended hours"
 
 
-def _business_minutes_for_weekday(profile, weekday_key: str) -> int:
-    total = 0
-    for start_str, end_str in profile.business_hours.get(weekday_key, []):
-        start = _parse_hhmm(start_str)
-        end = _parse_hhmm(end_str)
-        total += (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
-    return total
+def _business_minutes_between(profile, start: datetime, end: datetime) -> int:
+    """Minutes of business hours that fall between ``start`` and ``end``.
+
+    Business windows are defined in the profile's timezone, while the
+    interval can be a day in any timezone, so one interval can catch parts
+    of two business days.
+    """
+    tz = profile.timezone
+    total = timedelta()
+    day = start.astimezone(tz).date()
+    last_day = end.astimezone(tz).date()
+    while day <= last_day:
+        weekday_key = Weekday.from_date(day)
+        for win_start, win_end in _windows_for_day(profile.business_hours, weekday_key):
+            overlap_start = max(start, datetime.combine(day, win_start, tzinfo=tz))
+            overlap_end = min(end, datetime.combine(day, win_end, tzinfo=tz))
+            if overlap_end > overlap_start:
+                total += overlap_end.astimezone(UTC) - overlap_start.astimezone(UTC)
+        day += timedelta(days=1)
+    return int(total.total_seconds() // 60)
 
 
 def _longest_free_stretch(
@@ -268,9 +282,20 @@ def score_day(
     slots_for_day: list[FreeSlot],
     busy_for_day: list[BusyBlock],
     profile,
+    display_tz: tzinfo | None = None,
 ) -> DayRecommendation:
-    weekday_key = Weekday.from_date(day)
-    business_minutes = _business_minutes_for_weekday(profile, weekday_key)
+    """Label one calendar day by how much of its business time is free.
+
+    ``day`` is a date in ``display_tz`` (the profile's timezone by default).
+    Seen from another timezone, a day can hold parts of two of the
+    profile's business days, so the business minutes are measured over
+    that day's actual 24 hours.
+    """
+    tz = display_tz or profile.timezone
+    day_start = datetime.combine(day, time.min, tzinfo=tz)
+    business_minutes = _business_minutes_between(
+        profile, day_start, day_start + timedelta(days=1)
+    )
 
     business_slots = [s for s in slots_for_day if s.band == Band.BUSINESS]
     free_minutes = sum(
@@ -312,8 +337,14 @@ def recommend_week(
     profile,
     range_start: datetime,
     range_end: datetime,
+    display_tz: tzinfo | None = None,
 ) -> WeekRecommendation:
-    tz = profile.timezone
+    """Score every day in the range, grouped into days of ``display_tz``.
+
+    Defaults to the profile's timezone. Pass the viewer's timezone to get
+    the days as the viewer's calendar has them.
+    """
+    tz = display_tz or profile.timezone
     slots_by_date: dict[date_type, list[FreeSlot]] = defaultdict(list)
     for slot in result.free_slots:
         slots_by_date[slot.start.astimezone(tz).date()].append(slot)
@@ -329,7 +360,7 @@ def recommend_week(
     cursor = start_date
     while cursor < end_date:
         days.append(
-            score_day(cursor, slots_by_date[cursor], busy_by_date[cursor], profile)
+            score_day(cursor, slots_by_date[cursor], busy_by_date[cursor], profile, tz)
         )
         cursor += timedelta(days=1)
 

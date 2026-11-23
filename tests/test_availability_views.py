@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.urls import reverse
@@ -173,6 +174,17 @@ def test_check_endpoint_rate_limits(client, settings):
 
 
 @pytest.mark.django_db
+def test_week_grid_rate_limits(client, settings):
+    settings.AVAILABILITY_API_RATE_LIMIT = "2/m"
+    url = reverse("availability:week_grid")
+    assert client.get(url).status_code == 200
+    assert client.get(url, {"tz": "Asia/Tokyo"}).status_code == 200
+    response = client.get(url, {"tz": "Europe/Lisbon"})
+    assert response.status_code == 429
+    assert b"Too many requests" in response.content
+
+
+@pytest.mark.django_db
 def test_week_grid_defaults_to_summary_view(client):
     response = client.get(reverse("availability:week_grid"))
     assert b"Recommended" in response.content or b"Wide open" in response.content
@@ -305,7 +317,7 @@ def test_check_endpoint_defaults_duration_to_thirty(client):
 def test_display_range_starts_today_in_profile_tz():
     wednesday = datetime(2026, 4, 22, 10, 0, tzinfo=timezone.utc)
     with patch("availability.views.timezone.now", return_value=wednesday):
-        start, end = _display_range(AvailabilityProfile.get_solo())
+        start, end = _display_range(AvailabilityProfile.get_solo().timezone)
     assert start.weekday() == 2
     assert start.hour == 0 and start.minute == 0
     assert (end - start) == timedelta(days=14)
@@ -358,3 +370,92 @@ def test_check_endpoint_reports_busy(client):
     data = response.json()
     assert data["free"] is False
     assert data["reason"] == "Busy"
+
+
+def test_display_range_starts_today_in_the_given_timezone():
+    """20:00 UTC on Wednesday is already 08:00 Thursday in Auckland (NZST)."""
+    wednesday = datetime(2026, 4, 22, 20, 0, tzinfo=timezone.utc)
+    with patch("availability.views.timezone.now", return_value=wednesday):
+        start, _ = _display_range(ZoneInfo("Pacific/Auckland"))
+    assert start.date().isoformat() == "2026-04-23"
+    assert start.hour == 0
+
+
+@pytest.mark.django_db
+def test_week_grid_defaults_to_profile_timezone(client):
+    response = client.get(reverse("availability:week_grid"))
+    assert response.context["display_tz"] == AvailabilityProfile.get_solo().timezone
+    assert response.context["unknown_tz"] == ""
+    assert b"Same time as Mariatta." in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_uses_requested_timezone(client):
+    response = client.get(reverse("availability:week_grid") + "?tz=Asia/Tokyo")
+    assert response.context["display_tz"] == ZoneInfo("Asia/Tokyo")
+    assert b'data-display-tz="Asia/Tokyo"' in response.content
+    assert b"ahead of Mariatta." in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_accepts_city_alias(client):
+    response = client.get(reverse("availability:week_grid") + "?tz=seattle")
+    assert response.context["display_tz"] == ZoneInfo("America/Los_Angeles")
+    assert response.context["unknown_tz"] == ""
+
+
+@pytest.mark.django_db
+def test_week_grid_unknown_timezone_falls_back_with_notice(client):
+    response = client.get(reverse("availability:week_grid") + "?tz=Atlantis")
+    assert response.context["display_tz"] == AvailabilityProfile.get_solo().timezone
+    assert b"a timezone this page knows" in response.content
+    assert b"Atlantis" in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_groups_slots_into_viewer_days(client):
+    """Every slot sits under the card for its date in the viewer's timezone."""
+    tokyo = ZoneInfo("Asia/Tokyo")
+    response = client.get(
+        reverse("availability:week_grid") + "?view=detail&tz=Asia/Tokyo"
+    )
+    days_with_slots = response.context["days_with_slots"]
+    assert len(days_with_slots) == 14
+    assert any(slots for _, slots in days_with_slots)
+    for day, slots in days_with_slots:
+        assert all(slot.start.astimezone(tokyo).date() == day.date for slot in slots)
+    shown = sum(len(slots) for _, slots in days_with_slots)
+    assert shown == len(response.context["result"].free_slots)
+
+
+@pytest.mark.django_db
+def test_week_grid_links_keep_the_timezone(client):
+    response = client.get(
+        reverse("availability:week_grid") + "?tz=Europe/Lisbon&include_extended=true"
+    )
+    content = response.content.decode()
+    assert "tz=Europe/Lisbon" in content or "tz=Europe%2FLisbon" in content
+    detail_link = content.split(">Detail</a>")[0].rsplit('href="', 1)[1]
+    assert "view=detail" in detail_link
+    assert "Lisbon" in detail_link
+    assert "include_extended=true" in detail_link
+
+
+@pytest.mark.django_db
+def test_week_grid_offers_city_aliases_to_the_type_in_field(client):
+    response = client.get(reverse("availability:week_grid"))
+    assert "Seattle" in response.context["city_aliases"]["America/Los_Angeles"]
+    assert b'id="tz-city-aliases"' in response.content
+    assert b"brand/availability-timezone.js" in response.content
+
+
+@pytest.mark.django_db
+def test_week_grid_renders_clock_times_in_the_viewer_timezone(client):
+    """Monday 09:00-17:00 in Vancouver (PDT) reads 01:00-09:00 in Tokyo."""
+    monday = datetime(2026, 5, 4, 3, 0, tzinfo=timezone.utc)
+    with patch("availability.views.timezone.now", return_value=monday):
+        response = client.get(
+            reverse("availability:week_grid") + "?view=detail&tz=Asia/Tokyo"
+        )
+    assert b">01:00</time>" in response.content
+    assert b">16:30</time>" not in response.content

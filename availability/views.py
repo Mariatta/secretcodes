@@ -24,6 +24,7 @@ from .services.availability import (
 from .services.google import fetch_busy_blocks_for_all, has_active_calendars
 from .services.mcp import dispatch as mcp_dispatch
 from .services.oauth import build_flow, fetch_user_email, revoke_token
+from .services.timezones import aliases_by_zone, describe_offset, resolve_timezone
 
 superuser_required = user_passes_test(lambda u: u.is_superuser)
 
@@ -42,8 +43,9 @@ def _api_rate(group, request):
     return settings.AVAILABILITY_API_RATE_LIMIT
 
 
-def _display_range(profile):
-    now = timezone.now().astimezone(profile.timezone)
+def _display_range(tz):
+    """The 14 days shown on the page, starting at today's midnight in ``tz``."""
+    now = timezone.now().astimezone(tz)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=14)
     return start, end
@@ -54,15 +56,36 @@ def _buffer_for(profile):
 
 
 @require_GET
+@ratelimit(key="ip", rate=_api_rate, block=False)
 def week_grid(request):
+    """Show the next 14 days of availability in the viewer's timezone.
+
+    The timezone comes from the ``tz`` query parameter. The page's script
+    fills it in from the browser on a first visit, and the type-in field
+    changes it. Without it, or when it is not a timezone we know, the page
+    falls back to the profile's own timezone.
+
+    Rate limited like the JSON endpoints, because each timezone offset
+    asks Google for its own 14-day range.
+    """
+    if _rate_limited(request):
+        return HttpResponse(
+            "Too many requests. Please try again in a minute.",
+            status=429,
+            content_type="text/plain",
+        )
     profile = AvailabilityProfile.get_solo()
-    range_start, range_end = _display_range(profile)
+    requested_tz = request.GET.get("tz", "")
+    viewer_tz = resolve_timezone(requested_tz)
+    display_tz = viewer_tz or profile.timezone
+    range_start, range_end = _display_range(display_tz)
     if not has_active_calendars():
         return render(
             request,
             "availability/week_grid.html",
             {
                 "profile": profile,
+                "display_tz": display_tz,
                 "range_start": range_start,
                 "range_end": range_end,
                 "connected": False,
@@ -79,20 +102,26 @@ def week_grid(request):
         include_extended=include_extended,
         buffer=_buffer_for(profile),
     )
-    week_summary = recommend_week(result, busy_blocks, profile, range_start, range_end)
+    week_summary = recommend_week(
+        result, busy_blocks, profile, range_start, range_end, display_tz
+    )
     days_with_slots = [
         (
             day,
             [
                 slot
                 for slot in result.free_slots
-                if slot.start.astimezone(profile.timezone).date() == day.date
+                if slot.start.astimezone(display_tz).date() == day.date
             ],
         )
         for day in week_summary.days
     ]
     context = {
         "profile": profile,
+        "display_tz": display_tz,
+        "unknown_tz": requested_tz if viewer_tz is None else "",
+        "tz_offset": describe_offset(display_tz, profile.timezone, timezone.now()),
+        "city_aliases": aliases_by_zone(),
         "range_start": range_start,
         "range_end": range_end,
         "result": result,
